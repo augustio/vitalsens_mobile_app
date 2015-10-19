@@ -5,14 +5,18 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -22,10 +26,14 @@ import vitalsens.vitalsensapp.R;
 
 public class SensorList extends Activity {
 
+    private static final long SCAN_PERIOD = 10000;
+
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
     private List<ScanFilter> filters;
+    private Handler mHandler;
+    private boolean mScanning;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +43,7 @@ public class SensorList extends Activity {
         android.view.WindowManager.LayoutParams layoutParams = this.getWindow().getAttributes();
         layoutParams.gravity= Gravity.TOP;
         layoutParams.y = 200;
+        mHandler = new Handler();
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
@@ -56,6 +65,39 @@ public class SensorList extends Activity {
         filters = new ArrayList<ScanFilter>();
 
     }
+
+    private void scanLeDevice(final boolean enable) {
+        final Button cancelButton = (Button) findViewById(R.id.btn_cancel);
+        if (enable) {
+            // Stops scanning after a pre-defined scan period.
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mScanning = false;
+                    mLEScanner.stopScan(mLeScanCallback);
+
+                    cancelButton.setText(R.string.scan);
+
+                }
+            }, SCAN_PERIOD);
+
+            mScanning = true;
+            mLEScanner.startScan(filters, settings, mLeScanCallback);
+            cancelButton.setText(R.string.cancel);
+        } else {
+            mScanning = false;
+            mLEScanner.stopScan(mLeScanCallback);
+            cancelButton.setText(R.string.scan);
+        }
+    }
+
+    private ScanCallback mLeScanCallback = new ScanCallback() {
+
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+
+        }
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
