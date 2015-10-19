@@ -1,10 +1,12 @@
-package vitalsens.vitalsensapp;
+package vitalsens.vitalsensapp.activities;
 
 import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import vitalsens.vitalsensapp.R;
 
 /**
  * A placeholder fragment containing a simple view.

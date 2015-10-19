@@ -1,9 +1,11 @@
-package vitalsens.vitalsensapp;
+package vitalsens.vitalsensapp.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import vitalsens.vitalsensapp.R;
 
 public class SensorList extends Activity {
 
