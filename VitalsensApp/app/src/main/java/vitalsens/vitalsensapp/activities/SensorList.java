@@ -5,8 +5,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.Toast;
 
 import vitalsens.vitalsensapp.R;
@@ -18,7 +20,11 @@ public class SensorList extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title_bar);
         setContentView(R.layout.activity_sensor_list);
+        android.view.WindowManager.LayoutParams layoutParams = this.getWindow().getAttributes();
+        layoutParams.gravity= Gravity.TOP;
+        layoutParams.y = 200;
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
