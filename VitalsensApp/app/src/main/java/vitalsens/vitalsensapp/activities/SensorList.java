@@ -2,7 +2,11 @@ package vitalsens.vitalsensapp.activities;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -11,11 +15,17 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import vitalsens.vitalsensapp.R;
 
 public class SensorList extends Activity {
 
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothLeScanner mLEScanner;
+    private ScanSettings settings;
+    private List<ScanFilter> filters;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +48,13 @@ public class SensorList extends Activity {
             finish();
             return;
         }
+
+        mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
+        settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build();
+        filters = new ArrayList<ScanFilter>();
+
     }
 
     @Override
