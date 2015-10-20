@@ -53,8 +53,8 @@ public class SensorList extends Activity {
     private ArrayList<String> mSelectedSensors;
     private Handler mHandler;
     private boolean mScanning;
-    private Button mOKButton;
-    private Button mCancelButton;
+    private Button btnOK;
+    private Button btnScanCancel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,24 +86,25 @@ public class SensorList extends Activity {
         filters = new ArrayList<>();
 
         populateList();
-        mOKButton = (Button) findViewById(R.id.btn_ok);
-        mOKButton.setEnabled(false);
+        btnOK = (Button) findViewById(R.id.btn_ok);
+        btnOK.setEnabled(false);
         mEmptyList = (TextView) findViewById(R.id.empty);
-        mCancelButton = (Button) findViewById(R.id.btn_cancel);
+        btnScanCancel = (Button) findViewById(R.id.btn_cancel);
 
-        mOKButton.setOnClickListener(new View.OnClickListener() {
+        btnOK.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mLEScanner.stopScan(mLeScanCallback);
 
                 Intent result = new Intent();
-                result.putStringArrayListExtra("SENSOR_LIST",mSelectedSensors );;
+                result.putStringArrayListExtra("SENSOR_LIST", mSelectedSensors);
+                ;
                 setResult(Activity.RESULT_OK, result);
                 finish();
             }
         });
 
-        mCancelButton.setOnClickListener(new View.OnClickListener() {
+        btnScanCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -205,14 +206,14 @@ public class SensorList extends Activity {
             if(!mSelectedSensors.contains(sensor)) {
                 mSelectedSensors.add(sensor);
                 view.setBackgroundColor(Color.BLUE);
-                if(!mOKButton.isEnabled())
-                    mOKButton.setEnabled(true);
+                if(!btnOK.isEnabled())
+                    btnOK.setEnabled(true);
             }
             else{
                 mSelectedSensors.remove(sensor);
                 view.setBackgroundColor(Color.BLACK);
-                if(mSelectedSensors.isEmpty() && mOKButton.isEnabled())
-                    mOKButton.setEnabled(false);
+                if(mSelectedSensors.isEmpty() && btnOK.isEnabled())
+                    btnOK.setEnabled(false);
             }
         }
     };
