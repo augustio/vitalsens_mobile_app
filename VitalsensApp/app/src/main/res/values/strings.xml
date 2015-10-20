@@ -8,6 +8,6 @@
     <string name="scanning">Scanning for sensors...</string>
     <string name="scan">Scan</string>
     <string name="cancel">Cancel</string>
-    <string name="ok">Ok</string>
+    <string name="connect">Connect</string>
     <string name="paired">paired</string>
 </resources>

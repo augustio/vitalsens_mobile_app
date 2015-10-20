@@ -34,6 +34,7 @@
     </style>
     <color name="black">#FF000000</color>
     <color name="whitegrey">#FFF2F2F2</color>
+    <color name="darkgrey">#FF444444</color>
     <color name="red">#77FF0000</color>
     <color name="green">#7700FF00</color>
     <color name="yellow">#77FFFF00</color>

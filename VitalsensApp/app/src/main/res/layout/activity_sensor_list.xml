@@ -23,7 +23,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#666" >
+        android:background="@color/black" >
 
         <TextView
             android:id="@+id/title_sensors"
@@ -44,24 +44,30 @@
             android:layout_centerVertical="true"
             android:src="@android:drawable/ic_menu_info_details" />
     </RelativeLayout>
-    <LinearLayout android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical" >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="@color/darkgrey">
 
         <ListView
             android:id="@+id/new_sensors"
             android:layout_width="match_parent"
-            android:layout_height="397dp"
-            android:stackFromBottom="true" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:stackFromBottom="false" />
 
         <TextView
             android:id="@+id/empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/scanning" />
+            android:text="@string/scanning"
+            android:textColor="@color/whitegrey"/>
 
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal" >
 
@@ -70,7 +76,7 @@
             android:layout_width="0dp"
             android:layout_weight="3"
             android:layout_height="wrap_content"
-            android:text="@android:string/cancel" />
+            android:text="@android:string/cancel"/>
 
         <Button
             android:id="@+id/btn_ok"
@@ -78,6 +84,7 @@
             android:layout_weight="2"
             android:layout_height="wrap_content"
             android:text="@android:string/ok" />
+
 
     </LinearLayout>
 </LinearLayout>

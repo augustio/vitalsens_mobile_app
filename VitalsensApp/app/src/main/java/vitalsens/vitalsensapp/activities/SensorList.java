@@ -108,7 +108,9 @@ public class SensorList extends Activity {
             @Override
             public void onClick(View v) {
 
-                if (!mScanning) scanLeDevice(true);
+                if (!mScanning){
+                    scanLeDevice(true);
+                }
                 else finish();
             }
         });
@@ -211,7 +213,7 @@ public class SensorList extends Activity {
             }
             else{
                 mSelectedSensors.remove(sensor);
-                view.setBackgroundColor(Color.BLACK);
+                view.setBackgroundColor(Color.DKGRAY);
                 if(mSelectedSensors.isEmpty() && btnOK.isEnabled())
                     btnOK.setEnabled(false);
             }
