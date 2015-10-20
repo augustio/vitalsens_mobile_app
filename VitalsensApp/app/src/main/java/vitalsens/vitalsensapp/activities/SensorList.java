@@ -10,30 +10,51 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Gravity;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import vitalsens.vitalsensapp.R;
 
 public class SensorList extends Activity {
 
+    public static final String TAG = "SensorList";
+
     private static final long SCAN_PERIOD = 10000;
 
+    private TextView mEmptyList;
+
+    List<BluetoothDevice> mSensorList;
+    private DeviceAdapter mDeviceAdapter;
+    Map<String, Integer> mDevRssiValues;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
     private List<ScanFilter> filters;
+    private ArrayList<String> mSelectedSensors;
     private Handler mHandler;
     private boolean mScanning;
+    private Button mOKButton;
+    private Button mCancelButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +83,49 @@ public class SensorList extends Activity {
         settings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
-        filters = new ArrayList<ScanFilter>();
+        filters = new ArrayList<>();
+
+        populateList();
+        mOKButton = (Button) findViewById(R.id.btn_ok);
+        mOKButton.setEnabled(false);
+        mEmptyList = (TextView) findViewById(R.id.empty);
+        mCancelButton = (Button) findViewById(R.id.btn_cancel);
+
+        mOKButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mLEScanner.stopScan(mLeScanCallback);
+
+                Intent result = new Intent();
+                result.putStringArrayListExtra("SENSOR_LIST",mSelectedSensors );;
+                setResult(Activity.RESULT_OK, result);
+                finish();
+            }
+        });
+
+        mCancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (!mScanning) scanLeDevice(true);
+                else finish();
+            }
+        });
+    }
+
+    private void populateList() {
+        /* Initialize device list container */
+        Log.d(TAG, "populateList");
+        mSensorList = new ArrayList<>();
+        mDeviceAdapter = new DeviceAdapter(this, mSensorList);
+        mDevRssiValues = new HashMap<>();
+        mSelectedSensors = new ArrayList<>();
+
+        ListView newSensorsListView = (ListView) findViewById(R.id.new_sensors);
+        newSensorsListView.setAdapter(mDeviceAdapter);
+        newSensorsListView.setOnItemClickListener(mSensorClickListener);
+
+        scanLeDevice(true);
 
     }
 
@@ -94,30 +157,134 @@ public class SensorList extends Activity {
     private ScanCallback mLeScanCallback = new ScanCallback() {
 
         @Override
-        public void onScanResult(int callbackType, ScanResult result) {
+        public void onScanResult(int callbackType, final ScanResult result) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
 
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            addSensor(result.getDevice(), result.getRssi());
+                        }
+                    });
+
+                }
+            });
         }
     };
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_sensor_list, menu);
-        return true;
-    }
+    private void addSensor(BluetoothDevice sensor, int rssi) {
+        boolean sensorFound = false;
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        for (BluetoothDevice listDev : mSensorList) {
+            if (listDev.getAddress().equals(sensor.getAddress())) {
+                sensorFound = true;
+                break;
+            }
         }
 
-        return super.onOptionsItemSelected(item);
+
+        mDevRssiValues.put(sensor.getAddress(), rssi);
+        if (!sensorFound) {
+            mSensorList.add(sensor);
+            mEmptyList.setVisibility(View.GONE);
+
+
+
+
+            mDeviceAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private OnItemClickListener mSensorClickListener = new OnItemClickListener() {
+
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            String sensor = mSensorList.get(position).getAddress();
+            if(!mSelectedSensors.contains(sensor)) {
+                mSelectedSensors.add(sensor);
+                view.setBackgroundColor(Color.BLUE);
+                if(!mOKButton.isEnabled())
+                    mOKButton.setEnabled(true);
+            }
+            else{
+                mSelectedSensors.remove(sensor);
+                view.setBackgroundColor(Color.BLACK);
+                if(mSelectedSensors.isEmpty() && mOKButton.isEnabled())
+                    mOKButton.setEnabled(false);
+            }
+        }
+    };
+
+    class DeviceAdapter extends BaseAdapter {
+        Context context;
+        List<BluetoothDevice> sensors;
+        LayoutInflater inflater;
+
+        public DeviceAdapter(Context context, List<BluetoothDevice> sensors) {
+            this.context = context;
+            inflater = LayoutInflater.from(context);
+            this.sensors = sensors;
+        }
+
+        @Override
+        public int getCount() {
+            return sensors.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return sensors.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewGroup vg;
+
+            if (convertView != null) {
+                vg = (ViewGroup) convertView;
+            } else {
+                vg = (ViewGroup) inflater.inflate(R.layout.sensor_element, null);
+            }
+
+            BluetoothDevice sensor = sensors.get(position);
+            final TextView tvadd = ((TextView) vg.findViewById(R.id.address));
+            final TextView tvname = ((TextView) vg.findViewById(R.id.name));
+            final TextView tvpaired = (TextView) vg.findViewById(R.id.paired);
+            final TextView tvrssi = (TextView) vg.findViewById(R.id.rssi);
+
+            tvrssi.setVisibility(View.VISIBLE);
+            byte rssival = (byte) mDevRssiValues.get(sensor.getAddress()).intValue();
+            if (rssival != 0) {
+                tvrssi.setText("Rssi = " + String.valueOf(rssival));
+            }
+
+            tvname.setText(sensor.getName());
+            tvadd.setText(sensor.getAddress());
+            if (sensor.getBondState() == BluetoothDevice.BOND_BONDED) {
+                Log.i(TAG, "sensor::" + sensor.getName());
+                tvname.setTextColor(Color.WHITE);
+                tvadd.setTextColor(Color.WHITE);
+                tvpaired.setTextColor(Color.GRAY);
+                tvpaired.setVisibility(View.VISIBLE);
+                tvpaired.setText(R.string.paired);
+                tvrssi.setVisibility(View.VISIBLE);
+                tvrssi.setTextColor(Color.WHITE);
+
+            } else {
+                tvname.setTextColor(Color.WHITE);
+                tvadd.setTextColor(Color.WHITE);
+                tvpaired.setVisibility(View.GONE);
+                tvrssi.setVisibility(View.VISIBLE);
+                tvrssi.setTextColor(Color.WHITE);
+            }
+            return vg;
+        }
     }
 }
