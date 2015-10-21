@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -39,6 +40,8 @@ public class SensorList extends Activity {
 
     public static final String TAG = "SensorList";
 
+    private static final String[] UUIDS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+                                            "0000180D-0000-1000-8000-00805f9b34fb"};
     private static final long SCAN_PERIOD = 10000;
 
     private TextView mEmptyList;
@@ -79,11 +82,18 @@ public class SensorList extends Activity {
             return;
         }
 
+
         mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
         settings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
         filters = new ArrayList<>();
+        for(int i = 0; i < UUIDS.length; i++) {
+            ScanFilter ecgFilter = new ScanFilter.Builder()
+                    .setServiceUuid(ParcelUuid.fromString(UUIDS[0].toString())).build();
+
+            filters.add(ecgFilter);
+        }
 
         populateList();
         btnOK = (Button) findViewById(R.id.btn_ok);
