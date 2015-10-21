@@ -40,7 +40,6 @@ public class MainActivity extends Activity {
         }
 
         btnConnectDisconnect=(Button) findViewById(R.id.btn_connect);
-        btnConnectDisconnect.setBackgroundColor(Color.GREEN);
 
         mHandler = new Handler();
 
