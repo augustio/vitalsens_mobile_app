@@ -119,6 +119,7 @@ public class SensorList extends Activity {
             public void onClick(View v) {
 
                 if (!mScanning){
+                    mEmptyList.setVisibility(View.VISIBLE);
                     scanLeDevice(true);
                 }
                 else finish();
@@ -152,6 +153,7 @@ public class SensorList extends Activity {
                     mScanning = false;
                     mLEScanner.stopScan(mLeScanCallback);
 
+                    mEmptyList.setVisibility(View.GONE);
                     cancelButton.setText(R.string.scan);
 
                 }
