@@ -2,9 +2,16 @@ package vitalsens.vitalsensapp.activities;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,6 +22,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import vitalsens.vitalsensapp.R;
+import vitalsens.vitalsensapp.services.BLEService;
 
 public class MainActivity extends Activity {
 
@@ -25,6 +33,7 @@ public class MainActivity extends Activity {
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
     private Handler mHandler;
+    private BLEService mService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +56,8 @@ public class MainActivity extends Activity {
         btnConnectDisconnect=(Button) findViewById(R.id.btn_connect);
 
         mHandler = new Handler();
+
+        service_init();
 
         // Handle Disconnect & Connect button
         btnConnectDisconnect.setOnClickListener(new View.OnClickListener() {
@@ -99,6 +110,40 @@ public class MainActivity extends Activity {
                 Log.e(TAG, "wrong request code");
                 break;
         }
+    }
+
+    //BLE service connected/disconnected
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder rawBinder) {
+            mService = ((BLEService.LocalBinder) rawBinder).getService();
+            Log.d(TAG, "onServiceConnected mService= " + mService);
+            if (!mService.initialize()) {
+                finish();
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName classname) {
+            mService = null;
+        }
+    };
+
+    private final BroadcastReceiver SensorStatusChangeReceiver = new BroadcastReceiver() {
+
+        public void onReceive(Context context, Intent intent) {
+        }
+
+    };
+
+    private void service_init() {
+        Intent bindIntent = new Intent(this, BLEService.class);
+        bindService(bindIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(SensorStatusChangeReceiver, sensorStatusUpdateIntentFilter());
+    }
+
+    private static IntentFilter sensorStatusUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        return intentFilter;
     }
 
 
