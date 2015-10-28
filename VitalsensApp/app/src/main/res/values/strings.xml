@@ -10,4 +10,5 @@
     <string name="cancel">Cancel</string>
     <string name="connect">Connect</string>
     <string name="paired">paired</string>
+    <string name="disconnect">Disconnect</string>
 </resources>
