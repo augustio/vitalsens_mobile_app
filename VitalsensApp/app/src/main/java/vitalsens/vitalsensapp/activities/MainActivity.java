@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
     private Button btnConnectDisconnect;
     private Handler mHandler;
     private BLEService mService;
+    private ArrayList<String> mSelectedSensors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,9 +73,10 @@ public class MainActivity extends Activity {
                         //Connect button pressed, open SensorList class, with popup window that scan for devices
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
-                    } else {
-                        btnConnectDisconnect.setText("Connect");
-                        Log.i(TAG, "Disconnected");
+                        btnConnectDisconnect.setText(R.string.disconnect);
+                    } else if(btnConnectDisconnect.getText().equals("Disconnect")) {
+                        mService.disconnect(mSelectedSensors);
+                        btnConnectDisconnect.setText(R.string.connect);
                     }
                 }
             }
@@ -88,10 +90,8 @@ public class MainActivity extends Activity {
             case REQUEST_SELECT_DEVICE:
                 //When the DeviceListActivity return, with the selected device address
                 if (resultCode == Activity.RESULT_OK && data != null) {
-                    ArrayList<String> sensors = data.getStringArrayListExtra("SENSOR_LIST");
-                    for(String str: sensors)
-                        Log.i(TAG, "Sensor: "+str);
-                    btnConnectDisconnect.setText("Disconnect");
+                    mSelectedSensors = data.getStringArrayListExtra("SENSOR_LIST");
+                    mService.connect(mSelectedSensors);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -138,7 +138,8 @@ public class MainActivity extends Activity {
         Intent bindIntent = new Intent(this, BLEService.class);
         bindService(bindIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(SensorStatusChangeReceiver, sensorStatusUpdateIntentFilter());
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(SensorStatusChangeReceiver, sensorStatusUpdateIntentFilter());
     }
 
     private static IntentFilter sensorStatusUpdateIntentFilter() {
