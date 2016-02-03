@@ -103,8 +103,9 @@ public class BLEService extends Service {
         return true;
     }
 
-    public void connect(final ArrayList<String> sensorAddresses) {
-
+    public void connect(final ArrayList<String> sensors) {
+        if(sensors == null)
+            return;
         if (mBluetoothAdapter == null) {
             Log.w(TAG, "BluetoothAdapter not initialized ");
             return;
@@ -114,7 +115,7 @@ public class BLEService extends Service {
             mConnectionThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    connectionLoop(sensorAddresses);
+                    connectionLoop(sensors);
                     mConnectionThread.interrupt();
                     mConnectionThread = null;
                 }
@@ -137,7 +138,7 @@ public class BLEService extends Service {
         }
     }
 
-    public void disconnect(final ArrayList<String> sensorAddresses) {
+    public void disconnect(final ArrayList<String> sensors) {
         if (mBluetoothAdapter == null) {
             Log.w(TAG, "BluetoothAdapter not initialized ");
             return;
@@ -147,7 +148,7 @@ public class BLEService extends Service {
             mDisconnectionThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    disconnectionLoop(sensorAddresses);
+                    disconnectionLoop(sensors);
                     mDisconnectionThread.interrupt();
                     mDisconnectionThread = null;
                 }
@@ -158,6 +159,8 @@ public class BLEService extends Service {
     }
 
     private void disconnectionLoop(final ArrayList<String> sensors){
+        if(sensors == null)
+            return;
         for(int i = 0; i < sensors.size(); i++){
             String sensorAddress = sensors.get(i);
             BluetoothGatt gatt = mConnectedSensors.get(sensorAddress);
