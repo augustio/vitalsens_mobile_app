@@ -131,7 +131,9 @@ public class BLEService extends Service {
                     .connectGatt(getApplicationContext(), false, mGattCallback);
             try {
                 Thread.sleep(250);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+                Log.d(TAG, e.getMessage());
+            }
         }
     }
 
@@ -165,7 +167,9 @@ public class BLEService extends Service {
             }
             try {
                 Thread.sleep(250);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+                Log.d(TAG, e.getMessage());
+            }
         }
     }
 

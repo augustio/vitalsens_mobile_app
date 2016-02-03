@@ -143,8 +143,7 @@ public class MainActivity extends Activity {
     }
 
     private static IntentFilter sensorStatusUpdateIntentFilter() {
-        final IntentFilter intentFilter = new IntentFilter();
-        return intentFilter;
+        return new IntentFilter();
     }
 
 

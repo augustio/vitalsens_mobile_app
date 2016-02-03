@@ -49,7 +49,6 @@ public class SensorList extends Activity {
     List<BluetoothDevice> mSensorList;
     private DeviceAdapter mDeviceAdapter;
     Map<String, Integer> mDevRssiValues;
-    private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
     private List<ScanFilter> filters;
@@ -57,7 +56,6 @@ public class SensorList extends Activity {
     private Handler mHandler;
     private boolean mScanning;
     private Button btnOK;
-    private Button btnScanCancel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +71,7 @@ public class SensorList extends Activity {
         // BluetoothAdapter through BluetoothManager.
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = bluetoothManager.getAdapter();
+        BluetoothAdapter mBluetoothAdapter = bluetoothManager.getAdapter();
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
@@ -88,9 +86,9 @@ public class SensorList extends Activity {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
         filters = new ArrayList<>();
-        for(int i = 0; i < UUIDS.length; i++) {
+        for (String uuid: UUIDS) {
             ScanFilter ecgFilter = new ScanFilter.Builder()
-                    .setServiceUuid(ParcelUuid.fromString(UUIDS[0].toString())).build();
+                    .setServiceUuid(ParcelUuid.fromString(uuid)).build();
 
             filters.add(ecgFilter);
         }
@@ -99,7 +97,7 @@ public class SensorList extends Activity {
         btnOK = (Button) findViewById(R.id.btn_ok);
         btnOK.setEnabled(false);
         mEmptyList = (TextView) findViewById(R.id.empty);
-        btnScanCancel = (Button) findViewById(R.id.btn_cancel);
+        Button btnScanCancel = (Button) findViewById(R.id.btn_cancel);
 
         btnOK.setOnClickListener(new View.OnClickListener() {
             @Override
