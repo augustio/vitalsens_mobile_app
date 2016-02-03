@@ -5,24 +5,38 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <RelativeLayout
-        android:id="@+id/main_container"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-    <RelativeLayout
+    <LinearLayout
+        android:id="@+id/main_btn_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal" >
 
-    <Button
-        android:id="@+id/btn_connect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="@string/connect" />
+        <Button
+            android:id="@+id/btn_connect"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/connect" />
+        <Button
+            android:id="@+id/btn_record"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/record" />
+        <Button
+            android:id="@+id/btn_history"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/history" />
 
-    </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/main_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"/>
 
 </LinearLayout>

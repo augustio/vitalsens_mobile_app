@@ -5,10 +5,12 @@
     <string name="title_activity_sensor_list">Sensors</string>
     <string name="ble_not_supported">Bluetooth Low Energy not supported</string>
     <string name="select_sensors">Select sensors</string>
-    <string name="scanning">Scanning for sensors...</string>
+    <string name="scanning">Scanning for sensors&#8230;</string>
     <string name="scan">Scan</string>
     <string name="cancel">Cancel</string>
     <string name="connect">Connect</string>
     <string name="paired">paired</string>
     <string name="disconnect">Disconnect</string>
+    <string name="record">Record</string>
+    <string name="history">history</string>
 </resources>
