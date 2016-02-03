@@ -43,6 +43,7 @@ public class SensorList extends Activity {
     private static final String[] UUIDS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e",
                                             "0000180D-0000-1000-8000-00805f9b34fb"};
     private static final long SCAN_PERIOD = 10000;
+    private static final int MAX_SENSORS = 4;
 
     private TextView mEmptyList;
 
@@ -215,7 +216,7 @@ public class SensorList extends Activity {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             String sensor = mSensorList.get(position).getAddress();
-            if(!mSelectedSensors.contains(sensor)) {
+            if(!mSelectedSensors.contains(sensor) && mSelectedSensors.size() < MAX_SENSORS) {
                 mSelectedSensors.add(sensor);
                 view.setBackgroundColor(Color.BLUE);
                 if(!btnOK.isEnabled())
