@@ -15,4 +15,10 @@
     <string name="history">history</string>
     <string name="connected_sensors">Connected Sensors</string>
     <string name="send">Send</string>
+    <string name="popup_title">Quit VitalsensApp?</string>
+    <string name="quit_message">Do you want to quit this Application?</string>
+    <string name="disconnect_message">Still connected, disconnect before quitting</string>
+    <string name="popup_yes">YES</string>
+    <string name="popup_ok">OK</string>
+    <string name="popup_no">NO</string>
 </resources>
