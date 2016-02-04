@@ -13,4 +13,6 @@
     <string name="disconnect">Disconnect</string>
     <string name="record">Record</string>
     <string name="history">history</string>
+    <string name="connected_sensors">Connected Sensors</string>
+    <string name="send">Send</string>
 </resources>

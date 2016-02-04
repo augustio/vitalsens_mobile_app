@@ -15,11 +15,14 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import vitalsens.vitalsensapp.R;
+import vitalsens.vitalsensapp.fragments.MainFragment;
+import vitalsens.vitalsensapp.models.Sensor;
 import vitalsens.vitalsensapp.services.BLEService;
 
 public class MainActivity extends Activity {
@@ -30,19 +33,23 @@ public class MainActivity extends Activity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
+    private TextView connectedSensorsLabel;
     private Handler mHandler;
     private BLEService mService;
-    private ArrayList<String> mSelectedSensors;
+    private ArrayList<Sensor> mConnectedSensors;
+    private int mConnectionState;
+    private String mSensorLabels;
+
+    private MainFragment mainFrag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        MainActivityFragment frag = new MainActivityFragment();
-
+        mainFrag = new MainFragment();
         getFragmentManager().beginTransaction()
-                .add(R.id.main_container, frag)
+                .add(R.id.main_container, mainFrag)
                 .commit();
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -53,8 +60,12 @@ public class MainActivity extends Activity {
         }
 
         btnConnectDisconnect=(Button) findViewById(R.id.btn_connect);
+        connectedSensorsLabel = (TextView)findViewById(R.id.connected_sensors);
 
         mHandler = new Handler();
+        mConnectedSensors = new ArrayList<>();
+        mConnectionState = BLEService.STATE_DISCONNECTED;
+        mSensorLabels = "";
 
         service_init();
 
@@ -67,14 +78,12 @@ public class MainActivity extends Activity {
                     Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
-                    if (btnConnectDisconnect.getText().equals("Connect")) {
+                    if (mConnectionState == BLEService.STATE_DISCONNECTED) {
                         //Connect button pressed, open SensorList class, with popup window that scan for devices
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
-                        btnConnectDisconnect.setText(R.string.disconnect);
-                    } else if(btnConnectDisconnect.getText().equals("Disconnect")) {
-                        mService.disconnect(mSelectedSensors);
-                        btnConnectDisconnect.setText(R.string.connect);
+                    } else if(mConnectionState == BLEService.STATE_CONNECTED) {
+                        mService.disconnect(mConnectedSensors);
                     }
                 }
             }
@@ -88,8 +97,8 @@ public class MainActivity extends Activity {
             case REQUEST_SELECT_DEVICE:
                 //When the DeviceListActivity return, with the selected device address
                 if (resultCode == Activity.RESULT_OK && data != null) {
-                    mSelectedSensors = data.getStringArrayListExtra("SENSOR_LIST");
-                    mService.connect(mSelectedSensors);
+                    ArrayList<String> sensorAddresses = data.getStringArrayListExtra("SENSOR_LIST");
+                    mService.connect(sensorAddresses);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -125,13 +134,6 @@ public class MainActivity extends Activity {
         }
     };
 
-    private final BroadcastReceiver SensorStatusChangeReceiver = new BroadcastReceiver() {
-
-        public void onReceive(Context context, Intent intent) {
-        }
-
-    };
-
     private void service_init() {
         Intent bindIntent = new Intent(this, BLEService.class);
         bindService(bindIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
@@ -140,8 +142,49 @@ public class MainActivity extends Activity {
                 .registerReceiver(SensorStatusChangeReceiver, sensorStatusUpdateIntentFilter());
     }
 
+    private final BroadcastReceiver SensorStatusChangeReceiver = new BroadcastReceiver() {
+
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+
+            if (action.equals(BLEService.ACTION_GATT_CONNECTED)) {
+                final String sensorStr = intent.getStringExtra(Intent.EXTRA_TEXT);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Sensor sensor = new Sensor();
+                        sensor.fromJson(sensorStr);
+                        Log.d(TAG, "Connected to " + sensor.getName() +
+                                " : " + sensor.getAddress());
+                        mConnectedSensors.add(sensor);
+                        mConnectionState = BLEService.STATE_CONNECTED;
+                        btnConnectDisconnect.setText("Disconnect");
+                        if(!mSensorLabels.isEmpty())
+                            mSensorLabels+=",  ";
+                        connectedSensorsLabel.setText(mSensorLabels+=sensor.getName());
+                    }
+                });
+            }
+            if (action.equals(BLEService.ACTION_GATT_DISCONNECTED)) {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Log.d(TAG, "Disconnected from sensors");
+                        mConnectionState = BLEService.STATE_DISCONNECTED;
+                        btnConnectDisconnect.setText("Connect");
+                        mConnectedSensors.clear();
+                        mSensorLabels = "";
+                        connectedSensorsLabel.setText(mSensorLabels);
+                    }
+                });
+            }
+        }
+
+    };
+
     private static IntentFilter sensorStatusUpdateIntentFilter() {
-        return new IntentFilter();
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BLEService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
+        return intentFilter;
     }
 
     private void showMessage(final String msg) {

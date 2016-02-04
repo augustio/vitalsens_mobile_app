@@ -26,12 +26,14 @@ package vitalsens.vitalsensapp.services;
         import android.content.Intent;
         import android.os.Binder;
         import android.os.IBinder;
+        import android.support.v4.content.LocalBroadcastManager;
         import android.util.Log;
 
         import java.util.ArrayList;
         import java.util.HashMap;
         import java.util.Map;
 
+        import vitalsens.vitalsensapp.models.Sensor;
 
 
 /**
@@ -41,31 +43,56 @@ package vitalsens.vitalsensapp.services;
 public class BLEService extends Service {
     private final static String TAG = BLEService.class.getSimpleName();
 
+    public static final int STATE_DISCONNECTED = 0;
+    public static final int STATE_CONNECTED = 2;
+
+    public final static String ACTION_GATT_CONNECTED =
+            "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
+    public final static String ACTION_GATT_DISCONNECTED =
+            "vitalsens.vitalsensapp.ACTION_GATT_DISCONNECTED";
+
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private Thread mConnectionThread, mDisconnectionThread;
+    private int mConnectionState;
+
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
-    private static final int STATE_DISCONNECTED = 0;
-    private static final int STATE_CONNECTING = 1;
-    private static final int STATE_CONNECTED = 2;
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String sensorAddress = gatt.getDevice().getAddress();
-            String sensorName = gatt.getDevice().getName();
-
+            String intentAction;
+            Sensor sensor = new Sensor
+                    (gatt.getDevice().getName(), gatt.getDevice().getAddress());
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.d(TAG, "Connected to " + sensorAddress + ": " + sensorName);
-                mConnectedSensors.put(sensorAddress, gatt);
+                mConnectedSensors.put(sensor.getAddress(), gatt);
+                mConnectionState = STATE_CONNECTED;
+                intentAction = ACTION_GATT_CONNECTED;
+                broadcastUpdate(intentAction, sensor.toJson());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.d(TAG, "Disconnected from " + sensorAddress + ": " + sensorName);
-                mConnectedSensors.remove(sensorAddress);
+                Log.d(TAG, "Disconnected from " + sensor.getAddress() + ": " + sensor.getName());
+                gatt.close();
+                mConnectedSensors.remove(sensor.getAddress());
+                if(mConnectedSensors.isEmpty()) {
+                    mConnectionState = STATE_DISCONNECTED;
+                    intentAction = ACTION_GATT_DISCONNECTED;
+                    broadcastUpdate(intentAction);
+                }
             }
         }
     };
 
+    private void broadcastUpdate(final String action, String strValue ) {
+        final Intent intent = new Intent(action);
+        intent.putExtra(Intent.EXTRA_TEXT, strValue);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void broadcastUpdate(final String action) {
+        final Intent intent = new Intent(action);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
 
     public class LocalBinder extends Binder {
         public BLEService getService() {
@@ -138,7 +165,7 @@ public class BLEService extends Service {
         }
     }
 
-    public void disconnect(final ArrayList<String> sensors) {
+    public void disconnect(final ArrayList<Sensor> sensors) {
         if (mBluetoothAdapter == null) {
             Log.w(TAG, "BluetoothAdapter not initialized ");
             return;
@@ -158,15 +185,13 @@ public class BLEService extends Service {
         }
     }
 
-    private void disconnectionLoop(final ArrayList<String> sensors){
+    private void disconnectionLoop(final ArrayList<Sensor> sensors){
         if(sensors == null)
             return;
-        for(int i = 0; i < sensors.size(); i++){
-            String sensorAddress = sensors.get(i);
-            BluetoothGatt gatt = mConnectedSensors.get(sensorAddress);
+        for (Sensor sensor:sensors){
+            BluetoothGatt gatt = mConnectedSensors.get(sensor.getAddress());
             if(gatt != null){
                 gatt.disconnect();
-                mConnectedSensors.remove(sensorAddress);
             }
             try {
                 Thread.sleep(250);
@@ -175,6 +200,4 @@ public class BLEService extends Service {
             }
         }
     }
-
-
 }
