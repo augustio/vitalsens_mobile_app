@@ -21,4 +21,13 @@
     <string name="popup_yes">YES</string>
     <string name="popup_ok">OK</string>
     <string name="popup_no">NO</string>
+    <string name="ecg_show">Show ECG</string>
+    <string name="ecg_stop">Stop ECG</string>
+    <string name="ppg_show">Show PPG</string>
+    <string name="ppg_stop">Stop PPG</string>
+    <string name="hrm_show">Show HRM</string>
+    <string name="hrm_stop">Stop HRM</string>
+    <string name="impedance_show">Show IMPEDANCE</string>
+    <string name="impedance_stop">Stop IMPEDANCE</string>
+
 </resources>

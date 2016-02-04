@@ -18,6 +18,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,6 +38,8 @@ public class MainActivity extends Activity {
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
     private TextView connectedSensorsLabel;
+    private TextView ecgViewCtr, ppgViewCtr, hrmViewCtr, impedanceViewCtr;
+    private LinearLayout sensorViewCtrLayout;
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Sensor> mConnectedSensors;
@@ -64,6 +67,11 @@ public class MainActivity extends Activity {
 
         btnConnectDisconnect=(Button) findViewById(R.id.btn_connect);
         connectedSensorsLabel = (TextView)findViewById(R.id.connected_sensors);
+        sensorViewCtrLayout = (LinearLayout)findViewById(R.id.sensor_view_ctr_layout);
+        ecgViewCtr  = (TextView)findViewById(R.id.ecg_ctr);
+        ppgViewCtr  = (TextView)findViewById(R.id.ppg_ctr);
+        hrmViewCtr  = (TextView)findViewById(R.id.hrm_ctr);
+        impedanceViewCtr  = (TextView)findViewById(R.id.impedance_ctr);
 
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
@@ -72,7 +80,7 @@ public class MainActivity extends Activity {
 
         service_init();
 
-        // Handle Disconnect & Connect button
+        // Handle Disconnect & Connect blue_button
         btnConnectDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -82,7 +90,7 @@ public class MainActivity extends Activity {
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
-                        //Connect button pressed, open SensorList class, with popup window that scan for devices
+                        //Connect blue_button pressed, open SensorList class, with popup window that scan for devices
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
                     } else if(mConnectionState == BLEService.STATE_CONNECTED) {
@@ -146,6 +154,7 @@ public class MainActivity extends Activity {
                         btnConnectDisconnect.setText("Connect");
                         mConnectedSensors.clear();
                         mSensorLabels = "";
+                        sensorViewCtrLayout.setVisibility(View.GONE);
                         connectedSensorsLabel.setText(mSensorLabels);
                     }
                 });
@@ -154,6 +163,7 @@ public class MainActivity extends Activity {
                 final String service = intent.getStringExtra(Intent.EXTRA_TEXT);
                 runOnUiThread(new Runnable() {
                     public void run() {
+                        sensorViewCtrLayout.setVisibility(View.VISIBLE);
                         Log.d(TAG, "Gatt Services discovered");
                     }
                 });

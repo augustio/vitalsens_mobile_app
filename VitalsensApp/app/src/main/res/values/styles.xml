@@ -55,7 +55,7 @@
         <item name="android:shadowRadius">0.2</item>
         <item name="android:textSize">16dip</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:background">@drawable/button</item>
+        <item name="android:background">@drawable/blue_button</item>
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>
     </style>

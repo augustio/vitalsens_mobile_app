@@ -33,6 +33,48 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/sensor_view_ctr_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/ecg_ctr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="5dp"
+            android:background="@drawable/green_button"
+            android:text="@string/ecg_show"/>
+        <Button
+            android:id="@+id/ppg_ctr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="5dp"
+            android:background="@drawable/green_button"
+            android:text="@string/ppg_show"/>
+        <Button
+            android:id="@+id/hrm_ctr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="5dp"
+            android:background="@drawable/green_button"
+            android:text="@string/hrm_show"/>
+        <Button
+            android:id="@+id/impedance_ctr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="5dp"
+            android:background="@drawable/green_button"
+            android:text="@string/impedance_show"/>
+
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/main_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
