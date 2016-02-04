@@ -20,6 +20,8 @@ package vitalsens.vitalsensapp.services;
         import android.bluetooth.BluetoothAdapter;
         import android.bluetooth.BluetoothGatt;
         import android.bluetooth.BluetoothGattCallback;
+        import android.bluetooth.BluetoothGattCharacteristic;
+        import android.bluetooth.BluetoothGattService;
         import android.bluetooth.BluetoothManager;
         import android.bluetooth.BluetoothProfile;
         import android.content.Context;
@@ -31,7 +33,9 @@ package vitalsens.vitalsensapp.services;
 
         import java.util.ArrayList;
         import java.util.HashMap;
+        import java.util.List;
         import java.util.Map;
+        import java.util.UUID;
 
         import vitalsens.vitalsensapp.models.Sensor;
 
@@ -50,11 +54,25 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
     public final static String ACTION_GATT_DISCONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_DISCONNECTED";
+    public final static String ACTION_GATT_SERVICES_DISCOVERED =
+            "vitalsens.vitalsensapp.ACTION_GATT_SERVICES_DISCOVERED";
+
+    private final static UUID UART_SERVICE_UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+    private final static UUID TX_CHAR_UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
+    private final static UUID RX_CHAR_UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+    private final static UUID HR_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
+    private static final UUID HRM_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
+    private static final UUID ECG_SENSOR_LOCATION_CHARACTERISTIC_UUID = UUID.fromString("00002A38-0000-1000-8000-00805f9b34fb");
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private Thread mConnectionThread, mDisconnectionThread;
     private int mConnectionState;
+
+    private BluetoothGattCharacteristic mHRLocationCharacteristic;
+    private BluetoothGattCharacteristic mRXCharacteristic;
+    private BluetoothGattCharacteristic mTXCharacteristic;
+    private BluetoothGattCharacteristic mHRMCharacteristic;
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
@@ -70,6 +88,8 @@ public class BLEService extends Service {
                 mConnectionState = STATE_CONNECTED;
                 intentAction = ACTION_GATT_CONNECTED;
                 broadcastUpdate(intentAction, sensor.toJson());
+                Log.d(TAG, "Attempting to start service discovery:" +
+                        gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.d(TAG, "Disconnected from " + sensor.getAddress() + ": " + sensor.getName());
                 gatt.close();
@@ -79,6 +99,26 @@ public class BLEService extends Service {
                     intentAction = ACTION_GATT_DISCONNECTED;
                     broadcastUpdate(intentAction);
                 }
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "BluetoothGatt = " + gatt);
+                List<BluetoothGattService> services = gatt.getServices();
+                for (BluetoothGattService service : services) {
+                    if (service.getUuid().equals(UART_SERVICE_UUID)) {
+                        mRXCharacteristic = service.getCharacteristic(RX_CHAR_UUID);
+                        mTXCharacteristic = service.getCharacteristic(TX_CHAR_UUID);
+                    } else if (service.getUuid().equals(HR_SERVICE_UUID)) {
+                        mHRMCharacteristic = service.getCharacteristic(HRM_CHARACTERISTIC_UUID );
+                        mHRLocationCharacteristic = service.getCharacteristic(ECG_SENSOR_LOCATION_CHARACTERISTIC_UUID);
+                    }
+                }
+                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+            } else {
+                Log.w(TAG, "onServicesDiscovered received: " + status);
             }
         }
     };

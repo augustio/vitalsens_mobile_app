@@ -176,6 +176,14 @@ public class MainActivity extends Activity {
                     }
                 });
             }
+            if (action.equals(BLEService.ACTION_GATT_SERVICES_DISCOVERED)) {
+                final String service = intent.getStringExtra(Intent.EXTRA_TEXT);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Log.d(TAG, "Gatt Services discovered");
+                    }
+                });
+            }
         }
 
     };
@@ -184,6 +192,7 @@ public class MainActivity extends Activity {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BLEService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
         return intentFilter;
     }
 
