@@ -13,7 +13,7 @@
     <string name="disconnect">Disconnect</string>
     <string name="record">Record</string>
     <string name="history">history</string>
-    <string name="connected_sensors">Connected Sensors</string>
+    <string name="connected_sensors">Sensors Events Log</string>
     <string name="send">Send</string>
     <string name="popup_title">Quit VitalsensMobile?</string>
     <string name="quit_message">Do you want to quit this Application?</string>

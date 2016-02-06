@@ -168,8 +168,15 @@ public class MainActivity extends Activity {
                     }
                 });
             }
+            if (action.equals(BLEService.ACTION_DESCRIPTOR_WRITTEN)) {
+                final String str = intent.getStringExtra(Intent.EXTRA_TEXT);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Log.d(TAG, "str");
+                    }
+                });
+            }
         }
-
     };
 
     private static IntentFilter sensorStatusUpdateIntentFilter() {
@@ -177,6 +184,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BLEService.ACTION_DESCRIPTOR_WRITTEN);
         return intentFilter;
     }
 

@@ -21,6 +21,7 @@ package vitalsens.vitalsensapp.services;
         import android.bluetooth.BluetoothGatt;
         import android.bluetooth.BluetoothGattCallback;
         import android.bluetooth.BluetoothGattCharacteristic;
+        import android.bluetooth.BluetoothGattDescriptor;
         import android.bluetooth.BluetoothGattService;
         import android.bluetooth.BluetoothManager;
         import android.bluetooth.BluetoothProfile;
@@ -56,7 +57,12 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.ACTION_GATT_DISCONNECTED";
     public final static String ACTION_GATT_SERVICES_DISCOVERED =
             "vitalsens.vitalsensapp.ACTION_GATT_SERVICES_DISCOVERED";
+    public final static String DEVICE_DOES_NOT_SUPPORT_UART =
+            "vitalsens.vitalsensapp.DEVICE_DOES_NOT_SUPPORT_UART";
+    public final static String ACTION_DESCRIPTOR_WRITTEN =
+            "vitalsens.vitalsensapp.ACTION_DESCRIPTOR_WRITTEN";
 
+    private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final static UUID UART_SERVICE_UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID TX_CHAR_UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID RX_CHAR_UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
@@ -111,6 +117,7 @@ public class BLEService extends Service {
                     if (service.getUuid().equals(UART_SERVICE_UUID)) {
                         mRXCharacteristic = service.getCharacteristic(RX_CHAR_UUID);
                         mTXCharacteristic = service.getCharacteristic(TX_CHAR_UUID);
+                        enableRXNotification(gatt);
                     } else if (service.getUuid().equals(HR_SERVICE_UUID)) {
                         mHRMCharacteristic = service.getCharacteristic(HRM_CHARACTERISTIC_UUID );
                         mHRLocationCharacteristic = service.getCharacteristic(ECG_SENSOR_LOCATION_CHARACTERISTIC_UUID);
@@ -119,6 +126,17 @@ public class BLEService extends Service {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
+            }
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            if(status == BluetoothGatt.GATT_SUCCESS){
+                if(descriptor.getCharacteristic().getUuid().equals(RX_CHAR_UUID)) {
+                    String sensorStr = gatt.getDevice().getName()+":"+gatt.getDevice().getAddress()+
+                            "RX Character Descriptor written";
+                    broadcastUpdate(ACTION_DESCRIPTOR_WRITTEN, sensorStr);
+                }
             }
         }
     };
@@ -238,6 +256,18 @@ public class BLEService extends Service {
             } catch (InterruptedException e) {
                 Log.d(TAG, e.getMessage());
             }
+        }
+    }
+
+    public void enableRXNotification(BluetoothGatt gatt) {
+        if (mRXCharacteristic != null && mConnectionState == STATE_CONNECTED) {
+            gatt.setCharacteristicNotification(mRXCharacteristic, true);
+            BluetoothGattDescriptor descriptor = mRXCharacteristic.getDescriptor(CCCD_UUID);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            gatt.writeDescriptor(descriptor);
+        }else if(mRXCharacteristic == null){
+            Log.e(TAG, "Charateristic not found!");
+            broadcastUpdate(DEVICE_DOES_NOT_SUPPORT_UART);
         }
     }
 }
