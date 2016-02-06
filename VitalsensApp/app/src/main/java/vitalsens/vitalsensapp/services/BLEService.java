@@ -139,6 +139,14 @@ public class BLEService extends Service {
                 }
             }
         }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt,
+                                            BluetoothGattCharacteristic characteristic) {
+            if(characteristic.getUuid().equals(RX_CHAR_UUID)) {
+                processRXData(characteristic.getValue());
+            }
+        }
     };
 
     private void broadcastUpdate(final String action, String strValue ) {
