@@ -12,7 +12,7 @@
     <string name="paired">paired</string>
     <string name="disconnect">Disconnect</string>
     <string name="record">Record</string>
-    <string name="history">history</string>
+    <string name="history">History</string>
     <string name="connected_sensors">Sensors Events Log</string>
     <string name="send">Send</string>
     <string name="popup_title">Quit VitalsensMobile?</string>
@@ -21,13 +21,14 @@
     <string name="popup_yes">YES</string>
     <string name="popup_ok">OK</string>
     <string name="popup_no">NO</string>
-    <string name="ecg_show">Show ECG</string>
-    <string name="ecg_stop">Stop ECG</string>
-    <string name="ppg_show">Show PPG</string>
-    <string name="ppg_stop">Stop PPG</string>
-    <string name="hrm_show">Show HRM</string>
-    <string name="hrm_stop">Stop HRM</string>
-    <string name="impedance_show">Show IMPEDANCE</string>
-    <string name="impedance_stop">Stop IMPEDANCE</string>
+    <string name="ecg1">ECG1</string>
+    <string name="ecg3">ECG3</string>
+    <string name="ppg1">PPG1</string>
+    <string name="ppg2">PPG2</string>
+    <string name="accel">ACCEL</string>
+    <string name="imped">IMPED</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

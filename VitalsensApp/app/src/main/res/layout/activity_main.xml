@@ -16,19 +16,25 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/connect" />
+            android:text="@string/connect"
+            android:textAllCaps="true"
+            android:textSize="16sp"/>
         <Button
             android:id="@+id/btn_record"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/record" />
+            android:text="@string/record"
+            android:textAllCaps="true"
+            android:textSize="16sp"/>
         <Button
             android:id="@+id/btn_history"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/history" />
+            android:text="@string/history"
+            android:textAllCaps="true"
+            android:textSize="16sp"/>
 
     </LinearLayout>
 
@@ -36,41 +42,86 @@
         android:id="@+id/sensor_view_ctr_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone">
+        android:orientation="horizontal">
 
         <Button
-            android:id="@+id/ecg_ctr"
+            android:id="@+id/ecg1_ctr"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_margin="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginRight="1dp"
             android:background="@drawable/green_button"
-            android:text="@string/ecg_show"/>
+            android:text="@string/ecg1"
+            android:visibility="gone"
+            android:enabled="false"/>
         <Button
-            android:id="@+id/ppg_ctr"
+            android:id="@+id/ecg3_ctr"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_margin="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginRight="1dp"
             android:background="@drawable/green_button"
-            android:text="@string/ppg_show"/>
+            android:text="@string/ecg3"
+            android:visibility="gone"
+            android:enabled="false"/>
         <Button
-            android:id="@+id/hrm_ctr"
+            android:id="@+id/ppg1_ctr"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_margin="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginRight="1dp"
             android:background="@drawable/green_button"
-            android:text="@string/hrm_show"/>
+            android:text="@string/ppg1"
+            android:visibility="gone"
+            android:enabled="false"/>
+        <Button
+            android:id="@+id/ppg2_ctr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginRight="1dp"
+            android:background="@drawable/green_button"
+            android:text="@string/ppg2"
+            android:visibility="gone"
+            android:enabled="false"/>
+        <Button
+            android:id="@+id/accel_ctr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginRight="1dp"
+            android:background="@drawable/green_button"
+            android:text="@string/accel"
+            android:visibility="gone"
+            android:enabled="false"/>
         <Button
             android:id="@+id/impedance_ctr"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_margin="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginRight="1dp"
             android:background="@drawable/green_button"
-            android:text="@string/impedance_show"/>
+            android:text="@string/imped"
+            android:visibility="gone"
+            android:enabled="false"/>
 
     </LinearLayout>
 
@@ -79,7 +130,32 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"/>
+        android:orientation="vertical" />
+
+    <LinearLayout
+        android:id="@+id/channel1_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/channel2_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/channel3_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

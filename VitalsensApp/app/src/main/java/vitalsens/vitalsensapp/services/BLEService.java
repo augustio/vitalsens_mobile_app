@@ -50,6 +50,12 @@ public class BLEService extends Service {
 
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTED = 2;
+    public static final int ECG_ONE_CHANNEL = 0;
+    public static final int ECG_THREE_CHANNEL = 1;
+    public static final int PPG_ONE_CHANNEL = 2;
+    public static final int PPG_TWO_CHANNEL = 3;
+    public static final int ACCELERATION_THREE_CHANNEL = 4;
+    public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
 
     public final static String ACTION_GATT_CONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
@@ -61,6 +67,21 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.DEVICE_DOES_NOT_SUPPORT_UART";
     public final static String ACTION_DESCRIPTOR_WRITTEN =
             "vitalsens.vitalsensapp.ACTION_DESCRIPTOR_WRITTEN";
+    public static final String ONE_CHANNEL_ECG =
+            "vitalsens.vitalsensapp.ONE_CHANNEL_ECG";
+    public static final String THREE_CHANNEL_ECG =
+            "vitalsens.vitalsensapp.THREE_CHANNEL_ECG";
+    public static final String ONE_CHANNEL_PPG =
+            "vitalsens.vitalsensapp.ONE_CHANNEL_PPG";
+    public static final String TWO_CHANNEL_PPG =
+            "vitalsens.vitalsensapp.TWO_CHANNEL_PPG";
+    public static final String THREE_CHANNEL_ACCELERATION =
+            "vitalsens.vitalsensapp.THREE_CHANNEL_ACCELERATION";
+    public static final String ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY =
+            "vitalsens.vitalsensapp.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY";
+    public static final String OTHER_DATA_TYPES =
+            "vitalsens.vitalsensapp.OTHER_DATA_TYPES";
+
 
     private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final static UUID UART_SERVICE_UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
@@ -157,6 +178,13 @@ public class BLEService extends Service {
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void broadcastUpdate(final String action,
+                                 final int[] value) {
+        final Intent intent = new Intent(action);
+        intent.putExtra(Intent.EXTRA_TEXT, value);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -276,6 +304,53 @@ public class BLEService extends Service {
         }else if(mRXCharacteristic == null){
             Log.e(TAG, "Charateristic not found!");
             broadcastUpdate(DEVICE_DOES_NOT_SUPPORT_UART);
+        }
+    }
+
+    private void processRXData(byte[] data){
+        if(data.length < 16){
+            String sample = "";
+            for(int i:data)
+                sample += (i & 0xFF);
+
+            broadcastUpdate(OTHER_DATA_TYPES, sample);
+
+            return;
+        }
+
+        int dataId = ((data[0] & 0XFF) >> 5);
+        int packetNumber = (data[19] & 0XFF);
+
+        int ecgData[] = new int[14];
+        ecgData[0] = dataId;
+        ecgData[1] = packetNumber;
+        for(int i=2, j=1; i < ecgData.length; i+=2, j+=3){
+            ecgData[i] = (data[j] & 0X0FF) << 4 | (data[j+1] & 0XFF) >> 4;
+            ecgData[i+1] = (data[j+1] & 0X00F) << 8 | (data[j+2] & 0XFF);
+        }
+
+        switch (dataId){
+            case ECG_ONE_CHANNEL:
+                broadcastUpdate(ONE_CHANNEL_ECG, ecgData);
+                break;
+            case ECG_THREE_CHANNEL:
+                broadcastUpdate(THREE_CHANNEL_ECG, ecgData);
+                break;
+            case PPG_ONE_CHANNEL:
+                broadcastUpdate(ONE_CHANNEL_PPG, ecgData);
+                break;
+            case PPG_TWO_CHANNEL:
+                broadcastUpdate(TWO_CHANNEL_PPG, ecgData);
+                break;
+            case ACCELERATION_THREE_CHANNEL:
+
+                broadcastUpdate(THREE_CHANNEL_ACCELERATION, ecgData);
+                break;
+            case IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL:
+                broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, ecgData);
+                break;
+            default:
+                break;
         }
     }
 }
