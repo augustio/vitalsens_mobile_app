@@ -13,8 +13,10 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.ContactsContract;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -23,35 +25,63 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
 import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
 import vitalsens.vitalsensapp.fragments.MainFragment;
+import vitalsens.vitalsensapp.models.DataPacket;
+import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.models.Sensor;
 import vitalsens.vitalsensapp.services.BLEService;
 
 public class MainActivity extends Activity {
 
     private static final String TAG = "VitalsensApp";
+    private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
+    private static final int MAX_DATA_RECORDING_TIME = 120;// 2 minutes
+    private static final int SECONDS_IN_ONE_MINUTE = 60;
+    private static final int SECONDS_IN_ONE_HOUR = 3600;
+    private static final int ONE_SECOND = 1000;// 1000 milliseconds in one second
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
+    private Button btnRecord;
     private TextView sensorNamesView;
     private TextView ecgOneViewCtr, ecgThreeViewCtr;
     private TextView ppgOneViewCtr, ppgTwoViewCtr;
     private TextView accelViewCtr, impedanceViewCtr;
-    private LinearLayout mainContainer, chOne, chTwo, chThree;
+    private LinearLayout sensorVeiwCtrlPad, mainContainer, chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Sensor> mConnectedSensors;
+    private ArrayList<Record> mRecords;
+    private ArrayList<DataPacket> mECG1Collection;
+    private ArrayList<DataPacket> mECG3Collection;
+    private ArrayList<DataPacket> mPPG1Collection;
+    private ArrayList<DataPacket> mPPG2Collection;
+    private ArrayList<DataPacket> mACCELCollection;
+    private ArrayList<DataPacket> mIMPEDANCECollection;
     private int mConnectionState;
+    private int mRecTimerCounter, min, sec, hr;
+    private String mTimerString;
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
+    private boolean mRecording;
 
     private MainFragment mainFrag;
     private ChannelOneFragment mChannelOne;
@@ -71,8 +101,10 @@ public class MainActivity extends Activity {
         }
 
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
+        btnRecord = (Button) findViewById(R.id.btn_record);
         sensorNamesView = (TextView) findViewById(R.id.connected_sensors);
         sensorNamesView.setText("Connected Sensors:");
+        sensorVeiwCtrlPad = (LinearLayout) findViewById(R.id.sensor_view_ctr_layout);
         mainContainer = (LinearLayout) findViewById(R.id.main_container);
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
         chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
@@ -86,9 +118,20 @@ public class MainActivity extends Activity {
 
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
+        mRecords = new ArrayList<>();
+        mECG1Collection = new ArrayList<>();
+        mECG3Collection = new ArrayList<>();
+        mPPG1Collection = new ArrayList<>();
+        mPPG2Collection = new ArrayList<>();
+        mACCELCollection = new ArrayList<>();
+        mIMPEDANCECollection = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
+        mRecording = false;
+
+        min = sec =  hr = 0;
+        mTimerString = "";
 
         mainFrag = new MainFragment();
         mChannelOne = new ChannelOneFragment();
@@ -126,14 +169,36 @@ public class MainActivity extends Activity {
             }
         });
 
+        btnRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mConnectionState == BLEService.STATE_CONNECTED){
+                    if(mRecording)
+                        stopRecordingData();
+                    else {
+                        setGraphLayout(0);
+                        enableSensorViewControlPad(false);
+                        for(Sensor sensor : mConnectedSensors) {
+                            mRecords.add(new Record(sensor.getName(),
+                                    new SimpleDateFormat("yyMMddHHmmss",
+                                            Locale.US).format(new Date())));
+                        }
+                        mRecording = true;
+                        btnRecord.setText("Stop");
+                        mRecordTimer.run();
+                    }
+                }
+            }
+        });
+
         ecgOneViewCtr.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!mShowECGOne && mConnectionState == BLEService.STATE_CONNECTED) {
                     mShowECGThree = mShowPPGOne = mShowPPGTwo =
                             mShowAccel = mShowImpedance = false;
-                    mShowECGOne = true;
                     setGraphLayout(1);
+                    mShowECGOne = true;
                 }
             }
         });
@@ -143,8 +208,8 @@ public class MainActivity extends Activity {
                 if (!mShowECGThree && mConnectionState == BLEService.STATE_CONNECTED) {
                     mShowECGOne = mShowPPGOne = mShowPPGTwo =
                             mShowAccel = mShowImpedance = false;
-                    mShowECGThree = true;
                     setGraphLayout(3);
+                    mShowECGThree = true;
                 }
             }
         });
@@ -154,8 +219,8 @@ public class MainActivity extends Activity {
                 if (!mShowPPGOne && mConnectionState == BLEService.STATE_CONNECTED) {
                     mShowECGOne = mShowECGThree = mShowPPGTwo =
                             mShowAccel = mShowImpedance = false;
-                    mShowPPGOne = true;
                     setGraphLayout(1);
+                    mShowPPGOne = true;
                 }
             }
         });
@@ -165,8 +230,8 @@ public class MainActivity extends Activity {
                 if (!mShowPPGTwo && mConnectionState == BLEService.STATE_CONNECTED) {
                     mShowECGOne = mShowECGThree = mShowPPGOne =
                             mShowAccel = mShowImpedance = false;
-                    mShowPPGTwo = true;
                     setGraphLayout(2);
+                    mShowPPGTwo = true;
                 }
             }
         });
@@ -176,8 +241,8 @@ public class MainActivity extends Activity {
                 if (!mShowAccel && mConnectionState == BLEService.STATE_CONNECTED) {
                     mShowECGOne = mShowECGThree = mShowPPGOne =
                             mShowPPGTwo = mShowImpedance = false;
-                    mShowAccel = true;
                     setGraphLayout(3);
+                    mShowAccel = true;
                 }
             }
         });
@@ -187,8 +252,8 @@ public class MainActivity extends Activity {
                 if (!mShowImpedance && mConnectionState == BLEService.STATE_CONNECTED) {
                     mShowECGOne = mShowECGThree = mShowPPGOne =
                             mShowPPGTwo = mShowAccel = false;
-                    mShowImpedance = true;
                     setGraphLayout(1);
+                    mShowImpedance = true;
                 }
             }
         });
@@ -264,6 +329,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            if(mRecording)
+                                mECG1Collection.add(new DataPacket(samples));
                             if (mShowECGOne) {
                                 String str = "Packet Number: " + samples[1] + "{ECG1 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -282,6 +349,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            if(mRecording)
+                                mECG3Collection.add(new DataPacket(samples));
                             if (mShowECGThree) {
                                 String str = "Packet Number: " + samples[1] + "{ECG3 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -304,6 +373,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            if(mRecording)
+                                mPPG1Collection.add(new DataPacket(samples));
                             if (mShowPPGOne) {
                                 String str = "Packet Number: " + samples[1] + "{PPG1 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -322,6 +393,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            if(mRecording)
+                                mPPG2Collection.add(new DataPacket(samples));
                             if (mShowPPGTwo) {
                                 String str = "Packet Number: " + samples[1] + "{PPG2 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -342,6 +415,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            if(mRecording)
+                                mACCELCollection.add(new DataPacket(samples));
                             if (mShowAccel) {
                                 String str = "Packet Number: " + samples[1] + "{Accel Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -366,6 +441,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            if(mRecording)
+                                mIMPEDANCECollection.add(new DataPacket(samples));
                             if (mShowImpedance) {
                                 String str = "Packet Number: " + samples[1] + "{Impedance Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -539,6 +616,18 @@ public class MainActivity extends Activity {
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
         mainContainer.setVisibility(View.GONE);
+        mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo
+                = mShowAccel = mShowImpedance = false;
+    }
+
+    private void enableSensorViewControlPad(Boolean enable){
+        if(enable) {
+            sensorVeiwCtrlPad.setEnabled(true);
+            sensorVeiwCtrlPad.setVisibility(View.VISIBLE);
+        }else{
+            sensorVeiwCtrlPad.setEnabled(false);
+            sensorVeiwCtrlPad.setVisibility(View.GONE);
+        }
     }
 
     private void enableControlButton(String type) {
@@ -629,6 +718,123 @@ public class MainActivity extends Activity {
         chThree.setVisibility(View.GONE);
         mainContainer.setVisibility(View.VISIBLE);
         setGraphLayout(0);
+        if(mRecording)
+            stopRecordingData();
+    }
+
+    private void saveRecords(){
+        if(isExternalStorageWritable()){
+            new Thread(new Runnable(){
+                public void run(){
+                    File root = android.os.Environment.getExternalStorageDirectory();
+                    File dir = new File (root.getAbsolutePath() + DIRECTORY_NAME);
+                    if(!dir.isDirectory())
+                        dir.mkdirs();
+                    File file;
+                    for(int i = 0; i<mRecords.size(); i++) {
+                        Record record = mRecords.get(i);
+                        String fileName = record.getSensor() + "_" + record.getTimeStamp() + ".txt";
+                        file = new File(dir, fileName);
+                        Type type = new TypeToken<ArrayList<DataPacket>>() {
+                        }.getType();
+                        switch (record.getSensor()) {
+                            case BLEService.ECG1:
+                                record.setData(new Gson().toJson(mECG1Collection, type));
+                                mECG1Collection.clear();
+                                break;
+                            case BLEService.ECG3:
+                                record.setData(new Gson().toJson(mECG3Collection, type));
+                                mECG3Collection.clear();
+                                break;
+                            case BLEService.PPG1:
+                                record.setData(new Gson().toJson(mPPG1Collection, type));
+                                mPPG1Collection.clear();
+                                break;
+                            case BLEService.PPG2:
+                                record.setData(new Gson().toJson(mPPG2Collection, type));
+                                mPPG2Collection.clear();
+                                break;
+                            case BLEService.ACCEL:
+                                record.setData(new Gson().toJson(mACCELCollection, type));
+                                mACCELCollection.clear();
+                                break;
+                            case BLEService.IMPEDANCE:
+                                record.setData(new Gson().toJson(mIMPEDANCECollection, type));
+                                mIMPEDANCECollection.clear();
+                                break;
+                            default:
+                                break;
+                        }
+                        try {
+                            FileWriter fw = new FileWriter(file, true);
+                            fw.append(record.toJson());
+                            fw.flush();
+                            fw.close();
+                            showMessage(record.getSensor() + " Record Saved");
+                            mRecords.remove(record);
+                        } catch (IOException e) {
+                            Log.e(TAG, e.toString());
+                            showMessage("Problem writing to Storage");
+                        }
+                    }
+                }
+            }).start();
+        }
+        else
+            showMessage("Cannot write to storage");
+    }
+
+
+    public boolean isExternalStorageWritable() {
+        return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
+    }
+
+    private Runnable mRecordTimer = new Runnable() {
+        @Override
+        public void run() {
+                if (mRecTimerCounter < SECONDS_IN_ONE_MINUTE) {
+                    sec = mRecTimerCounter;
+                } else if (mRecTimerCounter < SECONDS_IN_ONE_HOUR) {
+                    min = mRecTimerCounter / SECONDS_IN_ONE_MINUTE;
+                    sec = mRecTimerCounter % SECONDS_IN_ONE_MINUTE;
+                } else {
+                    hr = mRecTimerCounter / SECONDS_IN_ONE_HOUR;
+                    min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) / SECONDS_IN_ONE_MINUTE;
+                    min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
+                }
+                updateTimer();
+                if (mRecTimerCounter >= MAX_DATA_RECORDING_TIME) {
+                    stopRecordingData();
+                    return;
+                }
+                if ((MAX_DATA_RECORDING_TIME - mRecTimerCounter) < 5)//Five seconds to the end of timer
+                    ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.green));
+                mRecTimerCounter++;
+            mHandler.postDelayed(mRecordTimer, ONE_SECOND);
+        }
+    };
+
+    private void refreshTimer(){
+        mRecTimerCounter = 1;
+        hr = min = sec = 0;
+        ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.red));
+    }
+
+    private void updateTimer(){
+        mTimerString = String.format("%02d:%02d:%02d", hr,min,sec);
+        ((TextView) findViewById(R.id.timer_view)).setText(mTimerString);
+    }
+
+    private void stopRecordingData(){
+        if(mRecording) {
+            saveRecords();
+            mRecording = false;
+            btnRecord.setText("Record");
+            mHandler.removeCallbacks(mRecordTimer);
+            ((TextView) findViewById(R.id.timer_view)).setText("");
+            refreshTimer();
+            enableSensorViewControlPad(true);
+        }
     }
 
     private void showMessage(final String msg) {
