@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
-    private TextView connectedSensorsLabel;
+    private TextView sensorNamesView;
     private TextView ecgOneViewCtr, ecgThreeViewCtr;
     private TextView ppgOneViewCtr, ppgTwoViewCtr;
     private TextView accelViewCtr, impedanceViewCtr;
@@ -50,7 +50,6 @@ public class MainActivity extends Activity {
     private BLEService mService;
     private ArrayList<Sensor> mConnectedSensors;
     private int mConnectionState;
-    private String mSensorLabels;
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
 
@@ -72,7 +71,8 @@ public class MainActivity extends Activity {
         }
 
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
-        connectedSensorsLabel = (TextView) findViewById(R.id.connected_sensors);
+        sensorNamesView = (TextView) findViewById(R.id.connected_sensors);
+        sensorNamesView.setText("Connected Sensors:");
         mainContainer = (LinearLayout) findViewById(R.id.main_container);
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
         chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
@@ -87,7 +87,6 @@ public class MainActivity extends Activity {
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
-        mSensorLabels = "";
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
 
@@ -233,7 +232,7 @@ public class MainActivity extends Activity {
             if (action.equals(BLEService.ACTION_GATT_DISCONNECTED)) {
                 runOnUiThread(new Runnable() {
                     public void run() {
-                       handleGattDisconnectionEvent();
+                        handleGattDisconnectionEvent();
                     }
                 });
             }
@@ -506,101 +505,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    /*private void setGraphLayout(){
-        FragmentManager fm = getFragmentManager();
-        switch (mDataType){
-            case 0:
-            case 2:
-            case 5:
-                if(fm.findFragmentByTag("chOne") == null) {
-                    fm.beginTransaction()
-                            .add(R.id.channel1_fragment, mChannelOne, "chOne")
-                            .commit();
-                }
-                break;
-            case 1:
-            case 4:
-                if(fm.findFragmentByTag("chOne") == null) {
-                    fm.beginTransaction()
-                            .add(R.id.channel1_fragment, mChannelOne, "chOne")
-                            .commit();
-                }
-                if(fm.findFragmentByTag("chTwo") == null) {
-                    fm.beginTransaction()
-                            .add(R.id.channel2_fragment, mChannelTwo, "chTwo")
-                            .commit();
-                }
-                if(fm.findFragmentByTag("chThree") == null) {
-                    fm.beginTransaction()
-                            .add(R.id.channel3_fragment, mChannelThree, "chThree")
-                            .commit();
-                }
-                break;
-            case 3:
-                if(fm.findFragmentByTag("chOne") == null) {
-                    fm.beginTransaction()
-                            .add(R.id.channel1_fragment, mChannelOne, "chOne")
-                            .commit();
-                }
-                if(fm.findFragmentByTag("chTwo") == null) {
-                    fm.beginTransaction()
-                            .add(R.id.channel2_fragment, mChannelTwo, "chTwo")
-                            .commit();
-                }
-                break;
-        }
-    }
-    private void clearGraphLayout(){
-        FragmentManager fm = getFragmentManager();
-        switch (mDataType) {
-            case 0:
-            case 2:
-            case 5:
-                mChannelOne.clearGraph();
-                if(fm.findFragmentByTag("chOne") != null) {
-                    fm.beginTransaction()
-                            .remove(mChannelOne)
-                            .commit();
-                }
-                break;
-            case 1:
-                mChannelOne.clearGraph();
-                mChannelTwo.clearGraph();
-                mChannelThree.clearGraph();
-                if(fm.findFragmentByTag("chOne") != null) {
-                    fm.beginTransaction()
-                            .remove(mChannelOne)
-                            .commit();
-                }
-                if(fm.findFragmentByTag("chTwo") != null) {
-                    fm.beginTransaction()
-                            .remove(mChannelTwo)
-                            .commit();
-                }
-                if(fm.findFragmentByTag("chThree") != null) {
-                    fm.beginTransaction()
-                            .remove(mChannelThree)
-                            .commit();
-                }
-                break;
-            case 3:
-            case 4:
-                mChannelOne.clearGraph();
-                mChannelTwo.clearGraph();
-                if(fm.findFragmentByTag("chOne") != null) {
-                    fm.beginTransaction()
-                            .remove(mChannelOne)
-                            .commit();
-                }
-                if(fm.findFragmentByTag("chTwo") != null) {
-                    fm.beginTransaction()
-                            .remove(mChannelTwo)
-                            .commit();
-                }
-                break;
-        }
-        mDataType = -1;
-    }*/
 
     private void setGraphLayout(int channels) {
         clearGraphLayout();
@@ -656,9 +560,7 @@ public class MainActivity extends Activity {
         mConnectedSensors.add(sensor);
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText("Disconnect");
-        if(!mSensorLabels.isEmpty())
-        mSensorLabels+=",  ";
-        connectedSensorsLabel.setText(mSensorLabels += sensor.getName());
+        sensorNamesView.setText(sensorNamesView.getText()+"  "+sensor.getName());
     }
 
     private void handleGattDisconnectionEvent(){
@@ -666,8 +568,7 @@ public class MainActivity extends Activity {
         mConnectionState = BLEService.STATE_DISCONNECTED;
         btnConnectDisconnect.setText("Connect");
         mConnectedSensors.clear();
-        mSensorLabels = "";
-        connectedSensorsLabel.setText(mSensorLabels);
+        sensorNamesView.setText("Connected Sensors:");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
