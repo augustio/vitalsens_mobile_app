@@ -230,9 +230,17 @@ public class MainActivity extends Activity {
                 });
             }
             if (action.equals(BLEService.ACTION_GATT_DISCONNECTED)) {
+                final String sensorStr = intent.getStringExtra(Intent.EXTRA_TEXT);
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        handleGattDisconnectionEvent();
+                        handleGattDisconnectionEvent(sensorStr);
+                    }
+                });
+            }
+            if (action.equals(BLEService.ACTION_ALL_SENSORS_DISCONNECTED)) {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        handleSensorsDisconnectionEvent();
                     }
                 });
             }
@@ -256,7 +264,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ecgOneViewCtr);
                             if (mShowECGOne) {
                                 String str = "Packet Number: " + samples[1] + "{ECG1 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -275,7 +282,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ecgThreeViewCtr);
                             if (mShowECGThree) {
                                 String str = "Packet Number: " + samples[1] + "{ECG3 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -298,7 +304,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ppgOneViewCtr);
                             if (mShowPPGOne) {
                                 String str = "Packet Number: " + samples[1] + "{PPG1 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -317,7 +322,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ppgTwoViewCtr);
                             if (mShowPPGTwo) {
                                 String str = "Packet Number: " + samples[1] + "{PPG2 Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -338,7 +342,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(accelViewCtr);
                             if (mShowAccel) {
                                 String str = "Packet Number: " + samples[1] + "{Accel Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -363,7 +366,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(impedanceViewCtr);
                             if (mShowImpedance) {
                                 String str = "Packet Number: " + samples[1] + "{Impedance Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
@@ -386,6 +388,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(BLEService.ACTION_DESCRIPTOR_WRITTEN);
+        intentFilter.addAction(BLEService.ACTION_ALL_SENSORS_DISCONNECTED);
         intentFilter.addAction(BLEService.ONE_CHANNEL_ECG);
         intentFilter.addAction(BLEService.THREE_CHANNEL_ECG);
         intentFilter.addAction(BLEService.ONE_CHANNEL_PPG);
@@ -538,15 +541,57 @@ public class MainActivity extends Activity {
         mainContainer.setVisibility(View.GONE);
     }
 
-    private void enableControlButton(View v) {
-        if (!v.isEnabled()) {
+    private void enableControlButton(String type) {
+        View v = null;
+        switch (type){
+            case BLEService.TYPE0:
+                v = ecgOneViewCtr;
+                break;
+            case BLEService.TYPE1:
+                v = ecgThreeViewCtr;
+                break;
+            case BLEService.TYPE2:
+                v = ppgOneViewCtr;
+                break;
+            case BLEService.TYPE3:
+                v = ppgTwoViewCtr;
+                break;
+            case BLEService.TYPE4:
+                v = accelViewCtr;
+                break;
+            case BLEService.TYPE5:
+                v = impedanceViewCtr;
+                break;
+        }
+        if (v != null) {
             v.setEnabled(true);
             v.setVisibility(View.VISIBLE);
         }
     }
 
-    private void disableControlButton(View v) {
-        if (v.isEnabled()) {
+    private void disableControlButton(String type) {
+        View v = null;
+        switch (type){
+            case BLEService.TYPE0:
+                v = ecgOneViewCtr;
+                break;
+            case BLEService.TYPE1:
+                v = ecgThreeViewCtr;
+                break;
+            case BLEService.TYPE2:
+                v = ppgOneViewCtr;
+                break;
+            case BLEService.TYPE3:
+                v = ppgTwoViewCtr;
+                break;
+            case BLEService.TYPE4:
+                v = accelViewCtr;
+                break;
+            case BLEService.TYPE5:
+                v = impedanceViewCtr;
+                break;
+        }
+        if (v != null) {
             v.setEnabled(false);
             v.setVisibility(View.GONE);
         }
@@ -555,19 +600,27 @@ public class MainActivity extends Activity {
     private void handleGattConnectionEvent(String sensorStr) {
         Sensor sensor = new Sensor();
         sensor.fromJson(sensorStr);
-        Log.d(TAG, "Connected to " + sensor.getName() +
-                " : " + sensor.getAddress());
+        enableControlButton(sensor.getType());
+        Log.d(TAG, "Connected to" + sensor.getName() +
+                " : " + sensor.getAddress() +" : "+sensor.getType());
         mConnectedSensors.add(sensor);
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText("Disconnect");
         sensorNamesView.setText(sensorNamesView.getText()+"  "+sensor.getName());
     }
 
-    private void handleGattDisconnectionEvent(){
-        Log.d(TAG, "Disconnected from sensors");
+    private void handleGattDisconnectionEvent(String sensorStr){
+        Sensor sensor = new Sensor();
+        sensor.fromJson(sensorStr);
+        Log.d(TAG, "Disconnected from" + sensor.getName() +
+                " : " + sensor.getAddress());
+        disableControlButton(sensor.getType());
+    }
+
+    private void handleSensorsDisconnectionEvent(){
+        mConnectedSensors.clear();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         btnConnectDisconnect.setText("Connect");
-        mConnectedSensors.clear();
         sensorNamesView.setText("Connected Sensors:");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
@@ -575,12 +628,6 @@ public class MainActivity extends Activity {
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
         mainContainer.setVisibility(View.VISIBLE);
-        disableControlButton(ecgOneViewCtr);
-        disableControlButton(ecgThreeViewCtr);
-        disableControlButton(ppgOneViewCtr);
-        disableControlButton(ppgTwoViewCtr);
-        disableControlButton(accelViewCtr);
-        disableControlButton(impedanceViewCtr);
         setGraphLayout(0);
     }
 

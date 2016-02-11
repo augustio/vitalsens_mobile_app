@@ -66,9 +66,9 @@ public class BLEService extends Service {
 
     private static final String ECG1 = "Vitalsens_ECG1";
     private static final String ECG3 = "Vitalsens_ECG3";
-    private static final String PPG1 = "VitalsensPPG1";
-    private static final String PPG2 = "VitalsensPPG2";
-    private static final String ACCEL = "VitalsensACCEL";
+    private static final String PPG1 = "Vitalsens_PPG1";
+    private static final String PPG2 = "Vitalsens_PPG2";
+    private static final String ACCEL = "Vitalsens_ACCEL";
     private static final String IMPEDANCE = "Vitalsens_IMPED";
 
     public final static String ACTION_GATT_CONNECTED =
@@ -81,6 +81,8 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.DEVICE_DOES_NOT_SUPPORT_UART";
     public final static String ACTION_DESCRIPTOR_WRITTEN =
             "vitalsens.vitalsensapp.ACTION_DESCRIPTOR_WRITTEN";
+    public final static String ACTION_ALL_SENSORS_DISCONNECTED =
+            "vitalsens.vitalsensapp.ACTION_ALL_SENSORS_DISCONNECTED";
     public static final String ONE_CHANNEL_ECG =
             "vitalsens.vitalsensapp.ONE_CHANNEL_ECG";
     public static final String THREE_CHANNEL_ECG =
@@ -131,8 +133,10 @@ public class BLEService extends Service {
                 intentAction = ACTION_GATT_DISCONNECTED;
                 broadcastUpdate(intentAction, sensor.toJson());
                 mConnectedSensors.remove(sensor.getAddress());
-                if(mConnectedSensors.isEmpty())
+                if(mConnectedSensors.isEmpty()) {
+                    broadcastUpdate(ACTION_ALL_SENSORS_DISCONNECTED);
                     mConnectionState = STATE_DISCONNECTED;
+                }
             }
         }
 
