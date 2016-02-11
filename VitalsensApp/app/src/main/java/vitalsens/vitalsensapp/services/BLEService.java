@@ -297,7 +297,7 @@ public class BLEService extends Service {
     }
 
     private void processRXData(byte[] data){
-        if(data.length < 16){
+        if(data.length < 20){
             String sample = "";
             for(int i:data)
                 sample += (i & 0xFF);
