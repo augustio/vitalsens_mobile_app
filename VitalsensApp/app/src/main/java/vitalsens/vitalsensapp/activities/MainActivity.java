@@ -771,12 +771,12 @@ public class MainActivity extends Activity {
                             fw.flush();
                             fw.close();
                             showMessage(record.getSensor() + " Record Saved");
-                            mRecords.remove(record);
                         } catch (IOException e) {
                             Log.e(TAG, e.toString());
                             showMessage("Problem writing to Storage");
                         }
                     }
+                    mRecords.clear();
                 }
             }).start();
         }
