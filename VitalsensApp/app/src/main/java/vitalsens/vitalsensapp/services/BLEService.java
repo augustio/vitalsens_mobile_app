@@ -85,21 +85,14 @@ public class BLEService extends Service {
 
     private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final static UUID UART_SERVICE_UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-    private final static UUID TX_CHAR_UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID RX_CHAR_UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
-    private final static UUID HR_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
-    private static final UUID HRM_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
-    private static final UUID ECG_SENSOR_LOCATION_CHARACTERISTIC_UUID = UUID.fromString("00002A38-0000-1000-8000-00805f9b34fb");
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private Thread mConnectionThread, mDisconnectionThread;
     private int mConnectionState;
 
-    private BluetoothGattCharacteristic mHRLocationCharacteristic;
     private BluetoothGattCharacteristic mRXCharacteristic;
-    private BluetoothGattCharacteristic mTXCharacteristic;
-    private BluetoothGattCharacteristic mHRMCharacteristic;
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
@@ -137,11 +130,7 @@ public class BLEService extends Service {
                 for (BluetoothGattService service : services) {
                     if (service.getUuid().equals(UART_SERVICE_UUID)) {
                         mRXCharacteristic = service.getCharacteristic(RX_CHAR_UUID);
-                        mTXCharacteristic = service.getCharacteristic(TX_CHAR_UUID);
                         enableRXNotification(gatt);
-                    } else if (service.getUuid().equals(HR_SERVICE_UUID)) {
-                        mHRMCharacteristic = service.getCharacteristic(HRM_CHARACTERISTIC_UUID );
-                        mHRLocationCharacteristic = service.getCharacteristic(ECG_SENSOR_LOCATION_CHARACTERISTIC_UUID);
                     }
                 }
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
