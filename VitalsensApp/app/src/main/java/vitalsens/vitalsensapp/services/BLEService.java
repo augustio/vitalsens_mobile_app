@@ -111,14 +111,12 @@ public class BLEService extends Service {
                 Log.d(TAG, "Attempting to start service discovery:" +
                         gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.d(TAG, "Disconnected from " + sensor.getAddress() + ": " + sensor.getName());
                 gatt.close();
+                intentAction = ACTION_GATT_DISCONNECTED;
+                broadcastUpdate(intentAction, sensor.toJson());
                 mConnectedSensors.remove(sensor.getAddress());
-                if(mConnectedSensors.isEmpty()) {
+                if(mConnectedSensors.isEmpty())
                     mConnectionState = STATE_DISCONNECTED;
-                    intentAction = ACTION_GATT_DISCONNECTED;
-                    broadcastUpdate(intentAction);
-                }
             }
         }
 
