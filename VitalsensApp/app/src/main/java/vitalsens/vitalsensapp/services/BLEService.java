@@ -57,6 +57,20 @@ public class BLEService extends Service {
     public static final int ACCELERATION_THREE_CHANNEL = 4;
     public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
 
+    private static final String ECG1 = "ONE CHANNEL ECG";
+    private static final String ECG3 = "THREE CHANNEL ECG";
+    private static final String PPG1 = "ONE CHANNEL PPG";
+    private static final String PPG2 = "TWO CHANNEL PPG";
+    private static final String ACCEL = "THREE CHANNEL ACCELERATION";
+    private static final String IMPEDANCE = "ONE CHANNEL IMPEDANCE PNEUMOGRAPHY";
+
+    private static final String TYPE0 = "Vitalsens_ECG1";
+    private static final String TYPE1 = "Vitalsens_ECG3";
+    private static final String TYPE2 = "VitalsensPPG1";
+    private static final String TYPE3= "VitalsensPPG2";
+    private static final String TYPE4 = "VitalsensACCEL";
+    private static final String TYPE5 = "Vitalsens_IMPED";
+
     public final static String ACTION_GATT_CONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
     public final static String ACTION_GATT_DISCONNECTED =
@@ -100,9 +114,11 @@ public class BLEService extends Service {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction;
-            Sensor sensor = new Sensor
-                    (gatt.getDevice().getName(), gatt.getDevice().getAddress());
+            String intentAction,
+                    name = gatt.getDevice().getName(),
+                    addr = gatt.getDevice().getAddress();
+            Sensor sensor = new Sensor(name, addr);
+            sensor.setType(getSensorType(name));
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectedSensors.put(sensor.getAddress(), gatt);
                 mConnectionState = STATE_CONNECTED;
@@ -339,5 +355,32 @@ public class BLEService extends Service {
             default:
                 break;
         }
+    }
+
+    private String getSensorType(String sensorName){
+        String type = "";
+        switch(sensorName){
+            case TYPE0:
+                type = ECG1;
+                break;
+            case TYPE1:
+                type = ECG3;
+                break;
+            case TYPE2:
+                type = PPG1;
+                break;
+            case TYPE3:
+                type = PPG2;
+                break;
+            case TYPE4:
+                type = ACCEL;
+                break;
+            case TYPE5:
+                type = IMPEDANCE;
+                break;
+            default:
+                break;
+        }
+        return type;
     }
 }
