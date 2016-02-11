@@ -57,19 +57,19 @@ public class BLEService extends Service {
     public static final int ACCELERATION_THREE_CHANNEL = 4;
     public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
 
-    private static final String ECG1 = "ONE CHANNEL ECG";
-    private static final String ECG3 = "THREE CHANNEL ECG";
-    private static final String PPG1 = "ONE CHANNEL PPG";
-    private static final String PPG2 = "TWO CHANNEL PPG";
-    private static final String ACCEL = "THREE CHANNEL ACCELERATION";
-    private static final String IMPEDANCE = "ONE CHANNEL IMPEDANCE PNEUMOGRAPHY";
+    public static final String TYPE0 = "ONE CHANNEL ECG";
+    public static final String TYPE1 = "THREE CHANNEL ECG";
+    public static final String TYPE2 = "ONE CHANNEL PPG";
+    public static final String TYPE3 = "TWO CHANNEL PPG";
+    public static final String TYPE4 = "THREE CHANNEL ACCELERATION";
+    public static final String TYPE5 = "ONE CHANNEL IMPEDANCE PNEUMOGRAPHY";
 
-    private static final String TYPE0 = "Vitalsens_ECG1";
-    private static final String TYPE1 = "Vitalsens_ECG3";
-    private static final String TYPE2 = "VitalsensPPG1";
-    private static final String TYPE3= "VitalsensPPG2";
-    private static final String TYPE4 = "VitalsensACCEL";
-    private static final String TYPE5 = "Vitalsens_IMPED";
+    private static final String ECG1 = "Vitalsens_ECG1";
+    private static final String ECG3 = "Vitalsens_ECG3";
+    private static final String PPG1 = "VitalsensPPG1";
+    private static final String PPG2 = "VitalsensPPG2";
+    private static final String ACCEL = "VitalsensACCEL";
+    private static final String IMPEDANCE = "Vitalsens_IMPED";
 
     public final static String ACTION_GATT_CONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
@@ -360,23 +360,23 @@ public class BLEService extends Service {
     private String getSensorType(String sensorName){
         String type = "";
         switch(sensorName){
-            case TYPE0:
-                type = ECG1;
+            case ECG1:
+                type = TYPE0;
                 break;
-            case TYPE1:
-                type = ECG3;
+            case ECG3:
+                type = TYPE1;
                 break;
-            case TYPE2:
-                type = PPG1;
+            case PPG1:
+                type = TYPE2;
                 break;
-            case TYPE3:
-                type = PPG2;
+            case PPG2:
+                type = TYPE3;
                 break;
-            case TYPE4:
-                type = ACCEL;
+            case ACCEL:
+                type = TYPE4;
                 break;
-            case TYPE5:
-                type = IMPEDANCE;
+            case IMPEDANCE:
+                type = TYPE5;
                 break;
             default:
                 break;
