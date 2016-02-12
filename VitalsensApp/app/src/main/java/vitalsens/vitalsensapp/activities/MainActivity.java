@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.provider.ContactsContract;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -59,8 +58,7 @@ public class MainActivity extends Activity {
     private static final int ONE_SECOND = 1000;// 1000 milliseconds in one second
 
     private BluetoothAdapter mBluetoothAdapter;
-    private Button btnConnectDisconnect;
-    private Button btnRecord;
+    private Button btnConnectDisconnect, btnHistory, btnRecord;
     private TextView sensorNamesView;
     private TextView ecgOneViewCtr, ecgThreeViewCtr;
     private TextView ppgOneViewCtr, ppgTwoViewCtr;
@@ -102,6 +100,7 @@ public class MainActivity extends Activity {
 
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
         btnRecord = (Button) findViewById(R.id.btn_record);
+        btnHistory = (Button) findViewById(R.id.btn_history);
         sensorNamesView = (TextView) findViewById(R.id.connected_sensors);
         sensorNamesView.setText("Connected Sensors:");
         sensorVeiwCtrlPad = (LinearLayout) findViewById(R.id.sensor_view_ctr_layout);
@@ -187,6 +186,17 @@ public class MainActivity extends Activity {
                         btnRecord.setText("Stop");
                         mRecordTimer.run();
                     }
+                }
+            }
+        });
+
+        btnHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mConnectionState == BLEService.STATE_DISCONNECTED) {
+                    Intent intent = new Intent(MainActivity.this, History.class);
+                    intent.putExtra(Intent.EXTRA_TEXT, DIRECTORY_NAME);
+                    startActivity(intent);
                 }
             }
         });
