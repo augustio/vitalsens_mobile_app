@@ -333,7 +333,7 @@ public class MainActivity extends Activity {
                                 mECG1Collection.add(new DataPacket(samples));
                             if (mShowECGOne) {
                                 String str = "Packet Number: " + samples[1] + "{ECG1 Samples: ";
-                                for (int i = 2; i < samples.length; i += 3) {
+                                for (int i = 2; i < samples.length; i++) {
                                     mChannelOne.updateGraph(samples[i]);
                                     str += (samples[i] + "-");
                                 }
@@ -377,7 +377,7 @@ public class MainActivity extends Activity {
                                 mPPG1Collection.add(new DataPacket(samples));
                             if (mShowPPGOne) {
                                 String str = "Packet Number: " + samples[1] + "{PPG1 Samples: ";
-                                for (int i = 2; i < samples.length; i += 3) {
+                                for (int i = 2; i < samples.length; i++) {
                                     mChannelOne.updateGraph(samples[i]);
                                     str += (samples[i] + "-");
                                 }
@@ -397,7 +397,7 @@ public class MainActivity extends Activity {
                                 mPPG2Collection.add(new DataPacket(samples));
                             if (mShowPPGTwo) {
                                 String str = "Packet Number: " + samples[1] + "{PPG2 Samples: ";
-                                for (int i = 2; i < samples.length; i += 3) {
+                                for (int i = 2; i < samples.length; i += 2) {
                                     mChannelOne.updateGraph(samples[i]);
                                     str += (samples[i] + "-");
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -445,7 +445,7 @@ public class MainActivity extends Activity {
                                 mIMPEDANCECollection.add(new DataPacket(samples));
                             if (mShowImpedance) {
                                 String str = "Packet Number: " + samples[1] + "{Impedance Samples: ";
-                                for (int i = 2; i < samples.length; i += 3) {
+                                for (int i = 2; i < samples.length; i++) {
                                     mChannelOne.updateGraph(samples[i]);
                                     str += (samples[i] + "-");
                                 }

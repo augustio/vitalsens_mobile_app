@@ -326,12 +326,12 @@ public class BLEService extends Service {
         }
 
         int dataId = ((data[0] & 0XFF) >> 5);
-        int packetNumber = (data[19] & 0XFF);
+        int packetNumber = (data[1] & 0XFF);
 
         int ecgData[] = new int[14];
         ecgData[0] = dataId;
         ecgData[1] = packetNumber;
-        for(int i=2, j=1; i < ecgData.length; i+=2, j+=3){
+        for(int i=2, j=2; i < ecgData.length; i+=2, j+=3){
             ecgData[i] = (data[j] & 0X0FF) << 4 | (data[j+1] & 0XFF) >> 4;
             ecgData[i+1] = (data[j+1] & 0X00F) << 8 | (data[j+2] & 0XFF);
         }
