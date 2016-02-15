@@ -26,12 +26,17 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.models.Record;
@@ -204,26 +209,31 @@ public class History extends Activity {
         return f;
     }
 
-    public static String POST(String url, Record record){
+    public static String POST(String serverUrl, Record record){
         InputStream inputStream;
         String result;
+        URL url;
+        HttpURLConnection urlConnection;
+        int responseCode;
         try {
-            HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httpPost = new HttpPost(url);
+            url = new URL(serverUrl);
+            urlConnection = (HttpURLConnection)url.openConnection();
+            urlConnection.setDoOutput(true);
+            urlConnection.setChunkedStreamingMode(0);
+            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestProperty("Accept", "application/json");
+            urlConnection.setRequestMethod("POST");
+
             String json = record.toJson();
 
-            StringEntity se = new StringEntity(json);
-            httpPost.setEntity(se);
+            OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
+            writer.write(json);
+            writer.flush();
+            writer.close();
 
-            httpPost.setHeader("Accept", "application/json");
-            httpPost.setHeader("Content-type", "application/json");
-
-            HttpResponse httpResponse = httpclient.execute(httpPost);
-
-            HttpEntity httpEntity = httpResponse.getEntity();
-
-            if(httpEntity != null){
-                inputStream = httpEntity.getContent();
+            responseCode = urlConnection.getResponseCode();
+            if(responseCode == HttpURLConnection.HTTP_OK){
+                inputStream = urlConnection.getInputStream();
                 result = convertInputStreamToString(inputStream);
             }else
                 result = SERVER_ERROR;
