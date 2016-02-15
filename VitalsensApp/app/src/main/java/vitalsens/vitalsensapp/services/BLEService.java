@@ -57,13 +57,6 @@ public class BLEService extends Service {
     public static final int ACCELERATION_THREE_CHANNEL = 4;
     public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
 
-    public static final String TYPE0 = "ONE CHANNEL ECG";
-    public static final String TYPE1 = "THREE CHANNEL ECG";
-    public static final String TYPE2 = "ONE CHANNEL PPG";
-    public static final String TYPE3 = "TWO CHANNEL PPG";
-    public static final String TYPE4 = "THREE CHANNEL ACCELERATION";
-    public static final String TYPE5 = "ONE CHANNEL IMPEDANCE PNEUMOGRAPHY";
-
     public static final String ECG1 = "Vitalsens_ECG1";
     public static final String ECG3 = "Vitalsens_ECG3";
     public static final String PPG1 = "Vitalsens_PPG1";
@@ -81,8 +74,6 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.DEVICE_DOES_NOT_SUPPORT_UART";
     public final static String ACTION_DESCRIPTOR_WRITTEN =
             "vitalsens.vitalsensapp.ACTION_DESCRIPTOR_WRITTEN";
-    public final static String ACTION_ALL_SENSORS_DISCONNECTED =
-            "vitalsens.vitalsensapp.ACTION_ALL_SENSORS_DISCONNECTED";
     public static final String ONE_CHANNEL_ECG =
             "vitalsens.vitalsensapp.ONE_CHANNEL_ECG";
     public static final String THREE_CHANNEL_ECG =
@@ -116,11 +107,8 @@ public class BLEService extends Service {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction,
-                    name = gatt.getDevice().getName(),
-                    addr = gatt.getDevice().getAddress();
-            Sensor sensor = new Sensor(name, addr);
-            sensor.setType(getSensorType(name));
+            String intentAction;
+            Sensor sensor = new Sensor(gatt.getDevice().getName(), gatt.getDevice().getAddress());
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectedSensors.put(sensor.getAddress(), gatt);
                 mConnectionState = STATE_CONNECTED;
@@ -130,11 +118,11 @@ public class BLEService extends Service {
                         gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 gatt.close();
-                intentAction = ACTION_GATT_DISCONNECTED;
-                broadcastUpdate(intentAction, sensor.toJson());
+                Log.d(TAG, "Disconnected from" + sensor.getName() +
+                        " : " + sensor.getAddress());
                 mConnectedSensors.remove(sensor.getAddress());
                 if(mConnectedSensors.isEmpty()) {
-                    broadcastUpdate(ACTION_ALL_SENSORS_DISCONNECTED);
+                    broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     mConnectionState = STATE_DISCONNECTED;
                 }
             }
@@ -359,32 +347,5 @@ public class BLEService extends Service {
             default:
                 break;
         }
-    }
-
-    private String getSensorType(String sensorName){
-        String type = "";
-        switch(sensorName){
-            case ECG1:
-                type = TYPE0;
-                break;
-            case ECG3:
-                type = TYPE1;
-                break;
-            case PPG1:
-                type = TYPE2;
-                break;
-            case PPG2:
-                type = TYPE3;
-                break;
-            case ACCEL:
-                type = TYPE4;
-                break;
-            case IMPEDANCE:
-                type = TYPE5;
-                break;
-            default:
-                break;
-        }
-        return type;
     }
 }

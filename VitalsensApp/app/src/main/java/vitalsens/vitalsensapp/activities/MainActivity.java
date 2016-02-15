@@ -71,6 +71,7 @@ public class MainActivity extends Activity {
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Sensor> mConnectedSensors;
+    private ArrayList<View> mEnabledCtrlBtns;
     private ArrayList<Record> mRecords;
     private ArrayList<DataPacket> mECG1Collection;
     private ArrayList<DataPacket> mECG3Collection;
@@ -121,6 +122,7 @@ public class MainActivity extends Activity {
 
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
+        mEnabledCtrlBtns = new ArrayList<>();
         mRecords = new ArrayList<>();
         mECG1Collection = new ArrayList<>();
         mECG3Collection = new ArrayList<>();
@@ -295,17 +297,9 @@ public class MainActivity extends Activity {
                 });
             }
             if (action.equals(BLEService.ACTION_GATT_DISCONNECTED)) {
-                final String sensorStr = intent.getStringExtra(Intent.EXTRA_TEXT);
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        handleGattDisconnectionEvent(sensorStr);
-                    }
-                });
-            }
-            if (action.equals(BLEService.ACTION_ALL_SENSORS_DISCONNECTED)) {
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        handleSensorsDisconnectionEvent();
+                        handleGattDisconnectionEvent();
                     }
                 });
             }
@@ -329,6 +323,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            enableControlButton(ecgOneViewCtr);
                             if(mRecording)
                                 mECG1Collection.add(new DataPacket(samples));
                             if (mShowECGOne) {
@@ -349,6 +344,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            enableControlButton(ecgThreeViewCtr);
                             if(mRecording)
                                 mECG3Collection.add(new DataPacket(samples));
                             if (mShowECGThree) {
@@ -373,6 +369,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            enableControlButton(ppgOneViewCtr);
                             if(mRecording)
                                 mPPG1Collection.add(new DataPacket(samples));
                             if (mShowPPGOne) {
@@ -393,6 +390,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            enableControlButton(ppgTwoViewCtr);
                             if(mRecording)
                                 mPPG2Collection.add(new DataPacket(samples));
                             if (mShowPPGTwo) {
@@ -415,6 +413,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            enableControlButton(accelViewCtr);
                             if(mRecording)
                                 mACCELCollection.add(new DataPacket(samples));
                             if (mShowAccel) {
@@ -441,6 +440,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            enableControlButton(impedanceViewCtr);
                             if(mRecording)
                                 mIMPEDANCECollection.add(new DataPacket(samples));
                             if (mShowImpedance) {
@@ -465,7 +465,6 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(BLEService.ACTION_DESCRIPTOR_WRITTEN);
-        intentFilter.addAction(BLEService.ACTION_ALL_SENSORS_DISCONNECTED);
         intentFilter.addAction(BLEService.ONE_CHANNEL_ECG);
         intentFilter.addAction(BLEService.THREE_CHANNEL_ECG);
         intentFilter.addAction(BLEService.ONE_CHANNEL_PPG);
@@ -630,83 +629,39 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void enableControlButton(String type) {
-        View v = null;
-        switch (type){
-            case BLEService.TYPE0:
-                v = ecgOneViewCtr;
-                break;
-            case BLEService.TYPE1:
-                v = ecgThreeViewCtr;
-                break;
-            case BLEService.TYPE2:
-                v = ppgOneViewCtr;
-                break;
-            case BLEService.TYPE3:
-                v = ppgTwoViewCtr;
-                break;
-            case BLEService.TYPE4:
-                v = accelViewCtr;
-                break;
-            case BLEService.TYPE5:
-                v = impedanceViewCtr;
-                break;
-        }
-        if (v != null) {
+    private void enableControlButton(View v) {
+        if (v != null && !v.isEnabled()) {
             v.setEnabled(true);
             v.setVisibility(View.VISIBLE);
+
+            if(!mEnabledCtrlBtns.contains(v))
+                mEnabledCtrlBtns.add(v);
         }
     }
 
-    private void disableControlButton(String type) {
-        View v = null;
-        switch (type){
-            case BLEService.TYPE0:
-                v = ecgOneViewCtr;
-                break;
-            case BLEService.TYPE1:
-                v = ecgThreeViewCtr;
-                break;
-            case BLEService.TYPE2:
-                v = ppgOneViewCtr;
-                break;
-            case BLEService.TYPE3:
-                v = ppgTwoViewCtr;
-                break;
-            case BLEService.TYPE4:
-                v = accelViewCtr;
-                break;
-            case BLEService.TYPE5:
-                v = impedanceViewCtr;
-                break;
+    private void disableControlButton() {
+        for(View v : mEnabledCtrlBtns) {
+            if (v != null) {
+                v.setEnabled(false);
+                v.setVisibility(View.GONE);
+            }
         }
-        if (v != null) {
-            v.setEnabled(false);
-            v.setVisibility(View.GONE);
-        }
+        mEnabledCtrlBtns.clear();
     }
 
     private void handleGattConnectionEvent(String sensorStr) {
         Sensor sensor = new Sensor();
         sensor.fromJson(sensorStr);
-        enableControlButton(sensor.getType());
         Log.d(TAG, "Connected to" + sensor.getName() +
-                " : " + sensor.getAddress() +" : "+sensor.getType());
+                " : " + sensor.getAddress());
         mConnectedSensors.add(sensor);
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText("Disconnect");
         sensorNamesView.setText(sensorNamesView.getText()+"  "+sensor.getName());
     }
 
-    private void handleGattDisconnectionEvent(String sensorStr){
-        Sensor sensor = new Sensor();
-        sensor.fromJson(sensorStr);
-        Log.d(TAG, "Disconnected from" + sensor.getName() +
-                " : " + sensor.getAddress());
-        disableControlButton(sensor.getType());
-    }
-
-    private void handleSensorsDisconnectionEvent(){
+    private void handleGattDisconnectionEvent(){
+        disableControlButton();
         mConnectedSensors.clear();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         btnConnectDisconnect.setText("Connect");

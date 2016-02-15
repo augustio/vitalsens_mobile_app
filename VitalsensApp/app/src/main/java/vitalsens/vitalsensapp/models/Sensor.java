@@ -10,18 +10,15 @@ import com.google.gson.Gson;
 public class Sensor {
     private String name;
     private String address;
-    private String type;
 
     public Sensor(){
         name = "";
         address = "";
-        type = "";
     }
 
     public Sensor(String name, String address){
         this.name = name;
         this.address = address;
-        this.type = "";
     }
 
     public String getName() {
@@ -40,14 +37,6 @@ public class Sensor {
         this.address = address;
     }
 
-    public String getType(){
-        return type;
-    }
-
-    public void setType(String type){
-        this.type = type;
-    }
-
     public String toJson(){
         Gson gson = new Gson();
         return gson.toJson(this);
@@ -58,6 +47,5 @@ public class Sensor {
         Sensor sensor = gson.fromJson(json, Sensor.class);
         this.name = sensor.getName();
         this.address = sensor.getAddress();
-        this.type = sensor.getType();
     }
 }
