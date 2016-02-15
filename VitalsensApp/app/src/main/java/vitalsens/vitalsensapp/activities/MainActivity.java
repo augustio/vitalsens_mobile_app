@@ -693,27 +693,27 @@ public class MainActivity extends Activity {
                         Type type = new TypeToken<ArrayList<DataPacket>>() {
                         }.getType();
                         switch (record.getSensor()) {
-                            case BLEService.ECG1:
+                            case Sensor.ECG1:
                                 record.setData(new Gson().toJson(mECG1Collection, type));
                                 mECG1Collection.clear();
                                 break;
-                            case BLEService.ECG3:
+                            case Sensor.ECG3:
                                 record.setData(new Gson().toJson(mECG3Collection, type));
                                 mECG3Collection.clear();
                                 break;
-                            case BLEService.PPG1:
+                            case Sensor.PPG1:
                                 record.setData(new Gson().toJson(mPPG1Collection, type));
                                 mPPG1Collection.clear();
                                 break;
-                            case BLEService.PPG2:
+                            case Sensor.PPG2:
                                 record.setData(new Gson().toJson(mPPG2Collection, type));
                                 mPPG2Collection.clear();
                                 break;
-                            case BLEService.ACCEL:
+                            case Sensor.ACCEL:
                                 record.setData(new Gson().toJson(mACCELCollection, type));
                                 mACCELCollection.clear();
                                 break;
-                            case BLEService.IMPEDANCE:
+                            case Sensor.IMPEDANCE:
                                 record.setData(new Gson().toJson(mIMPEDANCECollection, type));
                                 mIMPEDANCECollection.clear();
                                 break;

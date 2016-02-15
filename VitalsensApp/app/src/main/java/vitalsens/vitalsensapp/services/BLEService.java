@@ -57,13 +57,6 @@ public class BLEService extends Service {
     public static final int ACCELERATION_THREE_CHANNEL = 4;
     public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
 
-    public static final String ECG1 = "Vitalsens_ECG1";
-    public static final String ECG3 = "Vitalsens_ECG3";
-    public static final String PPG1 = "Vitalsens_PPG1";
-    public static final String PPG2 = "Vitalsens_PPG2";
-    public static final String ACCEL = "Vitalsens_ACCEL";
-    public static final String IMPEDANCE = "Vitalsens_IMPED";
-
     public final static String ACTION_GATT_CONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
     public final static String ACTION_GATT_DISCONNECTED =
