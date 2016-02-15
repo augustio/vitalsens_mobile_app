@@ -50,12 +50,16 @@ public class MainActivity extends Activity {
 
     private static final String TAG = "VitalsensApp";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
+    private static final int MAIN_LAYOUT = 0;
+    private static final int ONE_CHANNEL_LAYOUT = 1;
+    private static final int TWO_CHANNELS_LAYOUT = 2;
+    private static final int THRE_CHANNELS_LAYOUT = 3;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    private static final int MAX_DATA_RECORDING_TIME = 120;// 2 minutes
+    private static final int MAX_DATA_RECORDING_TIME_IN_MINS = 120;
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
-    private static final int ONE_SECOND = 1000;// 1000 milliseconds in one second
+    private static final int ONE_SECOND_IN_MILLIS = 1000;
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect, btnHistory, btnRecord;
@@ -125,8 +129,6 @@ public class MainActivity extends Activity {
         mACCELCollection = new ArrayList<>();
         mIMPEDANCECollection = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
-        mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
-                mShowAccel = mShowImpedance = false;
         mRecording = false;
 
         min = sec =  hr = 0;
@@ -146,7 +148,7 @@ public class MainActivity extends Activity {
                 .add(R.id.channel3_fragment, mChannelThree, "chThree")
                 .commit();
 
-        setGraphLayout(0);
+        setGraphLayout(MAIN_LAYOUT);
 
         service_init();
 
@@ -175,7 +177,7 @@ public class MainActivity extends Activity {
                     if(mRecording)
                         stopRecordingData();
                     else {
-                        setGraphLayout(0);
+                        setGraphLayout(MAIN_LAYOUT);
                         enableSensorViewControlPad(false);
                         for(Sensor sensor : mConnectedSensors) {
                             mRecords.add(new Record(sensor.getName(),
@@ -205,9 +207,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!mShowECGOne && mConnectionState == BLEService.STATE_CONNECTED) {
-                    mShowECGThree = mShowPPGOne = mShowPPGTwo =
-                            mShowAccel = mShowImpedance = false;
-                    setGraphLayout(1);
+                    setGraphLayout(ONE_CHANNEL_LAYOUT);
                     mShowECGOne = true;
                 }
             }
@@ -216,9 +216,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!mShowECGThree && mConnectionState == BLEService.STATE_CONNECTED) {
-                    mShowECGOne = mShowPPGOne = mShowPPGTwo =
-                            mShowAccel = mShowImpedance = false;
-                    setGraphLayout(3);
+                    setGraphLayout(THRE_CHANNELS_LAYOUT);
                     mShowECGThree = true;
                 }
             }
@@ -227,9 +225,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!mShowPPGOne && mConnectionState == BLEService.STATE_CONNECTED) {
-                    mShowECGOne = mShowECGThree = mShowPPGTwo =
-                            mShowAccel = mShowImpedance = false;
-                    setGraphLayout(1);
+                    setGraphLayout(ONE_CHANNEL_LAYOUT);
                     mShowPPGOne = true;
                 }
             }
@@ -238,9 +234,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!mShowPPGTwo && mConnectionState == BLEService.STATE_CONNECTED) {
-                    mShowECGOne = mShowECGThree = mShowPPGOne =
-                            mShowAccel = mShowImpedance = false;
-                    setGraphLayout(2);
+                    setGraphLayout(TWO_CHANNELS_LAYOUT);
                     mShowPPGTwo = true;
                 }
             }
@@ -249,9 +243,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!mShowAccel && mConnectionState == BLEService.STATE_CONNECTED) {
-                    mShowECGOne = mShowECGThree = mShowPPGOne =
-                            mShowPPGTwo = mShowImpedance = false;
-                    setGraphLayout(3);
+                    setGraphLayout(THRE_CHANNELS_LAYOUT);
                     mShowAccel = true;
                 }
             }
@@ -260,9 +252,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (!mShowImpedance && mConnectionState == BLEService.STATE_CONNECTED) {
-                    mShowECGOne = mShowECGThree = mShowPPGOne =
-                            mShowPPGTwo = mShowAccel = false;
-                    setGraphLayout(1);
+                    setGraphLayout(ONE_CHANNEL_LAYOUT);
                     mShowImpedance = true;
                 }
             }
@@ -596,20 +586,20 @@ public class MainActivity extends Activity {
     }
 
 
-    private void setGraphLayout(int channels) {
+    private void setGraphLayout(int type) {
         clearGraphLayout();
-        switch (channels) {
-            case 0:
+        switch (type) {
+            case MAIN_LAYOUT:
                 mainContainer.setVisibility(View.VISIBLE);
                 break;
-            case 1:
+            case ONE_CHANNEL_LAYOUT:
                 chOne.setVisibility(View.VISIBLE);
                 break;
-            case 2:
+            case TWO_CHANNELS_LAYOUT:
                 chOne.setVisibility(View.VISIBLE);
                 chTwo.setVisibility(View.VISIBLE);
                 break;
-            case 3:
+            case THRE_CHANNELS_LAYOUT:
                 chOne.setVisibility(View.VISIBLE);
                 chTwo.setVisibility(View.VISIBLE);
                 chThree.setVisibility(View.VISIBLE);
@@ -727,7 +717,7 @@ public class MainActivity extends Activity {
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
         mainContainer.setVisibility(View.VISIBLE);
-        setGraphLayout(0);
+        setGraphLayout(MAIN_LAYOUT);
         if(mRecording)
             stopRecordingData();
     }
@@ -813,14 +803,14 @@ public class MainActivity extends Activity {
                     min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
                 }
                 updateTimer();
-                if (mRecTimerCounter >= MAX_DATA_RECORDING_TIME) {
+                if (mRecTimerCounter >= MAX_DATA_RECORDING_TIME_IN_MINS) {
                     stopRecordingData();
                     return;
                 }
-                if ((MAX_DATA_RECORDING_TIME - mRecTimerCounter) < 5)//Five seconds to the end of timer
+                if ((MAX_DATA_RECORDING_TIME_IN_MINS - mRecTimerCounter) < 5)//Five seconds to the end of timer
                     ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.green));
                 mRecTimerCounter++;
-            mHandler.postDelayed(mRecordTimer, ONE_SECOND);
+            mHandler.postDelayed(mRecordTimer, ONE_SECOND_IN_MILLIS);
         }
     };
 
