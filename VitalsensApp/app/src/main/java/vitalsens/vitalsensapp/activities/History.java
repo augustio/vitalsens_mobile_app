@@ -18,22 +18,12 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -169,21 +159,30 @@ public class History extends Activity {
 
     private Record getRecord(int pos){
         if(isExternalStorageReadable()) {
-            File file;
-            Record record = new Record();
-            if ((file = validateFile(getFilePath(pos))) != null) {
-                try {
-                    BufferedReader buf = new BufferedReader(new FileReader(file));
-                    record.fromJson(buf.readLine());
-                    buf.close();
-                } catch (Exception e) {
-                    Log.e(TAG, e.toString());
-                    showMessage("Problem accessing mFile");
-                }
-            }
-            return record;
-        }else
+            showMessage("Cannot access external storage");
             return null;
+        }
+        String path = getFilePath(pos);
+        if(path.endsWith(("txt"))) {
+            showMessage("Invalid file format");
+            return null;
+        }
+        Record record = new Record();
+        File file = new File(path);
+        if (!isEmptyFile(file)) {
+            try {
+                BufferedReader buf = new BufferedReader(new FileReader(file));
+                record.fromJson(buf.readLine());
+                buf.close();
+            } catch (Exception e) {
+                Log.e(TAG, e.toString());
+                showMessage("Problem accessing mFile");
+            }
+        }else{
+            showMessage("Empty File");
+            record = null;
+        }
+        return record;
     }
 
     private void deleteRecord(AdapterView.AdapterContextMenuInfo info){
@@ -195,18 +194,8 @@ public class History extends Activity {
             showMessage("Problem deleting record");
     }
 
-    private File validateFile(String path){
-        File f = null;
-        if(path.endsWith(("txt"))){
-            f = new File(path);
-            if(f.length() <= Character.SIZE) {
-                showMessage("Empty File");
-                return null;
-            }
-        }
-        else
-            showMessage("Invalid File Format");
-        return f;
+    private boolean isEmptyFile(File f){
+        return (f.length() <= Character.SIZE);
     }
 
     public static String POST(String serverUrl, Record record){
