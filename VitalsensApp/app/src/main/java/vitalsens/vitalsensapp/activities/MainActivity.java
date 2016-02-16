@@ -107,7 +107,7 @@ public class MainActivity extends Activity {
         btnRecord = (Button) findViewById(R.id.btn_record);
         btnHistory = (Button) findViewById(R.id.btn_history);
         sensorNamesView = (TextView) findViewById(R.id.connected_sensors);
-        sensorNamesView.setText("Connected Sensors:");
+        sensorNamesView.setText("No Sensors Connected");
         sensorVeiwCtrlPad = (LinearLayout) findViewById(R.id.sensor_view_ctr_layout);
         mainContainer = (LinearLayout) findViewById(R.id.main_container);
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
@@ -163,6 +163,7 @@ public class MainActivity extends Activity {
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
+                        sensorNamesView.setText(" ");
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
@@ -665,7 +666,7 @@ public class MainActivity extends Activity {
         mConnectedSensors.clear();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         btnConnectDisconnect.setText("Connect");
-        sensorNamesView.setText("Connected Sensors:");
+        sensorNamesView.setText("No Sensors Connected");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
