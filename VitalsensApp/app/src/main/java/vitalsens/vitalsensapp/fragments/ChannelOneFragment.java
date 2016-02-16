@@ -4,11 +4,14 @@ package vitalsens.vitalsensapp.fragments;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import org.achartengine.GraphicalView;
+
+import java.util.ArrayList;
 
 import vitalsens.vitalsensapp.utils.LineGraphView;
 
@@ -21,7 +24,11 @@ public class ChannelOneFragment extends Fragment {
     private LineGraphView mLineGraph;
     private GraphicalView mGraphView;
 
+    private Handler mHandler;
+
     private int xValueCounter;
+    private boolean graphStarted;
+    private ArrayList<Integer> mCollection;
 
     public ChannelOneFragment() {
     }
@@ -31,6 +38,10 @@ public class ChannelOneFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         xValueCounter = 0;
+        mHandler = new Handler();
+        graphStarted = false;
+        mCollection = new ArrayList<>();
+
     }
 
     @Override
@@ -45,18 +56,35 @@ public class ChannelOneFragment extends Fragment {
     }
 
     public void updateGraph(int value) {
-        double maxX = xValueCounter;
-        double minX = (maxX < X_RANGE) ? 0 : (maxX - X_RANGE);
-        mLineGraph.setXRange(minX, maxX);
-        mLineGraph.addValue(new Point(xValueCounter, value));
-        xValueCounter++;
-        mGraphView.repaint();
+        if(!graphStarted) {
+            graphStarted = true;
+            mStartGraph.run();
+        }
+        mCollection.add(value);
     }
+
+    private final Runnable mStartGraph = new Runnable() {
+        @Override
+        public void run() {
+            if(!mCollection.isEmpty()) {
+                double maxX = xValueCounter;
+                double minX = (maxX < X_RANGE) ? 0 : (maxX - X_RANGE);
+                mLineGraph.setXRange(minX, maxX);
+                mLineGraph.addValue(new Point(xValueCounter, mCollection.get(xValueCounter)));
+                xValueCounter++;
+                mGraphView.repaint();
+            }
+            mHandler.postDelayed(mStartGraph, 1);
+        }
+    };
 
     public void clearGraph(){
         if(mGraphView != null) {
             mGraphView.repaint();
             mLineGraph.clearGraph();
+            graphStarted = false;
+            mCollection.clear();
+            mHandler.removeCallbacks(mStartGraph);
             xValueCounter = 0;
         }
     }
