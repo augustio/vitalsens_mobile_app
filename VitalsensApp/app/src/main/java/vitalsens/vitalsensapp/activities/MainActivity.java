@@ -420,8 +420,6 @@ public class MainActivity extends Activity {
                             if (mShowAccel) {
                                 String str = "Packet Number: " + samples[1] + "{Accel Samples: ";
                                 for (int i = 2; i < samples.length; i += 3) {
-                                    if (samples[i] == 0)
-                                        continue;
                                     mChannelOne.updateGraph(samples[i]);
                                     str += (samples[i] + "-");
                                     mChannelTwo.updateGraph(samples[i + 1]);
