@@ -40,15 +40,15 @@
 
     <LinearLayout
         android:id="@+id/sensor_view_ctr_layout"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/ecg1_ctr"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="1dp"
@@ -59,9 +59,8 @@
             android:enabled="false"/>
         <Button
             android:id="@+id/ecg3_ctr"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="1dp"
@@ -72,9 +71,8 @@
             android:enabled="false"/>
         <Button
             android:id="@+id/ppg1_ctr"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="1dp"
@@ -85,9 +83,8 @@
             android:enabled="false"/>
         <Button
             android:id="@+id/ppg2_ctr"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="1dp"
@@ -98,9 +95,8 @@
             android:enabled="false"/>
         <Button
             android:id="@+id/accel_ctr"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="1dp"
@@ -111,9 +107,8 @@
             android:enabled="false"/>
         <Button
             android:id="@+id/impedance_ctr"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginLeft="1dp"
