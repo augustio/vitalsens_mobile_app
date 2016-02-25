@@ -66,7 +66,7 @@ public class ChannelThreeFragment extends Fragment {
     private final Runnable mStartGraph = new Runnable() {
         @Override
         public void run() {
-            if(!mCollection.isEmpty()) {
+            if(xValueCounter < mCollection.size()) {
                 double maxX = xValueCounter;
                 double minX = (maxX < X_RANGE) ? 0 : (maxX - X_RANGE);
                 mLineGraph.setXRange(minX, maxX);
