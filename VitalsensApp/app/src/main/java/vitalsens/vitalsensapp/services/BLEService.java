@@ -91,6 +91,12 @@ public class BLEService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
     private Thread mConnectionThread, mDisconnectionThread;
     private int mConnectionState;
+    private int mPrevECG1PktNum = -1;
+    private int mPrevECG3PktNum = -1;
+    private int mPrevPPG1PktNum = -1;
+    private int mPrevPPG2PktNum = -1;
+    private int mPrevACCELPktNum = -1;
+    private int mPrevIMPEDPktNum = -1;
 
     private BluetoothGattCharacteristic mRXCharacteristic;
 
@@ -117,6 +123,8 @@ public class BLEService extends Service {
                 if(mConnectedSensors.isEmpty()) {
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     mConnectionState = STATE_DISCONNECTED;
+                    mPrevECG1PktNum = mPrevECG3PktNum = mPrevPPG1PktNum =
+                            mPrevPPG2PktNum = mPrevACCELPktNum = mPrevIMPEDPktNum = -1;
                 }
             }
         }
@@ -295,6 +303,15 @@ public class BLEService extends Service {
         }
     }
 
+    private int calculatePacketLoss(int pktNum, int prevPktNum){
+        if(prevPktNum < 0)
+            return 0;
+        else if(prevPktNum == 255)
+            return (pktNum + 255) - prevPktNum;
+        else
+            return pktNum - (prevPktNum + 1);
+    }
+
     private void processRXData(byte[] data){
         if(data.length < 20){
             String sample = "";
@@ -308,6 +325,7 @@ public class BLEService extends Service {
 
         int dataId = ((data[0] & 0XFF) >> 5);
         int packetNumber = (data[1] & 0XFF);
+        int numPacketsLost;
 
         int ecgData[] = new int[14];
         ecgData[0] = dataId;
@@ -319,22 +337,45 @@ public class BLEService extends Service {
 
         switch (dataId){
             case ECG_ONE_CHANNEL:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG1PktNum);
+                mPrevECG1PktNum = packetNumber;
+                if( numPacketsLost> 0)
+                    Log.e(TAG, "Packet Lost (ECG1): " + numPacketsLost);
                 broadcastUpdate(ONE_CHANNEL_ECG, ecgData);
                 break;
             case ECG_THREE_CHANNEL:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG3PktNum);
+                mPrevECG3PktNum = packetNumber;
+                if( numPacketsLost> 0)
+                    Log.e(TAG, "Packet Lost (ECG3): " + numPacketsLost);
                 broadcastUpdate(THREE_CHANNEL_ECG, ecgData);
                 break;
             case PPG_ONE_CHANNEL:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG1PktNum);
+                mPrevPPG1PktNum = packetNumber;
+                if( numPacketsLost> 0)
+                    Log.e(TAG, "Packet Lost (PPG1): " + numPacketsLost);
                 broadcastUpdate(ONE_CHANNEL_PPG, ecgData);
                 break;
             case PPG_TWO_CHANNEL:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG2PktNum);
+                mPrevPPG2PktNum = packetNumber;
+                if( numPacketsLost> 0)
+                    Log.e(TAG, "Packet Lost (PPG2): " + numPacketsLost);
                 broadcastUpdate(TWO_CHANNEL_PPG, ecgData);
                 break;
             case ACCELERATION_THREE_CHANNEL:
-
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevACCELPktNum);
+                mPrevACCELPktNum = packetNumber;
+                if( numPacketsLost> 0)
+                    Log.e(TAG, "Packet Lost (ACCELERATION): " + numPacketsLost);
                 broadcastUpdate(THREE_CHANNEL_ACCELERATION, ecgData);
                 break;
             case IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
+                mPrevIMPEDPktNum = packetNumber;
+                if( numPacketsLost> 0)
+                    Log.e(TAG, "Packet Lost (IMPEDANCE PNEUMOGRAPHY): " + numPacketsLost);
                 broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, ecgData);
                 break;
             default:
