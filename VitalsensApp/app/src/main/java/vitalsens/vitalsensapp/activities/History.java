@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
@@ -35,21 +36,25 @@ public class History extends Activity {
 
     private static final String TAG = History.class.getSimpleName();
 
-    private ArrayAdapter<String> mListAdapter;
-    private String mDirName;
-
-    private int mPosition;
-
     private static final String SERVER_ERROR = "No Response From Server!";
     private static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
     private static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
     private static final String SERVER_URL = "http://52.18.112.240:3000/records";
+
     private TextView accessStatus;
+    private ArrayAdapter<String> mListAdapter;
+    private String mDirName;
+    private int mPosition;
+    private Handler mHandler;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
+
+        mHandler = new Handler();
 
         accessStatus = (TextView)findViewById(R.id.server_access_status);
         ListView mHistView = (ListView) findViewById(R.id.historyListView);
@@ -158,12 +163,12 @@ public class History extends Activity {
     }
 
     private Record getRecord(int pos){
-        if(isExternalStorageReadable()) {
+        if(!isExternalStorageReadable()) {
             showMessage("Cannot access external storage");
             return null;
         }
         String path = getFilePath(pos);
-        if(path.endsWith(("txt"))) {
+        if(!path.endsWith(("txt"))) {
             showMessage("Invalid file format");
             return null;
         }
@@ -296,8 +301,13 @@ public class History extends Activity {
         return (networkInfo != null && networkInfo.isConnected());
     }
 
-    private void showMessage(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    private void showMessage(final String msg) {
+        Runnable showMessage = new Runnable() {
+            public void run() {
+                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        };
+        mHandler.post(showMessage);
     }
 }
 
