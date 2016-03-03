@@ -470,7 +470,6 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.TWO_CHANNEL_PPG);
         intentFilter.addAction(BLEService.THREE_CHANNEL_ACCELERATION);
         intentFilter.addAction(BLEService.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY);
-        intentFilter.addAction(BLEService.OTHER_DATA_TYPES);
         return intentFilter;
     }
 

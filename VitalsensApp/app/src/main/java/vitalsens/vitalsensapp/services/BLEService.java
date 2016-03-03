@@ -79,8 +79,6 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.THREE_CHANNEL_ACCELERATION";
     public static final String ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY =
             "vitalsens.vitalsensapp.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY";
-    public static final String OTHER_DATA_TYPES =
-            "vitalsens.vitalsensapp.OTHER_DATA_TYPES";
 
 
     private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
@@ -315,10 +313,13 @@ public class BLEService extends Service {
     private void processRXData(byte[] data){
         if(data.length < 20){
             String sample = "";
-            for(int i:data)
+            for(int i:data) {
+                sample += "[";
                 sample += (i & 0xFF);
+                sample += "]";
+            }
 
-            broadcastUpdate(OTHER_DATA_TYPES, sample);
+            Log.d(TAG, "Packet data: " + sample);
 
             return;
         }
