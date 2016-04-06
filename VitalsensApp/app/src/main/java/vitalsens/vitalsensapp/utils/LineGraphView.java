@@ -33,7 +33,8 @@ public class LineGraphView {
         //add single line chart mSeries
         mDataset.addSeries(mSeries);
         //set line chart color to blue
-        mRenderer.setColor(Color.BLUE);
+        mRenderer.setColor(Color.RED);
+        mRenderer.setLineWidth(2.0f);
         //set line chart style to square points
         //mRenderer.setPointStyle(PointStyle.SQUARE);
         mRenderer.setFillPoints(true);
@@ -41,17 +42,17 @@ public class LineGraphView {
         final XYMultipleSeriesRenderer renderer = mMultiRenderer;
         //set whole graph background color to transparent color
         renderer.setBackgroundColor(Color.TRANSPARENT);
-        renderer.setMargins(new int[] { 50, 65, 40, 5 }); // top, left, bottom, right
+        renderer.setMargins(new int[]{50, 65, 40, 5}); // top, left, bottom, right
         renderer.setMarginsColor(Color.argb(0x00, 0x01, 0x01, 0x01));
-        renderer.setAxesColor(Color.BLACK);
+        renderer.setAxesColor(Color.BLUE);
         renderer.setAxisTitleTextSize(24);
-        renderer.setShowGrid(true);
-        renderer.setGridColor(Color.LTGRAY);
-        renderer.setLabelsColor(Color.BLACK);
-        renderer.setYLabelsColor(0, Color.DKGRAY);
+        //renderer.setShowGrid(true);
+        renderer.setGridColor(Color.GREEN);
+        renderer.setLabelsColor(Color.BLUE);
+        renderer.setYLabelsColor(0, Color.BLUE);
         renderer.setYLabelsAlign(Align.RIGHT);
         renderer.setYLabelsPadding(4.0f);
-        renderer.setXLabelsColor(Color.DKGRAY);
+        renderer.setXLabelsColor(Color.BLUE);
         renderer.setLabelsTextSize(20);
         renderer.setLegendTextSize(20);
         renderer.setInScroll(true);
