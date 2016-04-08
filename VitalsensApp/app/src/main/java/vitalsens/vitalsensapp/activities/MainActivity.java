@@ -180,8 +180,8 @@ public class MainActivity extends Activity {
                     if(mRecording)
                         stopRecordingData();
                     else {
-                        setGraphLayout(MAIN_LAYOUT);
-                        enableSensorViewControlPad(false);
+                        //setGraphLayout(MAIN_LAYOUT);
+                        //enableSensorViewControlPad(false);
                         for(Sensor sensor : mConnectedSensors) {
                             mRecords.add(new Record(sensor.getName(),
                                     new SimpleDateFormat("yyMMddHHmmss",
