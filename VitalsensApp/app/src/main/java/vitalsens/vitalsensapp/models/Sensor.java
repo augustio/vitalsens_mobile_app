@@ -13,6 +13,7 @@ public class Sensor {
 
     public static final String ECG1 = "Vitalsens_ECG1";
     public static final String ECG3 = "HRTZ1000";
+    public static final String ECG3_ACCEL = "HRTZ1000_ECG3_ACCEL";
     public static final String PPG1 = "Vitalsens_PPG1";
     public static final String PPG2 = "Vitalsens_PPG2";
     public static final String ACCEL = "Vitalsens_ACCEL";

@@ -180,13 +180,14 @@ public class MainActivity extends Activity {
                     if(mRecording)
                         stopRecordingData();
                     else {
-                        //setGraphLayout(MAIN_LAYOUT);
-                        //enableSensorViewControlPad(false);
                         for(Sensor sensor : mConnectedSensors) {
                             mRecords.add(new Record(sensor.getName(),
                                     new SimpleDateFormat("yyMMddHHmmss",
                                             Locale.US).format(new Date())));
                         }
+                        mRecords.add(new Record(Sensor.ECG3_ACCEL,
+                                new SimpleDateFormat("yyMMddHHmmss",
+                                        Locale.US).format(new Date())));
                         mRecording = true;
                         btnRecord.setText("Stop");
                         mRecordTimer.run();
@@ -692,41 +693,59 @@ public class MainActivity extends Activity {
                         }.getType();
                         switch (record.getSensor()) {
                             case Sensor.ECG1:
-                                record.setData(new Gson().toJson(mECG1Collection, type));
-                                mECG1Collection.clear();
+                                if(!mECG1Collection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mECG1Collection, type));
+                                    mECG1Collection.clear();
+                                }
                                 break;
                             case Sensor.ECG3:
-                                record.setData(new Gson().toJson(mECG3Collection, type));
-                                mECG3Collection.clear();
+                                if(!mECG3Collection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mECG3Collection, type));
+                                    mECG3Collection.clear();
+                                }
                                 break;
                             case Sensor.PPG1:
-                                record.setData(new Gson().toJson(mPPG1Collection, type));
-                                mPPG1Collection.clear();
+                                if(!mPPG1Collection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mPPG1Collection, type));
+                                    mPPG1Collection.clear();
+                                }
                                 break;
                             case Sensor.PPG2:
-                                record.setData(new Gson().toJson(mPPG2Collection, type));
-                                mPPG2Collection.clear();
+                                if(!mPPG2Collection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mPPG2Collection, type));
+                                    mPPG2Collection.clear();
+                                }
                                 break;
                             case Sensor.ACCEL:
-                                record.setData(new Gson().toJson(mACCELCollection, type));
-                                mACCELCollection.clear();
+                            case Sensor.ECG3_ACCEL:
+                                if(!mACCELCollection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mACCELCollection, type));
+                                    mACCELCollection.clear();
+                                }
                                 break;
                             case Sensor.IMPEDANCE:
-                                record.setData(new Gson().toJson(mIMPEDANCECollection, type));
-                                mIMPEDANCECollection.clear();
-                                break;
+                                if(!mIMPEDANCECollection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mIMPEDANCECollection, type));
+                                    mIMPEDANCECollection.clear();
+                                    break;
+                                }
                             default:
                                 break;
                         }
-                        try {
-                            FileWriter fw = new FileWriter(file, true);
-                            fw.append(record.toJson());
-                            fw.flush();
-                            fw.close();
-                            showMessage(record.getSensor() + " Record Saved");
-                        } catch (IOException e) {
-                            Log.e(TAG, e.toString());
-                            showMessage("Problem writing to Storage");
+                        if(!record.getData().equals("")) {
+                            try {
+                                FileWriter fw = new FileWriter(file, true);
+                                fw.append(record.toJson());
+                                fw.flush();
+                                fw.close();
+                                showMessage(record.getSensor() + " Record Saved");
+                            } catch (IOException e) {
+                                Log.e(TAG, e.toString());
+                                showMessage("Problem writing to Storage");
+                            }
+                        }
+                        else{
+                            showMessage("No " + record.getSensor() + " data recorded");
                         }
                     }
                     mRecords.clear();
