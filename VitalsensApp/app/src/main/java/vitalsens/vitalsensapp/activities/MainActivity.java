@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
     private static final int THRE_CHANNELS_LAYOUT = 3;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    private static final int MAX_DATA_RECORDING_TIME_IN_MINS = 120;
+    private static final int MAX_DATA_RECORDING_TIME_IN_MINS = 600;
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
     private static final int ONE_SECOND_IN_MILLIS = 1000;
