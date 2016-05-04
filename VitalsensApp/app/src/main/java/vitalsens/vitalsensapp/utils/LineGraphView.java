@@ -9,6 +9,7 @@ import org.achartengine.renderer.XYSeriesRenderer;
 
 import android.content.Context;
 import android.graphics.Color;
+
 public class LineGraphView {
     private TimeSeries mSeries;
     private XYSeriesRenderer mRenderer = new XYSeriesRenderer();
@@ -26,14 +27,14 @@ public class LineGraphView {
         renderer.setBackgroundColor(Color.TRANSPARENT);
         renderer.setMargins(new int[]{50, 65, 40, 5});
         renderer.setMarginsColor(Color.argb(0x00, 0x01, 0x01, 0x01));
+        renderer.setAxesColor(Color.RED);
         renderer.setShowLabels(false);
-        renderer.setShowAxes(true);
-        renderer.setXAxisColor(Color.RED);
-        renderer.setYAxisColor(Color.RED);
         renderer.setLegendTextSize(20);
         renderer.setInScroll(true);
         renderer.setPanEnabled(false, false);
         renderer.setZoomEnabled(false, false);
+        renderer.setXTitle("    Time");
+        renderer.setYTitle("    Voltage");
         renderer.addSeriesRenderer(mRenderer);
     }
 
@@ -41,8 +42,12 @@ public class LineGraphView {
         return ChartFactory.getLineChartView(context, mDataset, mMultiRenderer);
     }
 
-    public void addValue(long x, long y) {
-        mSeries.add(x, y);
+    public void addValue(int index, int x, int y){
+        mSeries.add(index, x, y);
+    }
+
+    public int getItemCount(){
+        return mSeries.getItemCount();
     }
 
     public void removeValue(int index){
@@ -51,11 +56,6 @@ public class LineGraphView {
 
     public void clearGraph() {
         mSeries.clear();
-    }
-
-    public void setXYTitle(String x, String y){
-        mMultiRenderer.setXTitle(x);
-        mMultiRenderer.setYTitle(y);
     }
 
 }

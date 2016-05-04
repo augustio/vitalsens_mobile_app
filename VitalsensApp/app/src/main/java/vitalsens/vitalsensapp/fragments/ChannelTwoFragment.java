@@ -13,12 +13,12 @@ import vitalsens.vitalsensapp.utils.LineGraphView;
 
 public class ChannelTwoFragment extends Fragment {
 
-    private static final int X_RANGE = 300;
+    private static final int X_RANGE = 500;
 
     private LineGraphView mLineGraph;
     private GraphicalView mGraphView;
 
-    private long xValueCounter;
+    private int xValueCounter;
 
     public ChannelTwoFragment() {
     }
@@ -42,10 +42,12 @@ public class ChannelTwoFragment extends Fragment {
     public void updateGraph(int value) {
         if(mGraphView != null) {
             if(xValueCounter > X_RANGE){
-                mLineGraph.removeValue(0);
-                xValueCounter--;
+                xValueCounter = 0;
             }
-            mLineGraph.addValue(xValueCounter, value);
+            if(mLineGraph.getItemCount() > xValueCounter){
+                mLineGraph.removeValue(xValueCounter);
+            }
+            mLineGraph.addValue(xValueCounter, xValueCounter, value);
             xValueCounter++;
             mGraphView.repaint();
         }
