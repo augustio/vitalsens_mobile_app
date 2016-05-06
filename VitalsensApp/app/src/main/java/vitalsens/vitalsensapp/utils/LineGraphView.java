@@ -9,6 +9,7 @@ import org.achartengine.renderer.XYSeriesRenderer;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Paint;
 
 public class LineGraphView {
     private TimeSeries mSeries;
@@ -28,13 +29,16 @@ public class LineGraphView {
         renderer.setMargins(new int[]{50, 65, 40, 5});
         renderer.setMarginsColor(Color.argb(0x00, 0x01, 0x01, 0x01));
         renderer.setAxesColor(Color.RED);
-        renderer.setShowLabels(false);
+        renderer.setLabelsColor(Color.BLACK);
+        renderer.setYLabelsColor(0, Color.DKGRAY);
+        renderer.setYLabelsAlign(Paint.Align.RIGHT);
+        renderer.setYLabelsPadding(4.0f);
+        renderer.setXLabelsColor(Color.DKGRAY);
+        renderer.setLabelsTextSize(20);
         renderer.setLegendTextSize(20);
         renderer.setInScroll(true);
         renderer.setPanEnabled(false, false);
         renderer.setZoomEnabled(false, false);
-        renderer.setXTitle("    Time");
-        renderer.setYTitle("    Voltage");
         renderer.addSeriesRenderer(mRenderer);
     }
 
