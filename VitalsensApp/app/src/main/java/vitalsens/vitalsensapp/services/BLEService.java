@@ -328,13 +328,13 @@ public class BLEService extends Service {
         int packetNumber = (data[1] & 0XFF);
         int numPacketsLost;
 
-        int ecgData[] = new int[14];
-        ecgData[0] = dataId;
-        ecgData[1] = packetNumber;
+        int sensorData[] = new int[14];
+        sensorData[0] = dataId;
+        sensorData[1] = packetNumber;
 
-        for(int i=2, j=2; i < ecgData.length; i+=2, j+=3){
-            ecgData[i] = (data[j] & 0XFF) << 4 | (data[j+1] & 0XF0) >> 4;
-            ecgData[i+1] = (data[j+1] & 0X0F) << 8 | (data[j+2] & 0XFF);
+        for(int i=2, j=2; i < sensorData.length; i+=2, j+=3){
+            sensorData[i] = (data[j] & 0XFF) << 4 | (data[j+1] & 0XF0) >> 4;
+            sensorData[i+1] = (data[j+1] & 0X0F) << 8 | (data[j+2] & 0XFF);
         }
 
         switch (dataId){
@@ -343,42 +343,50 @@ public class BLEService extends Service {
                 mPrevECG1PktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (ECG1): " + numPacketsLost);
-                broadcastUpdate(ONE_CHANNEL_ECG, ecgData);
+                broadcastUpdate(ONE_CHANNEL_ECG, sensorData);
                 break;
             case ECG_THREE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG3PktNum);
                 mPrevECG3PktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (ECG3): " + numPacketsLost);
-                broadcastUpdate(THREE_CHANNEL_ECG, ecgData);
+                broadcastUpdate(THREE_CHANNEL_ECG, sensorData);
                 break;
             case PPG_ONE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG1PktNum);
                 mPrevPPG1PktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (PPG1): " + numPacketsLost);
-                broadcastUpdate(ONE_CHANNEL_PPG, ecgData);
+                broadcastUpdate(ONE_CHANNEL_PPG, sensorData);
                 break;
             case PPG_TWO_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG2PktNum);
                 mPrevPPG2PktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (PPG2): " + numPacketsLost);
-                broadcastUpdate(TWO_CHANNEL_PPG, ecgData);
+                broadcastUpdate(TWO_CHANNEL_PPG, sensorData);
                 break;
             case ACCELERATION_THREE_CHANNEL:
+                /*Get negative acceleration values. Max unsigned value = 4096.
+                * Max positive signed value = 2047*/
+                for(int i = 0; i < 14; i++){
+                    int value = sensorData[i];
+                    if(value > 2047) {
+                        sensorData[i] = value - 4096;
+                    }
+                }
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevACCELPktNum);
                 mPrevACCELPktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (ACCELERATION): " + numPacketsLost);
-                broadcastUpdate(THREE_CHANNEL_ACCELERATION, ecgData);
+                broadcastUpdate(THREE_CHANNEL_ACCELERATION, sensorData);
                 break;
             case IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
                 mPrevIMPEDPktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (IMPEDANCE PNEUMOGRAPHY): " + numPacketsLost);
-                broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, ecgData);
+                broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, sensorData);
                 break;
             default:
                 break;
