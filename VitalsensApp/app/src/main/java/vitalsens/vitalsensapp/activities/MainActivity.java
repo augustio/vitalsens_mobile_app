@@ -18,6 +18,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -261,6 +263,65 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+            getMenuInflater().inflate(R.menu.graph_menu, menu);
+            return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.samples_250) {
+            mChannelOne.clearGraph();
+            mChannelTwo.clearGraph();
+            mChannelThree.clearGraph();
+            mChannelOne.setxRange(250);
+            mChannelTwo.setxRange(250);
+            mChannelThree.setxRange(250);
+            return true;
+        }
+        if (id == R.id.samples_500) {
+            mChannelOne.clearGraph();
+            mChannelTwo.clearGraph();
+            mChannelThree.clearGraph();
+            mChannelOne.setxRange(500);
+            mChannelTwo.setxRange(500);
+            mChannelThree.setxRange(500);
+            return true;
+        }
+        if (id == R.id.samples_1000) {
+            mChannelOne.clearGraph();
+            mChannelTwo.clearGraph();
+            mChannelThree.clearGraph();
+            mChannelOne.setxRange(1000);
+            mChannelTwo.setxRange(1000);
+            mChannelThree.setxRange(1000);
+            return true;
+        }
+        if (id == R.id.samples_2500) {
+            mChannelOne.clearGraph();
+            mChannelTwo.clearGraph();
+            mChannelThree.clearGraph();
+            mChannelOne.setxRange(2500);
+            mChannelTwo.setxRange(2500);
+            mChannelThree.setxRange(2500);
+            return true;
+        }
+        if (id == R.id.samples_5000) {
+            mChannelOne.clearGraph();
+            mChannelTwo.clearGraph();
+            mChannelThree.clearGraph();
+            mChannelOne.setxRange(5000);
+            mChannelTwo.setxRange(5000);
+            mChannelThree.setxRange(5000);
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {

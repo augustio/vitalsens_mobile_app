@@ -1,0 +1,19 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="vitalsens.vitalsensapp.activities">
+    <item android:id="@+id/samples_250"
+        android:title="@string/samples_250"
+        android:orderInCategory="100" android:showAsAction="never"  />
+    <item android:id="@+id/samples_500"
+        android:title="@string/samples_500"
+        android:orderInCategory="100" android:showAsAction="never"  />
+    <item android:id="@+id/samples_1000"
+        android:title="@string/samples_1000"
+        android:orderInCategory="100" android:showAsAction="never"  />
+    <item android:id="@+id/samples_2500"
+        android:title="@string/samples_2500"
+        android:orderInCategory="100" android:showAsAction="never"  />
+    <item android:id="@+id/samples_5000"
+        android:title="@string/samples_5000"
+        android:orderInCategory="100" android:showAsAction="never"  />
+</menu>

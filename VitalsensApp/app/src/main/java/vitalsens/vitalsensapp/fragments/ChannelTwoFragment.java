@@ -13,7 +13,7 @@ import vitalsens.vitalsensapp.utils.LineGraphView;
 
 public class ChannelTwoFragment extends Fragment {
 
-    private static final int X_RANGE = 500;
+    private int xRange;
 
     private LineGraphView mLineGraph;
     private GraphicalView mGraphView;
@@ -28,6 +28,7 @@ public class ChannelTwoFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         xValueCounter = 0;
+        xRange = 250;
     }
 
     @Override
@@ -41,7 +42,7 @@ public class ChannelTwoFragment extends Fragment {
 
     public void updateGraph(int value) {
         if(mGraphView != null) {
-            if(xValueCounter > X_RANGE){
+            if(xValueCounter > xRange){
                 xValueCounter = 0;
             }
             if(mLineGraph.getItemCount() > xValueCounter){
@@ -59,6 +60,14 @@ public class ChannelTwoFragment extends Fragment {
             mLineGraph.clearGraph();
             xValueCounter = 0;
         }
+    }
+
+    public void setxRange(int xRange){
+        this.xRange = xRange;
+    }
+
+    public int getXRange(){
+        return xRange;
     }
 
 }
