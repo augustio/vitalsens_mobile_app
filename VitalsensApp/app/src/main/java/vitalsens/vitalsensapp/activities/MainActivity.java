@@ -182,14 +182,13 @@ public class MainActivity extends Activity {
                     if(mRecording)
                         stopRecordingData();
                     else {
+                        String date = new SimpleDateFormat("yyMMddHHmmss",
+                                Locale.US).format(new Date());
                         for(Sensor sensor : mConnectedSensors) {
-                            mRecords.add(new Record(sensor.getName(),
-                                    new SimpleDateFormat("yyMMddHHmmss",
-                                            Locale.US).format(new Date())));
+                            if(sensor.getName().equals(Sensor.ECG3))
+                                mRecords.add(new Record(sensor.getName(), date));
+                            mRecords.add(new Record(sensor.getName(), date));
                         }
-                        mRecords.add(new Record(Sensor.ECG3_ACCEL,
-                                new SimpleDateFormat("yyMMddHHmmss",
-                                        Locale.US).format(new Date())));
                         mRecording = true;
                         btnRecord.setText("Stop");
                         mRecordTimer.run();
@@ -748,51 +747,63 @@ public class MainActivity extends Activity {
                     File file;
                     for(int i = 0; i<mRecords.size(); i++) {
                         Record record = mRecords.get(i);
-                        String fileName = record.getSensor() + "_" + record.getTimeStamp() + ".txt";
-                        file = new File(dir, fileName);
                         Type type = new TypeToken<ArrayList<DataPacket>>() {
                         }.getType();
                         switch (record.getSensor()) {
                             case Sensor.ECG1:
                                 if(!mECG1Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mECG1Collection, type));
+                                    record.setDataType(0);
                                     mECG1Collection.clear();
                                 }
                                 break;
                             case Sensor.ECG3:
                                 if(!mECG3Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mECG3Collection, type));
+                                    record.setDataType(1);
                                     mECG3Collection.clear();
+                                }
+                                else if(!mACCELCollection.isEmpty()) {
+                                    record.setData(new Gson().toJson(mACCELCollection, type));
+                                    record.setDataType(4);
+                                    mACCELCollection.clear();
                                 }
                                 break;
                             case Sensor.PPG1:
                                 if(!mPPG1Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mPPG1Collection, type));
+                                    record.setDataType(2);
                                     mPPG1Collection.clear();
                                 }
                                 break;
                             case Sensor.PPG2:
                                 if(!mPPG2Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mPPG2Collection, type));
+                                    record.setDataType(3);
                                     mPPG2Collection.clear();
                                 }
                                 break;
                             case Sensor.ACCEL:
-                            case Sensor.ECG3_ACCEL:
                                 if(!mACCELCollection.isEmpty()) {
                                     record.setData(new Gson().toJson(mACCELCollection, type));
+                                    record.setDataType(4);
                                     mACCELCollection.clear();
                                 }
                                 break;
                             case Sensor.IMPEDANCE:
                                 if(!mIMPEDANCECollection.isEmpty()) {
                                     record.setData(new Gson().toJson(mIMPEDANCECollection, type));
+                                    record.setDataType(5);
                                     mIMPEDANCECollection.clear();
                                     break;
                                 }
                             default:
                                 break;
                         }
+                        String fileName = record.getSensor() + "_" +
+                                resolveDataType(record.getDataType()) + "_" +
+                                record.getTimeStamp() + ".txt";
+                        file = new File(dir, fileName);
                         if(!record.getData().equals("")) {
                             try {
                                 FileWriter fw = new FileWriter(file, true);
@@ -868,6 +879,33 @@ public class MainActivity extends Activity {
             refreshTimer();
             enableSensorViewControlPad(true);
         }
+    }
+
+    private String resolveDataType(int intValue){
+        String stringValue;
+        switch (intValue){
+            case 0:
+                stringValue = "ECG1";
+                break;
+            case 1:
+                stringValue = "ECG3";
+                break;
+            case 2:
+                stringValue = "PPG1";
+                break;
+            case 3:
+                stringValue = "PPG2";
+                break;
+            case 4:
+                stringValue = "ACCEL";
+                break;
+            case 5:
+                stringValue = "IMPEDANCE";
+                break;
+            default:
+                stringValue = "";
+        }
+        return stringValue;
     }
 
     private void showMessage(final String msg) {

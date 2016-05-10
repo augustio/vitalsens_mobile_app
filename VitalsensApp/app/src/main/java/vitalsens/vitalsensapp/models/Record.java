@@ -6,6 +6,7 @@ public class Record {
     private String sensor;
     private String timeStamp;
     private String data;
+    private int dataType;
 
     public Record(){
     }
@@ -14,6 +15,7 @@ public class Record {
         this.sensor = sensor;
         this.timeStamp = timeStamp;
         data = "";
+        dataType = -1;
     }
 
     public String getSensor() {
@@ -40,6 +42,14 @@ public class Record {
         this.data = data;
     }
 
+    public int getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(int dataType) {
+        this.dataType = dataType;
+    }
+
     public String toJson(){
 
         Gson gson = new Gson();
@@ -52,5 +62,6 @@ public class Record {
         this.sensor = record.getSensor();
         this.timeStamp = record.getTimeStamp();
         this.data = record.getData();
+        this.dataType = record.getDataType();
     }
 }
