@@ -21,7 +21,7 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:support-v4:22.2.0'
-    compile 'com.google.code.gson:gson:2.2.4'
     compile files('libs/achartengine-1.2.0.jar')
+    compile 'com.android.support:support-v4:24.0.0-alpha2'
+    compile 'com.google.code.gson:gson:2.2.4'
 }
