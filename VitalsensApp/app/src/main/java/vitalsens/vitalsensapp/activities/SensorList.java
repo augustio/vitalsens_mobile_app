@@ -45,8 +45,6 @@ public class SensorList extends Activity {
     private static final long SCAN_PERIOD = 10000;
     private static final int MAX_SENSORS = 4;
 
-    private TextView mEmptyList;
-
     List<BluetoothDevice> mSensorList;
     private DeviceAdapter mDeviceAdapter;
     Map<String, Integer> mDevRssiValues;
@@ -97,7 +95,6 @@ public class SensorList extends Activity {
         populateList();
         btnOK = (Button) findViewById(R.id.btn_ok);
         btnOK.setEnabled(false);
-        mEmptyList = (TextView) findViewById(R.id.empty);
         Button btnScanCancel = (Button) findViewById(R.id.btn_cancel);
 
         btnOK.setOnClickListener(new View.OnClickListener() {
@@ -118,7 +115,6 @@ public class SensorList extends Activity {
             public void onClick(View v) {
 
                 if (!mScanning){
-                    mEmptyList.setVisibility(View.VISIBLE);
                     scanLeDevice(true);
                 }
                 else finish();
@@ -152,7 +148,6 @@ public class SensorList extends Activity {
                     mScanning = false;
                     mLEScanner.stopScan(mLeScanCallback);
 
-                    mEmptyList.setVisibility(View.GONE);
                     cancelButton.setText(R.string.scan);
 
                 }
@@ -202,7 +197,6 @@ public class SensorList extends Activity {
         mDevRssiValues.put(sensor.getAddress(), rssi);
         if (!sensorFound) {
             mSensorList.add(sensor);
-            mEmptyList.setVisibility(View.GONE);
 
 
 
@@ -218,13 +212,13 @@ public class SensorList extends Activity {
             String sensor = mSensorList.get(position).getAddress();
             if(!mSelectedSensors.contains(sensor) && mSelectedSensors.size() < MAX_SENSORS) {
                 mSelectedSensors.add(sensor);
-                view.setBackgroundColor(Color.BLUE);
+                view.setBackgroundResource(R.drawable.device_element_sel_bg);
                 if(!btnOK.isEnabled())
                     btnOK.setEnabled(true);
             }
             else{
                 mSelectedSensors.remove(sensor);
-                view.setBackgroundColor(Color.DKGRAY);
+                view.setBackgroundResource(R.drawable.device_element_bg);
                 if(mSelectedSensors.isEmpty() && btnOK.isEnabled())
                     btnOK.setEnabled(false);
             }

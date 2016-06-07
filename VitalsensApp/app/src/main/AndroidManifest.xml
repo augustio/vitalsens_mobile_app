@@ -28,7 +28,8 @@
             android:name=".activities.SensorList"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/title_activity_sensor_list"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.NoTitleBar" >
         </activity>
 
         <service
