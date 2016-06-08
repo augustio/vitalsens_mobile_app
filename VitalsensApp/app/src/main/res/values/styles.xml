@@ -39,6 +39,7 @@
     <color name="green">#7700FF00</color>
     <color name="yellow">#77FFFF00</color>
     <color name="blue">#770000FF</color>
+    <color name="white">#FFFFFFFF</color>
     <!-- AlertDialog text color fix thanks to Shawn Castrianni, see: http://groups.google.com/group/android-developers/browse_thread/thread/f0b34621d3a70c4b -->
     <style name="DialogLight" parent="@android:style/Theme.Dialog">
 
@@ -53,7 +54,6 @@
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">-1</item>
         <item name="android:shadowRadius">0.2</item>
-        <item name="android:textSize">16dip</item>
         <item name="android:textStyle">bold</item>
         <item name="android:background">@drawable/blue_button</item>
         <item name="android:focusable">true</item>

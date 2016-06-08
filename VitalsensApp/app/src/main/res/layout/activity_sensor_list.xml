@@ -60,17 +60,19 @@
             android:layout_height="40dp"
             android:background="@drawable/blue_button"
             android:textSize="25sp"
-            android:textColor="#FFFFFF"
-            android:text="@string/scan"/>
+            android:paddingBottom="2dp"
+            android:textColor="@color/white"
+            android:text="@string/cancel"/>
 
         <Button
-            android:id="@+id/btn_ok"
+            android:id="@+id/btn_connect"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="40dp"
             android:background="@drawable/blue_button"
             android:textSize="25sp"
-            android:textColor="#FFFFFF"
+            android:paddingBottom="2dp"
+            android:textColor="@color/white"
             android:text="@string/connect" />
 
 

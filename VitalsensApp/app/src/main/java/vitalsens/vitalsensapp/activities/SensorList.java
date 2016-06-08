@@ -54,7 +54,7 @@ public class SensorList extends Activity {
     private ArrayList<String> mSelectedSensors;
     private Handler mHandler;
     private boolean mScanning;
-    private Button btnOK;
+    private Button btnConnect;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,11 +93,11 @@ public class SensorList extends Activity {
         }
 
         populateList();
-        btnOK = (Button) findViewById(R.id.btn_ok);
-        btnOK.setEnabled(false);
+        btnConnect = (Button) findViewById(R.id.btn_connect);
+        btnConnect.setEnabled(false);
         Button btnScanCancel = (Button) findViewById(R.id.btn_cancel);
 
-        btnOK.setOnClickListener(new View.OnClickListener() {
+        btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mLEScanner.stopScan(mLeScanCallback);
@@ -213,14 +213,14 @@ public class SensorList extends Activity {
             if(!mSelectedSensors.contains(sensor) && mSelectedSensors.size() < MAX_SENSORS) {
                 mSelectedSensors.add(sensor);
                 view.setBackgroundResource(R.drawable.device_element_sel_bg);
-                if(!btnOK.isEnabled())
-                    btnOK.setEnabled(true);
+                if(!btnConnect.isEnabled())
+                    btnConnect.setEnabled(true);
             }
             else{
                 mSelectedSensors.remove(sensor);
                 view.setBackgroundResource(R.drawable.device_element_bg);
-                if(mSelectedSensors.isEmpty() && btnOK.isEnabled())
-                    btnOK.setEnabled(false);
+                if(mSelectedSensors.isEmpty() && btnConnect.isEnabled())
+                    btnConnect.setEnabled(false);
             }
         }
     };
