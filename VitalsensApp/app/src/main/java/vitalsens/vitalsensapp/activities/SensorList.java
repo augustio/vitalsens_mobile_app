@@ -16,11 +16,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
@@ -54,16 +52,19 @@ public class SensorList extends Activity {
     private ArrayList<String> mSelectedSensors;
     private Handler mHandler;
     private boolean mScanning;
-    private Button btnConnect;
+    private Button btnConnect, btnScanCancel;
+    private TextView btnBack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title_bar);
         setContentView(R.layout.activity_sensor_list);
-        android.view.WindowManager.LayoutParams layoutParams = this.getWindow().getAttributes();
-        layoutParams.gravity= Gravity.TOP;
-        layoutParams.y = 200;
+
+        btnConnect = (Button) findViewById(R.id.btn_connect);
+        btnConnect.setEnabled(false);
+        btnScanCancel = (Button) findViewById(R.id.btn_cancel);
+        btnBack = (TextView) findViewById(R.id.btn_back);
+
         mHandler = new Handler();
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
@@ -93,9 +94,6 @@ public class SensorList extends Activity {
         }
 
         populateList();
-        btnConnect = (Button) findViewById(R.id.btn_connect);
-        btnConnect.setEnabled(false);
-        Button btnScanCancel = (Button) findViewById(R.id.btn_cancel);
 
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -113,11 +111,22 @@ public class SensorList extends Activity {
         btnScanCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (!mScanning){
+                    mSensorList.clear();
+                    mDeviceAdapter.notifyDataSetChanged();
                     scanLeDevice(true);
                 }
-                else finish();
+                else{
+                    scanLeDevice(false);
+                }
+            }
+        });
+
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scanLeDevice(false);
+                finish();
             }
         });
     }
@@ -135,11 +144,9 @@ public class SensorList extends Activity {
         newSensorsListView.setOnItemClickListener(mSensorClickListener);
 
         scanLeDevice(true);
-
     }
 
     private void scanLeDevice(final boolean enable) {
-        final Button cancelButton = (Button) findViewById(R.id.btn_cancel);
         if (enable) {
             // Stops scanning after a pre-defined scan period.
             mHandler.postDelayed(new Runnable() {
@@ -147,19 +154,17 @@ public class SensorList extends Activity {
                 public void run() {
                     mScanning = false;
                     mLEScanner.stopScan(mLeScanCallback);
-
-                    cancelButton.setText(R.string.scan);
-
+                    btnScanCancel.setText(R.string.scan);
                 }
             }, SCAN_PERIOD);
 
             mScanning = true;
             mLEScanner.startScan(filters, settings, mLeScanCallback);
-            cancelButton.setText(R.string.cancel);
+            btnScanCancel.setText(R.string.cancel);
         } else {
             mScanning = false;
             mLEScanner.stopScan(mLeScanCallback);
-            cancelButton.setText(R.string.scan);
+            btnScanCancel.setText(R.string.scan);
         }
     }
 
@@ -193,14 +198,9 @@ public class SensorList extends Activity {
             }
         }
 
-
         mDevRssiValues.put(sensor.getAddress(), rssi);
         if (!sensorFound) {
             mSensorList.add(sensor);
-
-
-
-
             mDeviceAdapter.notifyDataSetChanged();
         }
     }
@@ -224,6 +224,7 @@ public class SensorList extends Activity {
             }
         }
     };
+
 
     class DeviceAdapter extends BaseAdapter {
         Context context;
@@ -294,5 +295,11 @@ public class SensorList extends Activity {
             }
             return vg;
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        scanLeDevice(false);
     }
 }
