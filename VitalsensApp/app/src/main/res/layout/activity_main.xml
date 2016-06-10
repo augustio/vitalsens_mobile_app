@@ -1,192 +1,227 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:layout_width="fill_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:background="@drawable/background">
 
-    <LinearLayout
-        android:id="@+id/main_btn_layout"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-
-        <Button
-            android:id="@+id/btn_connect"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/connect"
-            android:textAllCaps="true"
-            android:textSize="16sp"/>
-        <Button
-            android:id="@+id/btn_record"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/record"
-            android:textAllCaps="true"
-            android:textSize="16sp"/>
-        <Button
-            android:id="@+id/btn_history"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/history"
-            android:textAllCaps="true"
-            android:textSize="16sp"/>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/sensor_view_ctr_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="6"
         android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/ecg1_ctr"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+        <LinearLayout
+            android:id="@+id/main_btn_layout"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="1dp"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/green_button"
-            android:text="@string/ecg1"
-            android:visibility="gone"
-            android:enabled="false"/>
-        <Button
-            android:id="@+id/ecg3_ctr"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_alignParentEnd="true">
+
+            <Button
+                android:id="@+id/btn_connect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/connect_btn_bg"
+                android:text="@string/connect"
+                android:textSize="25sp"/>
+            <Button
+                android:id="@+id/btn_history"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/history_btn_bg"
+                android:text="@string/history"
+                android:textSize="25sp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sensor_view_ctr_layout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="1dp"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/green_button"
-            android:text="@string/ecg3"
-            android:visibility="gone"
-            android:enabled="false"/>
-        <Button
-            android:id="@+id/ppg1_ctr"
-            android:layout_width="0dp"
+            android:orientation="vertical"
+            android:layout_alignParentStart="true">
+
+            <Button
+                android:id="@+id/ecg1_ctr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="1dp"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/green_button"
+                android:text="@string/ecg1"
+                android:visibility="gone"
+                android:enabled="false"/>
+            <Button
+                android:id="@+id/ecg3_ctr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="1dp"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/green_button"
+                android:text="@string/ecg3"
+                android:visibility="gone"
+                android:enabled="false"/>
+            <Button
+                android:id="@+id/ppg1_ctr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="1dp"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/green_button"
+                android:text="@string/ppg1"
+                android:visibility="gone"
+                android:enabled="false"/>
+            <Button
+                android:id="@+id/ppg2_ctr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="1dp"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/green_button"
+                android:text="@string/ppg2"
+                android:visibility="gone"
+                android:enabled="false"/>
+            <Button
+                android:id="@+id/accel_ctr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="1dp"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/green_button"
+                android:text="@string/accel"
+                android:visibility="gone"
+                android:enabled="false"/>
+            <Button
+                android:id="@+id/impedance_ctr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="1dp"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/green_button"
+                android:text="@string/imped"
+                android:visibility="gone"
+                android:enabled="false"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="7"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/channel1_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="1dp"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/green_button"
-            android:text="@string/ppg1"
-            android:visibility="gone"
-            android:enabled="false"/>
-        <Button
-            android:id="@+id/ppg2_ctr"
-            android:layout_width="0dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/channel2_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="1dp"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/green_button"
-            android:text="@string/ppg2"
-            android:visibility="gone"
-            android:enabled="false"/>
-        <Button
-            android:id="@+id/accel_ctr"
-            android:layout_width="0dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/channel3_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="1dp"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/green_button"
-            android:text="@string/accel"
-            android:visibility="gone"
-            android:enabled="false"/>
-        <Button
-            android:id="@+id/impedance_ctr"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_marginLeft="1dp"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/green_button"
-            android:text="@string/imped"
-            android:visibility="gone"
-            android:enabled="false"/>
+            android:orientation="vertical"
+            android:visibility="gone">
+        </LinearLayout>
 
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/main_container"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical" />
-
-    <LinearLayout
-        android:id="@+id/channel1_fragment"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+    <RelativeLayout
+        android:id="@+id/btn_record_layout"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center"
         android:orientation="vertical"
-        android:visibility="gone">
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/channel2_fragment"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:visibility="gone">
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/channel3_fragment"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:visibility="gone">
-    </LinearLayout>
+        android:background="@drawable/record_btn_bg">
 
-    <LinearLayout
-        android:id="@+id/footer_layout"
+        <TextView
+            android:id="@+id/timer_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:paddingTop="20dp"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/black"
+            android:textSize="25sp"/>
+
+        <TextView
+            android:id="@+id/btn_record"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="@string/record"
+            android:textSize="48sp"/>
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/connected_devices"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:gravity="center"
+        android:textColor="@color/darkgrey"
+        android:textSize="25sp"
+        android:text="@string/empty"/>
+
+    <RelativeLayout
+        android:id="@+id/footer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:orientation="horizontal"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="0dp">
+        android:background="@drawable/change_device_bg">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/green"/>
+        <TextView
+            android:id="@+id/btn_dec"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_toStartOf="@+id/cur_disp_dataType"
+            android:clickable="true"/>
 
-            <TextView
-                android:id="@+id/timer_view"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:textColor="@color/red"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
+        <TextView
+            android:id="@+id/cur_disp_dataType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:textColor="@color/white"
+            android:textSize="25sp"/>
 
-            <TextView
-                android:id="@+id/connected_sensors"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="10dp"
-                android:textColor="@color/blue"
-                android:textSize="16sp"/>
+        <TextView
+            android:id="@+id/btn_inc"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@+id/cur_disp_dataType"/>
 
-    </LinearLayout>
+    </RelativeLayout>
 
 </LinearLayout>

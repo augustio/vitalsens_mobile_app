@@ -39,5 +39,6 @@
     <string name="samples_5000">5000 Samples</string>
     <string name="logo_desc">vitalsens logo</string>
     <string name="connect_devices">Connect devices</string>
+    <string name="empty">""</string>
 
 </resources>

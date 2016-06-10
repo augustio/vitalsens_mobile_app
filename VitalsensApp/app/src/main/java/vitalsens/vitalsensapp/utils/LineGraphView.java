@@ -9,33 +9,30 @@ import org.achartengine.renderer.XYSeriesRenderer;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Paint;
 
 public class LineGraphView {
     private TimeSeries mSeries;
-    private XYSeriesRenderer mRenderer = new XYSeriesRenderer();
     private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
     private XYMultipleSeriesRenderer mMultiRenderer = new XYMultipleSeriesRenderer();
 
     public LineGraphView(String title) {
+
+        XYSeriesRenderer mRenderer = new XYSeriesRenderer();
+
         mSeries = new TimeSeries(title);
         mDataset.addSeries(mSeries);
-        mRenderer.setColor(Color.BLACK);
-        mRenderer.setLineWidth(2.0f);
+        mRenderer.setColor(Color.WHITE);
+        mRenderer.setLineWidth(3.0f);
         mRenderer.setFillPoints(true);
 
         final XYMultipleSeriesRenderer renderer = mMultiRenderer;
         renderer.setBackgroundColor(Color.TRANSPARENT);
+        renderer.setShowAxes(false);
+        renderer.setShowLabels(false);
         renderer.setMargins(new int[]{50, 65, 40, 5});
         renderer.setMarginsColor(Color.argb(0x00, 0x01, 0x01, 0x01));
-        renderer.setAxesColor(Color.RED);
-        renderer.setLabelsColor(Color.BLACK);
-        renderer.setYLabelsColor(0, Color.DKGRAY);
-        renderer.setYLabelsAlign(Paint.Align.RIGHT);
-        renderer.setYLabelsPadding(4.0f);
-        renderer.setXLabelsColor(Color.DKGRAY);
-        renderer.setLabelsTextSize(20);
-        renderer.setLegendTextSize(20);
+
+        renderer.setShowLegend(false);
         renderer.setInScroll(true);
         renderer.setPanEnabled(false, false);
         renderer.setZoomEnabled(false, false);

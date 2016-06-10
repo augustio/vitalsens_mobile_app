@@ -23,11 +23,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -42,7 +45,6 @@ import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
 import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
-import vitalsens.vitalsensapp.fragments.MainFragment;
 import vitalsens.vitalsensapp.models.DataPacket;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.models.Sensor;
@@ -64,16 +66,12 @@ public class MainActivity extends Activity {
     private static final int ONE_SECOND_IN_MILLIS = 1000;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private Button btnConnectDisconnect, btnHistory, btnRecord;
-    private TextView sensorNamesView;
-    private TextView ecgOneViewCtr, ecgThreeViewCtr;
-    private TextView ppgOneViewCtr, ppgTwoViewCtr;
-    private TextView accelViewCtr, impedanceViewCtr;
-    private LinearLayout sensorVeiwCtrlPad, mainContainer, chOne, chTwo, chThree;
+    private Button btnConnectDisconnect;
+    private TextView btnRecord, connectedDevices, curDispDataType;
+    private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Sensor> mConnectedSensors;
-    private ArrayList<View> mEnabledCtrlBtns;
     private ArrayList<Record> mRecords;
     private ArrayList<DataPacket> mECG1Collection;
     private ArrayList<DataPacket> mECG3Collection;
@@ -81,14 +79,16 @@ public class MainActivity extends Activity {
     private ArrayList<DataPacket> mPPG2Collection;
     private ArrayList<DataPacket> mACCELCollection;
     private ArrayList<DataPacket> mIMPEDANCECollection;
+    private ArrayList<String> mAvailableDataTypes;
     private int mConnectionState;
     private int mRecTimerCounter, min, sec, hr;
+    private int mNextIndex;
     private String mTimerString;
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
     private boolean mRecording;
+    private boolean mInitDataDispOn;
 
-    private MainFragment mainFrag;
     private ChannelOneFragment mChannelOne;
     private ChannelTwoFragment mChannelTwo;
     private ChannelThreeFragment mChannelThree;
@@ -106,25 +106,19 @@ public class MainActivity extends Activity {
         }
 
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
-        btnRecord = (Button) findViewById(R.id.btn_record);
-        btnHistory = (Button) findViewById(R.id.btn_history);
-        sensorNamesView = (TextView) findViewById(R.id.connected_sensors);
-        sensorNamesView.setText("No Sensors Connected");
-        sensorVeiwCtrlPad = (LinearLayout) findViewById(R.id.sensor_view_ctr_layout);
-        mainContainer = (LinearLayout) findViewById(R.id.main_container);
+        btnRecord = (TextView) findViewById(R.id.btn_record);
+        TextView btnInc = (TextView) findViewById(R.id.btn_inc);
+        TextView btnDec = (TextView) findViewById(R.id.btn_dec);
+        Button btnHistory = (Button) findViewById(R.id.btn_history);
+        curDispDataType = (TextView) findViewById(R.id.cur_disp_dataType);
+        connectedDevices = (TextView) findViewById(R.id.connected_devices);
+        RelativeLayout btnRecordLayout = (RelativeLayout)findViewById(R.id.btn_record_layout);
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
         chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
         chThree = (LinearLayout) findViewById(R.id.channel3_fragment);
-        ecgOneViewCtr = (TextView) findViewById(R.id.ecg1_ctr);
-        ecgThreeViewCtr = (TextView) findViewById(R.id.ecg3_ctr);
-        ppgOneViewCtr = (TextView) findViewById(R.id.ppg1_ctr);
-        ppgTwoViewCtr = (TextView) findViewById(R.id.ppg2_ctr);
-        accelViewCtr = (TextView) findViewById(R.id.accel_ctr);
-        impedanceViewCtr = (TextView) findViewById(R.id.impedance_ctr);
 
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
-        mEnabledCtrlBtns = new ArrayList<>();
         mRecords = new ArrayList<>();
         mECG1Collection = new ArrayList<>();
         mECG3Collection = new ArrayList<>();
@@ -132,13 +126,14 @@ public class MainActivity extends Activity {
         mPPG2Collection = new ArrayList<>();
         mACCELCollection = new ArrayList<>();
         mIMPEDANCECollection = new ArrayList<>();
+        mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
+        mInitDataDispOn = false;
 
         min = sec =  hr = 0;
         mTimerString = "";
 
-        mainFrag = new MainFragment();
         mChannelOne = new ChannelOneFragment();
         mChannelTwo = new ChannelTwoFragment();
         mChannelThree = new ChannelThreeFragment();
@@ -146,7 +141,6 @@ public class MainActivity extends Activity {
         FragmentManager fragmentManager = getFragmentManager();
 
         fragmentManager.beginTransaction()
-                .add(R.id.main_container, mainFrag, "main")
                 .add(R.id.channel1_fragment, mChannelOne, "chOne")
                 .add(R.id.channel2_fragment, mChannelTwo, "chTwo")
                 .add(R.id.channel3_fragment, mChannelThree, "chThree")
@@ -165,7 +159,6 @@ public class MainActivity extends Activity {
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
-                        sensorNamesView.setText(" ");
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
@@ -175,7 +168,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        btnRecord.setOnClickListener(new View.OnClickListener() {
+        btnRecordLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mConnectionState == BLEService.STATE_CONNECTED){
@@ -208,62 +201,41 @@ public class MainActivity extends Activity {
             }
         });
 
-        ecgOneViewCtr.setOnClickListener(new View.OnClickListener() {
+        btnInc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!mShowECGOne && mConnectionState == BLEService.STATE_CONNECTED) {
-                    setGraphLayout(ONE_CHANNEL_LAYOUT);
-                    mShowECGOne = true;
+                if(mNextIndex < (mAvailableDataTypes.size() - 1)) {
+                    mNextIndex++;
+                    displayData();
                 }
             }
         });
-        ecgThreeViewCtr.setOnClickListener(new View.OnClickListener() {
+
+        btnDec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!mShowECGThree && mConnectionState == BLEService.STATE_CONNECTED) {
-                    setGraphLayout(THRE_CHANNELS_LAYOUT);
-                    mShowECGThree = true;
+                if(mNextIndex > 0) {
+                    mNextIndex--;
+                    displayData();
                 }
             }
         });
-        ppgOneViewCtr.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mShowPPGOne && mConnectionState == BLEService.STATE_CONNECTED) {
-                    setGraphLayout(ONE_CHANNEL_LAYOUT);
-                    mShowPPGOne = true;
-                }
+
+        if (!mBluetoothAdapter.isEnabled()) {
+            Log.i(TAG, "onClick - BT not enabled yet");
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        } else {
+            if (mConnectionState == BLEService.STATE_DISCONNECTED) {
+                Intent newIntent = new Intent(MainActivity.this, SensorList.class);
+                startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
+            } else if (mConnectionState == BLEService.STATE_CONNECTED) {
+                mService.disconnect(mConnectedSensors);
             }
-        });
-        ppgTwoViewCtr.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mShowPPGTwo && mConnectionState == BLEService.STATE_CONNECTED) {
-                    setGraphLayout(TWO_CHANNELS_LAYOUT);
-                    mShowPPGTwo = true;
-                }
-            }
-        });
-        accelViewCtr.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mShowAccel && mConnectionState == BLEService.STATE_CONNECTED) {
-                    setGraphLayout(THRE_CHANNELS_LAYOUT);
-                    mShowAccel = true;
-                }
-            }
-        });
-        impedanceViewCtr.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mShowImpedance && mConnectionState == BLEService.STATE_CONNECTED) {
-                    setGraphLayout(ONE_CHANNEL_LAYOUT);
-                    mShowImpedance = true;
-                }
-            }
-        });
+        }
     }
 
+    /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
             getMenuInflater().inflate(R.menu.graph_menu, menu);
@@ -322,6 +294,7 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
+    */
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder rawBinder) {
@@ -385,7 +358,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ecgOneViewCtr);
+                            if(!mAvailableDataTypes.contains(Sensor.ECG_ONE_DATA)) {
+                                mAvailableDataTypes.add(Sensor.ECG_ONE_DATA);
+                                if(!mInitDataDispOn){
+                                    mInitDataDispOn = true;
+                                    displayData();
+                                }
+                            }
                             if(mRecording)
                                 mECG1Collection.add(new DataPacket(samples));
                             if (mShowECGOne) {
@@ -406,7 +385,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ecgThreeViewCtr);
+                            if(!mAvailableDataTypes.contains(Sensor.ECG_THREE_DATA)) {
+                                mAvailableDataTypes.add(Sensor.ECG_THREE_DATA);
+                                if(!mInitDataDispOn){
+                                    mInitDataDispOn = true;
+                                    displayData();
+                                }
+                            }
                             if(mRecording)
                                 mECG3Collection.add(new DataPacket(samples));
                             if (mShowECGThree) {
@@ -431,7 +416,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ppgOneViewCtr);
+                            if(!mAvailableDataTypes.contains(Sensor.PPG_ONE_DATA)) {
+                                mAvailableDataTypes.add(Sensor.PPG_ONE_DATA);
+                                if(!mInitDataDispOn){
+                                    mInitDataDispOn = true;
+                                    displayData();
+                                }
+                            }
                             if(mRecording)
                                 mPPG1Collection.add(new DataPacket(samples));
                             if (mShowPPGOne) {
@@ -452,7 +443,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(ppgTwoViewCtr);
+                            if(!mAvailableDataTypes.contains(Sensor.PPG_TWO_DATA)) {
+                                mAvailableDataTypes.add(Sensor.PPG_TWO_DATA);
+                                if(!mInitDataDispOn){
+                                    mInitDataDispOn = true;
+                                    displayData();
+                                }
+                            }
                             if(mRecording)
                                 mPPG2Collection.add(new DataPacket(samples));
                             if (mShowPPGTwo) {
@@ -475,7 +472,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(accelViewCtr);
+                            if(!mAvailableDataTypes.contains(Sensor.ACCEL_DATA)) {
+                                mAvailableDataTypes.add(Sensor.ACCEL_DATA);
+                                if(!mInitDataDispOn){
+                                    mInitDataDispOn = true;
+                                    displayData();
+                                }
+                            }
                             if(mRecording)
                                 mACCELCollection.add(new DataPacket(samples));
                             if (mShowAccel) {
@@ -500,7 +503,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            enableControlButton(impedanceViewCtr);
+                            if(!mAvailableDataTypes.contains(Sensor.IMPEDANCE_DATA)) {
+                                mAvailableDataTypes.add(Sensor.IMPEDANCE_DATA);
+                                if(!mInitDataDispOn){
+                                    mInitDataDispOn = true;
+                                    displayData();
+                                }
+                            }
                             if(mRecording)
                                 mIMPEDANCECollection.add(new DataPacket(samples));
                             if (mShowImpedance) {
@@ -648,7 +657,6 @@ public class MainActivity extends Activity {
         clearGraphLayout();
         switch (type) {
             case MAIN_LAYOUT:
-                mainContainer.setVisibility(View.VISIBLE);
                 break;
             case ONE_CHANNEL_LAYOUT:
                 chOne.setVisibility(View.VISIBLE);
@@ -673,65 +681,82 @@ public class MainActivity extends Activity {
         chOne.setVisibility(View.GONE);
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
-        mainContainer.setVisibility(View.GONE);
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo
                 = mShowAccel = mShowImpedance = false;
+        mInitDataDispOn = false;
     }
 
-    private void enableSensorViewControlPad(Boolean enable){
-        if(enable) {
-            sensorVeiwCtrlPad.setEnabled(true);
-            sensorVeiwCtrlPad.setVisibility(View.VISIBLE);
-        }else{
-            sensorVeiwCtrlPad.setEnabled(false);
-            sensorVeiwCtrlPad.setVisibility(View.GONE);
+    private void displayData(){
+
+        String dataType = mAvailableDataTypes.get(mNextIndex);
+
+        switch (dataType){
+            case Sensor.ECG_ONE_DATA:
+                curDispDataType.setText(Sensor.ECG_ONE_DATA);
+                setGraphLayout(ONE_CHANNEL_LAYOUT);
+                mShowECGOne = true;
+                break;
+            case Sensor.ECG_THREE_DATA:
+                curDispDataType.setText(Sensor.ECG_THREE_DATA);
+                setGraphLayout(THRE_CHANNELS_LAYOUT);
+                mShowECGThree = true;
+                break;
+            case Sensor.PPG_ONE_DATA:
+                curDispDataType.setText(Sensor.PPG_ONE_DATA);
+                setGraphLayout(ONE_CHANNEL_LAYOUT);
+                mShowPPGOne = true;
+                break;
+            case Sensor.PPG_TWO_DATA:
+                curDispDataType.setText(Sensor.PPG_TWO_DATA);
+                setGraphLayout(TWO_CHANNELS_LAYOUT);
+                mShowPPGTwo = true;
+                break;
+            case Sensor.ACCEL_DATA:
+                curDispDataType.setText(Sensor.ACCEL_DATA);
+                setGraphLayout(THRE_CHANNELS_LAYOUT);
+                mShowAccel = true;
+                break;
+            case Sensor.IMPEDANCE_DATA:
+                curDispDataType.setText(Sensor.IMPEDANCE_DATA);
+                setGraphLayout(ONE_CHANNEL_LAYOUT);
+                mShowImpedance = true;
+                break;
+            default:
+                break;
         }
     }
 
-    private void enableControlButton(View v) {
-        if (v != null && !v.isEnabled()) {
-            v.setEnabled(true);
-            v.setVisibility(View.VISIBLE);
-
-            if(!mEnabledCtrlBtns.contains(v))
-                mEnabledCtrlBtns.add(v);
-        }
-    }
-
-    private void disableControlButton() {
-        for(View v : mEnabledCtrlBtns) {
-            if (v != null) {
-                v.setEnabled(false);
-                v.setVisibility(View.GONE);
-            }
-        }
-        mEnabledCtrlBtns.clear();
-    }
 
     private void handleGattConnectionEvent(String sensorStr) {
         Sensor sensor = new Sensor();
+        String connectedDevicesStr = connectedDevices.getText().toString();
         sensor.fromJson(sensorStr);
         Log.d(TAG, "Connected to" + sensor.getName() +
                 " : " + sensor.getAddress());
         mConnectedSensors.add(sensor);
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText("Disconnect");
-        sensorNamesView.setText(sensorNamesView.getText()+"  "+sensor.getName());
+        if(connectedDevicesStr.equals(""))
+            connectedDevices.setText(sensor.getName());
+        else
+            connectedDevices.setText(connectedDevicesStr + " " + sensor.getName());
     }
 
     private void handleGattDisconnectionEvent(){
-        disableControlButton();
         mConnectedSensors.clear();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         btnConnectDisconnect.setText("Connect");
-        sensorNamesView.setText("No Sensors Connected");
+        curDispDataType.setText("");
+        connectedDevices.setText("");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
-        mainContainer.setVisibility(View.VISIBLE);
-        setGraphLayout(MAIN_LAYOUT);
+        mNextIndex = 0;
+        mAvailableDataTypes.clear();
+        mInitDataDispOn = false;
+        clearGraphLayout();
         if(mRecording)
             stopRecordingData();
     }
@@ -861,7 +886,7 @@ public class MainActivity extends Activity {
     private void refreshTimer(){
         mRecTimerCounter = 1;
         hr = min = sec = 0;
-        ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.red));
+        ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.black));
     }
 
     private void updateTimer(){
@@ -877,7 +902,6 @@ public class MainActivity extends Activity {
             mHandler.removeCallbacks(mRecordTimer);
             ((TextView) findViewById(R.id.timer_view)).setText("");
             refreshTimer();
-            enableSensorViewControlPad(true);
         }
     }
 
@@ -885,22 +909,22 @@ public class MainActivity extends Activity {
         String stringValue;
         switch (intValue){
             case 0:
-                stringValue = "ECG1";
+                stringValue = Sensor.ECG_ONE_DATA;
                 break;
             case 1:
-                stringValue = "ECG3";
+                stringValue = Sensor.ECG_THREE_DATA;
                 break;
             case 2:
-                stringValue = "PPG1";
+                stringValue = Sensor.PPG_ONE_DATA;
                 break;
             case 3:
-                stringValue = "PPG2";
+                stringValue = Sensor.PPG_TWO_DATA;
                 break;
             case 4:
-                stringValue = "ACCEL";
+                stringValue = Sensor.ACCEL_DATA;
                 break;
             case 5:
-                stringValue = "IMPEDANCE";
+                stringValue = Sensor.IMPEDANCE_DATA;
                 break;
             default:
                 stringValue = "";
