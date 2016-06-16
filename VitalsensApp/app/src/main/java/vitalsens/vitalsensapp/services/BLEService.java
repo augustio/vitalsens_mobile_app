@@ -79,11 +79,22 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.THREE_CHANNEL_ACCELERATION";
     public static final String ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY =
             "vitalsens.vitalsensapp.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY";
+    public static final String TEMP_VALUE =
+            "vitalsens.vitalsensapp.TEMP_VALUE";
 
 
     private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final static UUID UART_SERVICE_UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID RX_CHAR_UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+    private final static UUID HT_SERVICE_UUID = UUID.fromString("00001809-0000-1000-8000-00805f9b34fb");
+    private static final UUID HT_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A1C-0000-1000-8000-00805f9b34fb");
+
+    private final static int HIDE_MSB_8BITS_OUT_OF_32BITS = 0x00FFFFFF;
+    private final static int HIDE_MSB_8BITS_OUT_OF_16BITS = 0x00FF;
+    private final static int SHIFT_LEFT_8BITS = 8;
+    private final static int SHIFT_LEFT_16BITS = 16;
+    private final static int GET_BIT24 = 0x00400000;
+    private final static int FIRST_BIT_MASK = 0x01;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -96,7 +107,7 @@ public class BLEService extends Service {
     private int mPrevACCELPktNum = -1;
     private int mPrevIMPEDPktNum = -1;
 
-    private BluetoothGattCharacteristic mRXCharacteristic;
+    private BluetoothGattCharacteristic mRXCharacteristic = null, mHTCharacteristic = null;
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
@@ -118,6 +129,7 @@ public class BLEService extends Service {
                 Log.d(TAG, "Disconnected from" + sensor.getName() +
                         " : " + sensor.getAddress());
                 mConnectedSensors.remove(sensor.getAddress());
+                mRXCharacteristic = mHTCharacteristic = null;
                 if(mConnectedSensors.isEmpty()) {
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     mConnectionState = STATE_DISCONNECTED;
@@ -136,6 +148,8 @@ public class BLEService extends Service {
                     if (service.getUuid().equals(UART_SERVICE_UUID)) {
                         mRXCharacteristic = service.getCharacteristic(RX_CHAR_UUID);
                         enableRXNotification(gatt);
+                    }else if (service.getUuid().equals(HT_SERVICE_UUID)) {
+                        mHTCharacteristic = service.getCharacteristic(HT_MEASUREMENT_CHARACTERISTIC_UUID);
                     }
                 }
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
@@ -151,6 +165,12 @@ public class BLEService extends Service {
                     String sensorStr = gatt.getDevice().getName()+":"+gatt.getDevice().getAddress()+
                             "RX Character Descriptor written";
                     broadcastUpdate(ACTION_DESCRIPTOR_WRITTEN, sensorStr);
+                    enableHTNotification(gatt);
+                }
+                if(descriptor.getCharacteristic().getUuid().equals(HT_MEASUREMENT_CHARACTERISTIC_UUID)) {
+                    String sensorStr = gatt.getDevice().getName()+":"+gatt.getDevice().getAddress()+
+                            "HT measure Characteristic Descriptor written";
+                    broadcastUpdate(ACTION_DESCRIPTOR_WRITTEN, sensorStr);
                 }
             }
         }
@@ -161,12 +181,27 @@ public class BLEService extends Service {
             if(characteristic.getUuid().equals(RX_CHAR_UUID)) {
                 processRXData(characteristic.getValue());
             }
+            if(characteristic.getUuid().equals(HT_MEASUREMENT_CHARACTERISTIC_UUID)){
+                try {
+                    double tempValue = decodeTemperature(characteristic.getValue());
+                    broadcastUpdate(TEMP_VALUE, tempValue);
+                    Log.w(TAG, "TEMPERATURE VALUE: "+tempValue);
+                } catch (Exception e) {
+                    Log.e(TAG, "Invalid temperature value: "+e.getMessage());
+                }
+            }
         }
     };
 
     private void broadcastUpdate(final String action, String strValue ) {
         final Intent intent = new Intent(action);
         intent.putExtra(Intent.EXTRA_TEXT, strValue);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void broadcastUpdate(final String action, double doubleValue ) {
+        final Intent intent = new Intent(action);
+        intent.putExtra(Intent.EXTRA_TEXT, doubleValue);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -301,6 +336,17 @@ public class BLEService extends Service {
         }
     }
 
+    public void enableHTNotification(BluetoothGatt gatt) {
+        if (mHTCharacteristic != null && mConnectionState == STATE_CONNECTED) {
+            gatt.setCharacteristicNotification(mHTCharacteristic, true);
+            BluetoothGattDescriptor descriptor = mHTCharacteristic.getDescriptor(CCCD_UUID);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            gatt.writeDescriptor(descriptor);
+        }else if(mHTCharacteristic == null){
+            Log.e(TAG, "Charateristic not found!");
+        }
+    }
+
     private int calculatePacketLoss(int pktNum, int prevPktNum){
         if(prevPktNum < 0)
             return 0;
@@ -392,4 +438,38 @@ public class BLEService extends Service {
                 break;
         }
     }
+
+    private double decodeTemperature(byte[] data) throws Exception {
+        double temperatureValue;
+        byte flag = data[0];
+        byte exponential = data[4];
+        short firstOctet = convertNegativeByteToPositiveShort(data[1]);
+        short secondOctet = convertNegativeByteToPositiveShort(data[2]);
+        short thirdOctet = convertNegativeByteToPositiveShort(data[3]);
+        int mantissa = ((thirdOctet << SHIFT_LEFT_16BITS) | (secondOctet << SHIFT_LEFT_8BITS) | (firstOctet)) & HIDE_MSB_8BITS_OUT_OF_32BITS;
+        mantissa = getTwosComplimentOfNegativeMantissa(mantissa);
+        temperatureValue = (mantissa * Math.pow(10, exponential));
+
+        if ((flag & FIRST_BIT_MASK) != 0) {
+            temperatureValue = (float) ((temperatureValue - 32) * (5 / 9.0));
+        }
+        return temperatureValue;
+    }
+
+    private short convertNegativeByteToPositiveShort(byte octet) {
+        if (octet < 0) {
+            return (short) (octet & HIDE_MSB_8BITS_OUT_OF_16BITS);
+        } else {
+            return octet;
+        }
+    }
+
+    private int getTwosComplimentOfNegativeMantissa(int mantissa) {
+        if ((mantissa & GET_BIT24) != 0) {
+            return ((((~mantissa) & HIDE_MSB_8BITS_OUT_OF_32BITS) + 1) * (-1));
+        } else {
+            return mantissa;
+        }
+    }
+
 }

@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
-    private TextView btnRecord, connectedDevices, curDispDataType;
+    private TextView btnRecord, connectedDevices, curDispDataType, curTemperature;
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
@@ -107,6 +107,7 @@ public class MainActivity extends Activity {
 
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
         btnRecord = (TextView) findViewById(R.id.btn_record);
+        curTemperature = (TextView) findViewById(R.id.cur_temp);
         TextView btnInc = (TextView) findViewById(R.id.btn_inc);
         TextView btnDec = (TextView) findViewById(R.id.btn_dec);
         Button btnHistory = (Button) findViewById(R.id.btn_history);
@@ -525,6 +526,22 @@ public class MainActivity extends Activity {
                     }
                 }).run();
             }
+            if (action.equals(BLEService.TEMP_VALUE)) {
+                final double tempValue = intent.getDoubleExtra(Intent.EXTRA_TEXT, 1000);
+                try {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            if (tempValue != 1000) {
+                                curTemperature.setText("Temp: " + tempValue + "\u00B0");
+                            }else{
+                                curTemperature.setText("Temp: N/A");
+                            }
+                        }
+                    });
+                }catch (Exception e){
+                    Log.e(TAG, "Following exception encountered: " + e.getMessage());
+                }
+            }
         }
     };
 
@@ -540,6 +557,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.TWO_CHANNEL_PPG);
         intentFilter.addAction(BLEService.THREE_CHANNEL_ACCELERATION);
         intentFilter.addAction(BLEService.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY);
+        intentFilter.addAction(BLEService.TEMP_VALUE);
         return intentFilter;
     }
 
@@ -748,6 +766,7 @@ public class MainActivity extends Activity {
         btnConnectDisconnect.setText("Connect");
         curDispDataType.setText("");
         connectedDevices.setText("");
+        curTemperature.setText("__");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
