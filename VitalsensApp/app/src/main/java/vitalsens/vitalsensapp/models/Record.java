@@ -11,11 +11,11 @@ public class Record {
     public Record(){
     }
 
-    public Record(String sensor, String timeStamp){
+    public Record(String sensor, String timeStamp, int dataType){
         this.sensor = sensor;
         this.timeStamp = timeStamp;
         data = "";
-        dataType = -1;
+        this.dataType = dataType;
     }
 
     public String getSensor() {

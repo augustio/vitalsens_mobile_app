@@ -7,14 +7,6 @@ public class Sensor {
     private String name;
     private String address;
 
-    /*Sensor types*/
-    public static final String ECG1 = "Vitalsens_ECG1";
-    public static final String ECG3 = "HRTZ1000";
-    public static final String PPG1 = "Vitalsens_PPG1";
-    public static final String PPG2 = "Vitalsens_PPG2";
-    public static final String ACCEL = "Vitalsens_ACCEL";
-    public static final String IMPEDANCE = "Vitalsens_IMPED";
-
     /*Sensor datatypes*/
     public static final String ECG_ONE_DATA = "Single Channel ECG";
     public static final String ECG_THREE_DATA = "Three Channels ECG";

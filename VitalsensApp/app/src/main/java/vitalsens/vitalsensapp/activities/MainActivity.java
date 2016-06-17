@@ -178,11 +178,14 @@ public class MainActivity extends Activity {
                     else {
                         String date = new SimpleDateFormat("yyMMddHHmmss",
                                 Locale.US).format(new Date());
-                        for(Sensor sensor : mConnectedSensors) {
+                        String sensorName = mConnectedSensors.get(0).getName();
+                        /*for(Sensor sensor : mConnectedSensors) {
                             if(sensor.getName().equals(Sensor.ECG3))
                                 mRecords.add(new Record(sensor.getName(), date));
                             mRecords.add(new Record(sensor.getName(), date));
-                        }
+                        }*/
+                        mRecords.add(new Record(sensorName, date, 1));
+                        mRecords.add(new Record(sensorName, date, 4));
                         mRecording = true;
                         btnRecord.setText("Stop");
                         mRecordTimer.run();
@@ -793,59 +796,50 @@ public class MainActivity extends Activity {
                         Record record = mRecords.get(i);
                         Type type = new TypeToken<ArrayList<DataPacket>>() {
                         }.getType();
-                        switch (record.getSensor()) {
-                            case Sensor.ECG1:
+
+                        switch (record.getDataType()) {
+                            case 0:
                                 if(!mECG1Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mECG1Collection, type));
-                                    record.setDataType(0);
                                     mECG1Collection.clear();
                                 }
                                 break;
-                            case Sensor.ECG3:
+                            case 1:
                                 if(!mECG3Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mECG3Collection, type));
-                                    record.setDataType(1);
                                     mECG3Collection.clear();
                                 }
-                                else if(!mACCELCollection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mACCELCollection, type));
-                                    record.setDataType(4);
-                                    mACCELCollection.clear();
-                                }
                                 break;
-                            case Sensor.PPG1:
+                            case 2:
                                 if(!mPPG1Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mPPG1Collection, type));
-                                    record.setDataType(2);
                                     mPPG1Collection.clear();
                                 }
                                 break;
-                            case Sensor.PPG2:
+                            case 3:
                                 if(!mPPG2Collection.isEmpty()) {
                                     record.setData(new Gson().toJson(mPPG2Collection, type));
-                                    record.setDataType(3);
                                     mPPG2Collection.clear();
                                 }
                                 break;
-                            case Sensor.ACCEL:
+                            case 4:
                                 if(!mACCELCollection.isEmpty()) {
                                     record.setData(new Gson().toJson(mACCELCollection, type));
-                                    record.setDataType(4);
                                     mACCELCollection.clear();
                                 }
                                 break;
-                            case Sensor.IMPEDANCE:
+                            case 5:
                                 if(!mIMPEDANCECollection.isEmpty()) {
                                     record.setData(new Gson().toJson(mIMPEDANCECollection, type));
-                                    record.setDataType(5);
                                     mIMPEDANCECollection.clear();
                                     break;
                                 }
                             default:
                                 break;
                         }
+                        String dataTypeStr = resolveDataType(record.getDataType());
                         String fileName = record.getSensor() + "_" +
-                                resolveDataType(record.getDataType()) + "_" +
+                                dataTypeStr + "_" +
                                 record.getTimeStamp() + ".txt";
                         file = new File(dir, fileName);
                         if(!record.getData().equals("")) {
@@ -854,14 +848,14 @@ public class MainActivity extends Activity {
                                 fw.append(record.toJson());
                                 fw.flush();
                                 fw.close();
-                                showMessage(record.getSensor() + " Record Saved");
+                                showMessage(dataTypeStr + " Record Saved");
                             } catch (IOException e) {
                                 Log.e(TAG, e.toString());
                                 showMessage("Problem writing to Storage");
                             }
                         }
                         else{
-                            showMessage("No " + record.getSensor() + " data recorded");
+                            showMessage("No " + dataTypeStr + " data recorded");
                         }
                     }
                     mRecords.clear();
