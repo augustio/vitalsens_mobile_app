@@ -532,7 +532,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         public void run() {
                             if (tempValue != 1000) {
-                                curTemperature.setText("Temp: " + tempValue + "\u00B0");
+                                curTemperature.setText(tempValue + "\u00B0C");
                             }else{
                                 curTemperature.setText("Temp: N/A");
                             }
@@ -766,7 +766,7 @@ public class MainActivity extends Activity {
         btnConnectDisconnect.setText("Connect");
         curDispDataType.setText("");
         connectedDevices.setText("");
-        curTemperature.setText("__");
+        curTemperature.setText("");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);

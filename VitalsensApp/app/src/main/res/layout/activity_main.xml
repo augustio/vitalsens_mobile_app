@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="6"
+        android:baselineAligned="false"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -22,13 +23,13 @@
                 android:id="@+id/cur_temp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_margin="10dp"
                 android:textSize="25sp"
-                android:textColor="@color/white"
-                android:text="Temp: N/A"/>
+                android:textColor="@color/white"/>
 
         </LinearLayout>
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/main_btn_layout"
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -39,6 +40,8 @@
                 android:id="@+id/btn_connect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/connect_btn_bg"
                 android:text="@string/connect"
                 android:textSize="25sp"/>
@@ -46,11 +49,14 @@
                 android:id="@+id/btn_history"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="10dp"
+                android:layout_below="@+id/btn_connect"
                 android:background="@drawable/history_btn_bg"
                 android:text="@string/history"
                 android:textSize="25sp"/>
 
-        </LinearLayout>
+        </RelativeLayout>
 
     </LinearLayout>
 
