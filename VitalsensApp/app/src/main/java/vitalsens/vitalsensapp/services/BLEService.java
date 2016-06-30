@@ -63,10 +63,6 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.ACTION_GATT_DISCONNECTED";
     public final static String ACTION_GATT_SERVICES_DISCOVERED =
             "vitalsens.vitalsensapp.ACTION_GATT_SERVICES_DISCOVERED";
-    public final static String DEVICE_DOES_NOT_SUPPORT_UART =
-            "vitalsens.vitalsensapp.DEVICE_DOES_NOT_SUPPORT_UART";
-    public final static String ACTION_DESCRIPTOR_WRITTEN =
-            "vitalsens.vitalsensapp.ACTION_DESCRIPTOR_WRITTEN";
     public static final String ONE_CHANNEL_ECG =
             "vitalsens.vitalsensapp.ONE_CHANNEL_ECG";
     public static final String THREE_CHANNEL_ECG =
@@ -81,6 +77,8 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY";
     public static final String TEMP_VALUE =
             "vitalsens.vitalsensapp.TEMP_VALUE";
+    public static final String BATTERY_LEVEL =
+            "vitalsens.vitalsensapp.BATTERY_LEVEL";
 
 
     private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
@@ -88,6 +86,8 @@ public class BLEService extends Service {
     private final static UUID RX_CHAR_UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID HT_SERVICE_UUID = UUID.fromString("00001809-0000-1000-8000-00805f9b34fb");
     private static final UUID HT_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A1C-0000-1000-8000-00805f9b34fb");
+    private final static UUID BATTERY_SERVICE_UUID = UUID.fromString("0000180F-0000-1000-8000-00805f9b34fb");
+    private final static UUID BATTERY_LEVEL_CHARACTERISTIC_UUID = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
 
     private final static int HIDE_MSB_8BITS_OUT_OF_32BITS = 0x00FFFFFF;
     private final static int HIDE_MSB_8BITS_OUT_OF_16BITS = 0x00FF;
@@ -98,7 +98,7 @@ public class BLEService extends Service {
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
-    private Thread mConnectionThread, mDisconnectionThread;
+    private Thread mConnectionThread, mDisconnectionThread, mNotificationThread;
     private int mConnectionState;
     private int mPrevECG1PktNum = -1;
     private int mPrevECG3PktNum = -1;
@@ -107,7 +107,8 @@ public class BLEService extends Service {
     private int mPrevACCELPktNum = -1;
     private int mPrevIMPEDPktNum = -1;
 
-    private BluetoothGattCharacteristic mRXCharacteristic = null, mHTCharacteristic = null;
+    private BluetoothGattCharacteristic mRXCharacteristic = null, mHTCharacteristic = null,
+    mBatteryLevelCharacteristic = null;
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
@@ -129,7 +130,7 @@ public class BLEService extends Service {
                 Log.d(TAG, "Disconnected from" + sensor.getName() +
                         " : " + sensor.getAddress());
                 mConnectedSensors.remove(sensor.getAddress());
-                mRXCharacteristic = mHTCharacteristic = null;
+                mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic = null;
                 if(mConnectedSensors.isEmpty()) {
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     mConnectionState = STATE_DISCONNECTED;
@@ -144,34 +145,23 @@ public class BLEService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "BluetoothGatt = " + gatt);
                 List<BluetoothGattService> services = gatt.getServices();
+                ArrayList<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
                 for (BluetoothGattService service : services) {
                     if (service.getUuid().equals(UART_SERVICE_UUID)) {
                         mRXCharacteristic = service.getCharacteristic(RX_CHAR_UUID);
-                        enableRXNotification(gatt);
+                        characteristics.add(mRXCharacteristic);
                     }else if (service.getUuid().equals(HT_SERVICE_UUID)) {
                         mHTCharacteristic = service.getCharacteristic(HT_MEASUREMENT_CHARACTERISTIC_UUID);
+                        characteristics.add(mHTCharacteristic);
+                    }else if (service.getUuid().equals(BATTERY_SERVICE_UUID)) {
+                        mBatteryLevelCharacteristic = service.getCharacteristic(BATTERY_LEVEL_CHARACTERISTIC_UUID);
+                        characteristics.add(mBatteryLevelCharacteristic);
                     }
                 }
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                enableNotification(characteristics, gatt);
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
-            }
-        }
-
-        @Override
-        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            if(status == BluetoothGatt.GATT_SUCCESS){
-                if(descriptor.getCharacteristic().getUuid().equals(RX_CHAR_UUID)) {
-                    String sensorStr = gatt.getDevice().getName()+":"+gatt.getDevice().getAddress()+
-                            "RX Character Descriptor written";
-                    broadcastUpdate(ACTION_DESCRIPTOR_WRITTEN, sensorStr);
-                    enableHTNotification(gatt);
-                }
-                if(descriptor.getCharacteristic().getUuid().equals(HT_MEASUREMENT_CHARACTERISTIC_UUID)) {
-                    String sensorStr = gatt.getDevice().getName()+":"+gatt.getDevice().getAddress()+
-                            "HT measure Characteristic Descriptor written";
-                    broadcastUpdate(ACTION_DESCRIPTOR_WRITTEN, sensorStr);
-                }
             }
         }
 
@@ -185,10 +175,13 @@ public class BLEService extends Service {
                 try {
                     double tempValue = decodeTemperature(characteristic.getValue());
                     broadcastUpdate(TEMP_VALUE, tempValue);
-                    Log.w(TAG, "TEMPERATURE VALUE: "+tempValue);
                 } catch (Exception e) {
                     Log.e(TAG, "Invalid temperature value: "+e.getMessage());
                 }
+            }
+            if(characteristic.getUuid().equals(BATTERY_LEVEL_CHARACTERISTIC_UUID)){
+                int batLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                broadcastUpdate(BATTERY_LEVEL, batLevel);
             }
         }
     };
@@ -202,6 +195,12 @@ public class BLEService extends Service {
     private void broadcastUpdate(final String action, double doubleValue ) {
         final Intent intent = new Intent(action);
         intent.putExtra(Intent.EXTRA_TEXT, doubleValue);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void broadcastUpdate(final String action, int intValue ) {
+        final Intent intent = new Intent(action);
+        intent.putExtra(Intent.EXTRA_TEXT, intValue);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -324,26 +323,38 @@ public class BLEService extends Service {
         }
     }
 
-    public void enableRXNotification(BluetoothGatt gatt) {
-        if (mRXCharacteristic != null && mConnectionState == STATE_CONNECTED) {
-            gatt.setCharacteristicNotification(mRXCharacteristic, true);
-            BluetoothGattDescriptor descriptor = mRXCharacteristic.getDescriptor(CCCD_UUID);
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            gatt.writeDescriptor(descriptor);
-        }else if(mRXCharacteristic == null){
-            Log.e(TAG, "Charateristic not found!");
-            broadcastUpdate(DEVICE_DOES_NOT_SUPPORT_UART);
+    public void enableNotification(final ArrayList<BluetoothGattCharacteristic> characteristics, final BluetoothGatt gatt) {
+        if(characteristics == null)
+            return;
+        if(mNotificationThread == null){
+            mNotificationThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    notificationLoop(characteristics, gatt);
+                    mNotificationThread.interrupt();
+                    mNotificationThread = null;
+                }
+            });
+
+            mNotificationThread.start();
         }
     }
 
-    public void enableHTNotification(BluetoothGatt gatt) {
-        if (mHTCharacteristic != null && mConnectionState == STATE_CONNECTED) {
-            gatt.setCharacteristicNotification(mHTCharacteristic, true);
-            BluetoothGattDescriptor descriptor = mHTCharacteristic.getDescriptor(CCCD_UUID);
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            gatt.writeDescriptor(descriptor);
-        }else if(mHTCharacteristic == null){
-            Log.e(TAG, "Charateristic not found!");
+
+    private void notificationLoop(final ArrayList<BluetoothGattCharacteristic> characteristics, BluetoothGatt gatt){
+        for(BluetoothGattCharacteristic ch : characteristics){
+            if (ch != null && mConnectionState == STATE_CONNECTED) {
+                gatt.setCharacteristicNotification(ch, true);
+                BluetoothGattDescriptor descriptor = ch.getDescriptor(CCCD_UUID);
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                gatt.writeDescriptor(descriptor);
+
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    Log.d(TAG, e.getMessage());
+                }
+            }
         }
     }
 

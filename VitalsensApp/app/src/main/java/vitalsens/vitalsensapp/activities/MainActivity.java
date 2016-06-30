@@ -67,7 +67,8 @@ public class MainActivity extends Activity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
-    private TextView btnRecord, connectedDevices, curDispDataType, curTemperature;
+    private TextView btnRecord, connectedDevices, curDispDataType,
+            batLevel, curTemperature;
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
@@ -108,6 +109,7 @@ public class MainActivity extends Activity {
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
         btnRecord = (TextView) findViewById(R.id.btn_record);
         curTemperature = (TextView) findViewById(R.id.cur_temp);
+        batLevel = (TextView) findViewById(R.id.bat_level);
         TextView btnInc = (TextView) findViewById(R.id.btn_inc);
         TextView btnDec = (TextView) findViewById(R.id.btn_dec);
         Button btnHistory = (Button) findViewById(R.id.btn_history);
@@ -349,14 +351,6 @@ public class MainActivity extends Activity {
                     }
                 });
             }
-            if (action.equals(BLEService.ACTION_DESCRIPTOR_WRITTEN)) {
-                final String str = intent.getStringExtra(Intent.EXTRA_TEXT);
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        Log.d(TAG, str);
-                    }
-                });
-            }
             if (action.equals(BLEService.ONE_CHANNEL_ECG)) {
                 final int[] samples = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
                 (new Runnable() {
@@ -542,7 +536,23 @@ public class MainActivity extends Activity {
                         }
                     });
                 }catch (Exception e){
-                    Log.e(TAG, "Following exception encountered: " + e.getMessage());
+                    Log.e(TAG, e.getMessage());
+                }
+            }
+            if (action.equals(BLEService.BATTERY_LEVEL)) {
+                final int batteryLevel = intent.getIntExtra(Intent.EXTRA_TEXT, 200);
+                try {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            if (batteryLevel != 200) {
+                                batLevel.setText("Battery: " + batteryLevel + "%");
+                            }else{
+                                batLevel.setText("Battery: N/A");
+                            }
+                        }
+                    });
+                }catch (Exception e){
+                    Log.e(TAG, e.getMessage());
                 }
             }
         }
@@ -553,7 +563,6 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BLEService.ACTION_DESCRIPTOR_WRITTEN);
         intentFilter.addAction(BLEService.ONE_CHANNEL_ECG);
         intentFilter.addAction(BLEService.THREE_CHANNEL_ECG);
         intentFilter.addAction(BLEService.ONE_CHANNEL_PPG);
@@ -561,6 +570,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.THREE_CHANNEL_ACCELERATION);
         intentFilter.addAction(BLEService.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY);
         intentFilter.addAction(BLEService.TEMP_VALUE);
+        intentFilter.addAction(BLEService.BATTERY_LEVEL);
         return intentFilter;
     }
 
@@ -770,6 +780,7 @@ public class MainActivity extends Activity {
         curDispDataType.setText("");
         connectedDevices.setText("");
         curTemperature.setText("");
+        batLevel.setText("");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
