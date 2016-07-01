@@ -102,7 +102,6 @@ public class SensorList extends Activity {
 
                 Intent result = new Intent();
                 result.putStringArrayListExtra("SENSOR_LIST", mSelectedSensors);
-                ;
                 setResult(Activity.RESULT_OK, result);
                 finish();
             }
@@ -114,6 +113,7 @@ public class SensorList extends Activity {
                 if (!mScanning){
                     mSensorList.clear();
                     mDeviceAdapter.notifyDataSetChanged();
+                    btnConnect.setEnabled(false);
                     scanLeDevice(true);
                 }
                 else{
