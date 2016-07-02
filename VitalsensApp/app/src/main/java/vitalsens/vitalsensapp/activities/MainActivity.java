@@ -81,6 +81,7 @@ public class MainActivity extends Activity {
     private ArrayList<DataPacket> mACCELCollection;
     private ArrayList<DataPacket> mIMPEDANCECollection;
     private ArrayList<String> mAvailableDataTypes;
+    ArrayList<String> mSensorAddresses;
     private int mConnectionState;
     private int mRecTimerCounter, min, sec, hr;
     private int mNextIndex;
@@ -89,6 +90,8 @@ public class MainActivity extends Activity {
             mShowPPGTwo, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mInitDataDispOn;
+    private boolean mUserInitiatedDisconnection;
+    private boolean mReconnecting;
 
     private ChannelOneFragment mChannelOne;
     private ChannelTwoFragment mChannelTwo;
@@ -133,6 +136,8 @@ public class MainActivity extends Activity {
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
         mInitDataDispOn = false;
+        mUserInitiatedDisconnection = false;
+        mReconnecting = false;
 
         min = sec =  hr = 0;
         mTimerString = "";
@@ -162,10 +167,16 @@ public class MainActivity extends Activity {
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
+                        if(mReconnecting){
+                            mReconnecting = false;
+                            mUserInitiatedDisconnection = true;
+                            mService.disconnect(null, mSensorAddresses);
+                        }
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
-                        mService.disconnect(mConnectedSensors);
+                        mUserInitiatedDisconnection = true;
+                        mService.disconnect(mConnectedSensors, null);
                     }
                 }
             }
@@ -231,13 +242,9 @@ public class MainActivity extends Activity {
             Log.i(TAG, "onClick - BT not enabled yet");
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        } else {
-            if (mConnectionState == BLEService.STATE_DISCONNECTED) {
-                Intent newIntent = new Intent(MainActivity.this, SensorList.class);
-                startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
-            } else if (mConnectionState == BLEService.STATE_CONNECTED) {
-                mService.disconnect(mConnectedSensors);
-            }
+        }else {
+            Intent newIntent = new Intent(MainActivity.this, SensorList.class);
+            startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
         }
     }
 
@@ -580,8 +587,8 @@ public class MainActivity extends Activity {
 
             case REQUEST_SELECT_DEVICE:
                 if (resultCode == Activity.RESULT_OK && data != null) {
-                    ArrayList<String> sensorAddresses = data.getStringArrayListExtra("SENSOR_LIST");
-                    mService.connect(sensorAddresses);
+                    mSensorAddresses = data.getStringArrayListExtra("SENSOR_LIST");
+                    mService.connect(mSensorAddresses);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -767,6 +774,9 @@ public class MainActivity extends Activity {
         mConnectedSensors.add(sensor);
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText("Disconnect");
+        if(mReconnecting){
+            mReconnecting = false;
+        }
         if(connectedDevicesStr.equals(""))
             connectedDevices.setText(sensor.getName());
         else
@@ -789,9 +799,19 @@ public class MainActivity extends Activity {
         mNextIndex = 0;
         mAvailableDataTypes.clear();
         mInitDataDispOn = false;
+        mReconnecting = false;
         clearGraphLayout();
         if(mRecording)
             stopRecordingData();
+        if(mUserInitiatedDisconnection) {
+            mUserInitiatedDisconnection = false;
+            mSensorAddresses.clear();
+        }
+        else{
+            mService.connect(mSensorAddresses);
+            mReconnecting = true;
+        }
+
     }
 
     private void saveRecords(){

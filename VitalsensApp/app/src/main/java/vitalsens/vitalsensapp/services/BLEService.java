@@ -287,7 +287,7 @@ public class BLEService extends Service {
         }
     }
 
-    public void disconnect(final ArrayList<Sensor> sensors) {
+    public void disconnect(final ArrayList<Sensor> sensors, final ArrayList<String> sensorAddresses) {
         if (mBluetoothAdapter == null) {
             Log.w(TAG, "BluetoothAdapter not initialized ");
             return;
@@ -297,7 +297,7 @@ public class BLEService extends Service {
             mDisconnectionThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    disconnectionLoop(sensors);
+                    disconnectionLoop(sensors, sensorAddresses);
                     mDisconnectionThread.interrupt();
                     mDisconnectionThread = null;
                 }
@@ -307,11 +307,62 @@ public class BLEService extends Service {
         }
     }
 
-    private void disconnectionLoop(final ArrayList<Sensor> sensors){
-        if(sensors == null)
+    private void disconnectionLoop(final ArrayList<Sensor> sensors,final ArrayList<String> sensorAddresses ){
+        if(sensors == null && sensorAddresses == null)
             return;
-        for (Sensor sensor:sensors){
-            BluetoothGatt gatt = mConnectedSensors.get(sensor.getAddress());
+        if(sensors == null){
+            for (String str : sensorAddresses) {
+                BluetoothGatt gatt = mConnectedSensors.get(str);
+                if (gatt != null) {
+                    gatt.disconnect();
+                }
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    Log.d(TAG, e.getMessage());
+                }
+            }
+        }
+        else {
+            for (Sensor sensor : sensors) {
+                BluetoothGatt gatt = mConnectedSensors.get(sensor.getAddress());
+                if (gatt != null) {
+                    gatt.disconnect();
+                }
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    Log.d(TAG, e.getMessage());
+                }
+            }
+        }
+    }
+
+    /*public void disconnect(final ArrayList<String> sensorAddresses) {
+        if (mBluetoothAdapter == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized ");
+            return;
+        }
+
+        if(mDisconnectionThread == null){
+            mDisconnectionThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    disconnectionLoop(sensorAddresses);
+                    mDisconnectionThread.interrupt();
+                    mDisconnectionThread = null;
+                }
+            });
+
+            mDisconnectionThread.start();
+        }
+    }
+
+    private void disconnectionLoop(final ArrayList<Object> sensorAddresses){
+        if(sensorAddresses == null)
+            return;
+        for (Object str : sensorAddresses){
+            BluetoothGatt gatt = mConnectedSensors.get(str);
             if(gatt != null){
                 gatt.disconnect();
             }
@@ -321,7 +372,8 @@ public class BLEService extends Service {
                 Log.d(TAG, e.getMessage());
             }
         }
-    }
+    }*/
+
 
     public void enableNotification(final ArrayList<BluetoothGattCharacteristic> characteristics, final BluetoothGatt gatt) {
         if(characteristics == null)
@@ -414,6 +466,7 @@ public class BLEService extends Service {
                 mPrevPPG1PktNum = packetNumber;
                 if( numPacketsLost> 0)
                     Log.e(TAG, "Packet Lost (PPG1): " + numPacketsLost);
+                Log.e(TAG, "Sending ppg2");
                 broadcastUpdate(ONE_CHANNEL_PPG, sensorData);
                 break;
             case PPG_TWO_CHANNEL:
