@@ -18,8 +18,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -29,8 +27,6 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
-import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -101,6 +97,19 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        int samplesDispWindowSize;
+        int screenSize = getResources().getConfiguration().screenLayout &
+                Configuration.SCREENLAYOUT_SIZE_MASK;
+        switch(screenSize) {
+            case Configuration.SCREENLAYOUT_SIZE_XLARGE:
+                samplesDispWindowSize = 1250;
+                break;
+            case Configuration.SCREENLAYOUT_SIZE_LARGE:
+                samplesDispWindowSize = 675;
+                break;
+            default:
+                samplesDispWindowSize = 600;
+        }
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
@@ -145,6 +154,10 @@ public class MainActivity extends Activity {
         mChannelOne = new ChannelOneFragment();
         mChannelTwo = new ChannelTwoFragment();
         mChannelThree = new ChannelThreeFragment();
+
+        mChannelOne.setxRange(samplesDispWindowSize);
+        mChannelTwo.setxRange(samplesDispWindowSize);
+        mChannelThree.setxRange(samplesDispWindowSize);
 
         FragmentManager fragmentManager = getFragmentManager();
 
@@ -247,67 +260,6 @@ public class MainActivity extends Activity {
             startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
         }
     }
-
-    /*
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-            getMenuInflater().inflate(R.menu.graph_menu, menu);
-            return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.samples_250) {
-            mChannelOne.clearGraph();
-            mChannelTwo.clearGraph();
-            mChannelThree.clearGraph();
-            mChannelOne.setxRange(250);
-            mChannelTwo.setxRange(250);
-            mChannelThree.setxRange(250);
-            return true;
-        }
-        if (id == R.id.samples_500) {
-            mChannelOne.clearGraph();
-            mChannelTwo.clearGraph();
-            mChannelThree.clearGraph();
-            mChannelOne.setxRange(500);
-            mChannelTwo.setxRange(500);
-            mChannelThree.setxRange(500);
-            return true;
-        }
-        if (id == R.id.samples_1000) {
-            mChannelOne.clearGraph();
-            mChannelTwo.clearGraph();
-            mChannelThree.clearGraph();
-            mChannelOne.setxRange(1000);
-            mChannelTwo.setxRange(1000);
-            mChannelThree.setxRange(1000);
-            return true;
-        }
-        if (id == R.id.samples_2500) {
-            mChannelOne.clearGraph();
-            mChannelTwo.clearGraph();
-            mChannelThree.clearGraph();
-            mChannelOne.setxRange(2500);
-            mChannelTwo.setxRange(2500);
-            mChannelThree.setxRange(2500);
-            return true;
-        }
-        if (id == R.id.samples_5000) {
-            mChannelOne.clearGraph();
-            mChannelTwo.clearGraph();
-            mChannelThree.clearGraph();
-            mChannelOne.setxRange(5000);
-            mChannelTwo.setxRange(5000);
-            mChannelThree.setxRange(5000);
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-    */
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder rawBinder) {

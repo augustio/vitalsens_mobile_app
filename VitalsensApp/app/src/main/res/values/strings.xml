@@ -32,11 +32,6 @@
     <string name="action_delete">Delete</string>
     <string name="action_send_to_cloud">Send To Cloud</string>
     <string name="action_send_to_email">Send To Email</string>
-    <string name="samples_250">250 Samples</string>
-    <string name="samples_500">500 Samples</string>
-    <string name="samples_1000">1000 Samples</string>
-    <string name="samples_2500">2500 Samples</string>
-    <string name="samples_5000">5000 Samples</string>
     <string name="logo_desc">vitalsens logo</string>
     <string name="connect_devices">Connect devices</string>
     <string name="empty">""</string>

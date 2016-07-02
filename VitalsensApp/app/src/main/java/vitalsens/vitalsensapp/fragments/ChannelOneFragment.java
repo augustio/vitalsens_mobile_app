@@ -28,7 +28,6 @@ public class ChannelOneFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         xValueCounter = 0;
-        xRange = 250;
     }
 
     @Override
