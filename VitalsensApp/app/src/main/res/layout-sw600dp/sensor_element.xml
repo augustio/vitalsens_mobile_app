@@ -26,8 +26,9 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
-        android:paddingEnd="18dp"
-        android:textSize="12sp" />
+        android:paddingEnd="20dp"
+        android:paddingStart="0dp"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/paired"
@@ -35,29 +36,30 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_below="@+id/rssi"
-        android:paddingEnd="18dp"
+        android:paddingEnd="20dp"
+        android:paddingStart="0dp"
         android:text="@string/paired"
-        android:textSize="12sp" />
+        android:textSize="15sp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:layout_marginStart="25dp"
+        android:layout_marginStart="30dp"
         android:layout_centerVertical="true">
 
         <TextView
             android:id="@+id/name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="15sp" />
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/address"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:textSize="12sp"/>
+            android:layout_marginTop="2dp"
+            android:textSize="15sp"/>
 
     </LinearLayout>
 

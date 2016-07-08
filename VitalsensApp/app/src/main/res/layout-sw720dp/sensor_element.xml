@@ -16,7 +16,7 @@
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="50dp"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/device_element_bg">
 
@@ -25,40 +25,37 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:paddingEnd="18dp"
-        android:textSize="12sp" />
+        android:layout_alignParentTop="true"
+        android:paddingEnd="50dp"
+        android:paddingTop="40dp"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/paired"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
         android:layout_below="@+id/rssi"
-        android:paddingEnd="18dp"
+        android:paddingEnd="50dp"
         android:text="@string/paired"
         android:textSize="12sp" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/name"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_marginStart="25dp"
-        android:layout_centerVertical="true">
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:paddingStart="50dp"
+        android:paddingTop="20dp"
+        android:textSize="20sp" />
 
-        <TextView
-            android:id="@+id/name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/address"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:textSize="12sp"/>
-
-    </LinearLayout>
+    <TextView
+        android:id="@+id/address"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/name"
+        android:paddingStart="50dp"
+        android:textSize="15sp" />
 
 </RelativeLayout>
