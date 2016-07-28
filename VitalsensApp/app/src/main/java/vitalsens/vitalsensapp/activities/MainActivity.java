@@ -17,6 +17,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -38,6 +39,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
+import vitalsens.vitalsensapp.activities.util.SystemUiHider;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
 import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
@@ -70,12 +72,6 @@ public class MainActivity extends Activity {
     private BLEService mService;
     private ArrayList<Sensor> mConnectedSensors;
     private ArrayList<Record> mRecords;
-    private ArrayList<DataPacket> mECG1Collection;
-    private ArrayList<DataPacket> mECG3Collection;
-    private ArrayList<DataPacket> mPPG1Collection;
-    private ArrayList<DataPacket> mPPG2Collection;
-    private ArrayList<DataPacket> mACCELCollection;
-    private ArrayList<DataPacket> mIMPEDANCECollection;
     private ArrayList<String> mAvailableDataTypes;
     ArrayList<String> mSensorAddresses;
     private int mConnectionState;
@@ -88,6 +84,8 @@ public class MainActivity extends Activity {
     private boolean mInitDataDispOn;
     private boolean mUserInitiatedDisconnection;
     private boolean mReconnecting;
+
+    private String mPatientId;
 
     private ChannelOneFragment mChannelOne;
     private ChannelTwoFragment mChannelTwo;
@@ -135,12 +133,6 @@ public class MainActivity extends Activity {
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
         mRecords = new ArrayList<>();
-        mECG1Collection = new ArrayList<>();
-        mECG3Collection = new ArrayList<>();
-        mPPG1Collection = new ArrayList<>();
-        mPPG2Collection = new ArrayList<>();
-        mACCELCollection = new ArrayList<>();
-        mIMPEDANCECollection = new ArrayList<>();
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
@@ -150,6 +142,8 @@ public class MainActivity extends Activity {
 
         min = sec =  hr = 0;
         mTimerString = "";
+
+        mPatientId = "p101";
 
         mChannelOne = new ChannelOneFragment();
         mChannelTwo = new ChannelTwoFragment();
@@ -202,16 +196,10 @@ public class MainActivity extends Activity {
                     if(mRecording)
                         stopRecordingData();
                     else {
-                        String date = new SimpleDateFormat("yyMMddHHmmss",
-                                Locale.US).format(new Date());
-                        String sensorName = mConnectedSensors.get(0).getName();
-                        /*for(Sensor sensor : mConnectedSensors) {
-                            if(sensor.getName().equals(Sensor.ECG3))
-                                mRecords.add(new Record(sensor.getName(), date));
-                            mRecords.add(new Record(sensor.getName(), date));
-                        }*/
-                        mRecords.add(new Record(sensorName, date, 1));
-                        mRecords.add(new Record(sensorName, date, 4));
+                        long timeStamp = System.currentTimeMillis();
+                        for(int i = 0; i < 6; i++){
+                            mRecords.add( new Record(1, timeStamp, mPatientId, i));
+                        }
                         mRecording = true;
                         btnRecord.setText("Stop");
                         mRecordTimer.run();
@@ -315,6 +303,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.ECG_ONE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.ECG_ONE_DATA);
                                 if(!mInitDataDispOn){
@@ -323,15 +312,13 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording)
-                                mECG1Collection.add(new DataPacket(samples));
+                                mRecords.get(0).addToChOne(dp.getChOne());
                             if (mShowECGOne) {
-                                String str = "Packet Number: " + samples[1] + "{ECG1 Samples: ";
-                                for (int i = 2; i < samples.length; i++) {
+                                for(int i = 1; i < samples.length; i++){
                                     mChannelOne.updateGraph(samples[i]);
-                                    str += (samples[i] + "-");
                                 }
-                                str += "}";
-                                Log.d(TAG, str.replace("-}", "}"));
+                                String str = "{ECG1 Samples: " + dp.getChOne() + "}";
+                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -342,6 +329,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.ECG_THREE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.ECG_THREE_DATA);
                                 if(!mInitDataDispOn){
@@ -349,20 +337,22 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording)
-                                mECG3Collection.add(new DataPacket(samples));
+                            if(mRecording){
+                                mRecords.get(1).addToChOne(dp.getChOne());
+                                mRecords.get(1).addToChTwo(dp.getChTwo());
+                                mRecords.get(1).addToChThree(dp.getChThree());
+                            }
                             if (mShowECGThree) {
-                                String str = "Packet Number: " + samples[1] + "{ECG3 Samples: ";
-                                for (int i = 2; i < samples.length; i += 3) {
+                                for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
-                                    str += (samples[i] + "-");
                                     mChannelTwo.updateGraph(samples[i + 1]);
-                                    str += (samples[i + 1] + "-");
                                     mChannelThree.updateGraph(samples[i + 2]);
-                                    str += (samples[i + 2] + "-");
                                 }
-                                str += "}";
-                                Log.d(TAG, str.replace("-}", "}"));
+                                String str = "{ECG3 Samples: " +
+                                        "chOne: " + dp.getChOne() +
+                                        " chTwo: " + dp.getChTwo() +
+                                        " chThree: " + dp.getChThree() + "}";
+                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -373,6 +363,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.PPG_ONE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.PPG_ONE_DATA);
                                 if(!mInitDataDispOn){
@@ -380,16 +371,15 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording)
-                                mPPG1Collection.add(new DataPacket(samples));
+                            if(mRecording){
+                                mRecords.get(2).addToChOne(dp.getChOne());
+                            }
                             if (mShowPPGOne) {
-                                String str = "Packet Number: " + samples[1] + "{PPG1 Samples: ";
-                                for (int i = 2; i < samples.length; i++) {
+                                for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
-                                    str += (samples[i] + "-");
                                 }
-                                str += "}";
-                                Log.d(TAG, str.replace("-}", "}"));
+                                String str = "{PPG1 Samples: " + dp.getChOne() + "}";
+                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -400,6 +390,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.PPG_TWO_DATA)) {
                                 mAvailableDataTypes.add(Sensor.PPG_TWO_DATA);
                                 if(!mInitDataDispOn){
@@ -407,18 +398,19 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording)
-                                mPPG2Collection.add(new DataPacket(samples));
+                            if(mRecording){
+                                mRecords.get(3).addToChOne(dp.getChOne());
+                                mRecords.get(3).addToChTwo(dp.getChTwo());
+                            }
                             if (mShowPPGTwo) {
-                                String str = "Packet Number: " + samples[1] + "{PPG2 Samples: ";
-                                for (int i = 2; i < samples.length; i += 2) {
+                                for(int i = 1; i < samples.length; i += 2){
                                     mChannelOne.updateGraph(samples[i]);
-                                    str += (samples[i] + "-");
                                     mChannelTwo.updateGraph(samples[i + 1]);
-                                    str += (samples[i + 1] + "-");
                                 }
-                                str += "}";
-                                Log.d(TAG, str.replace("-}", "}"));
+                                String str = "{PPG2 Samples: " +
+                                        "chOne: " + dp.getChOne() +
+                                        " chTwo: " + dp.getChTwo() + "}";
+                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -429,6 +421,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.ACCEL_DATA)) {
                                 mAvailableDataTypes.add(Sensor.ACCEL_DATA);
                                 if(!mInitDataDispOn){
@@ -436,20 +429,22 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording)
-                                mACCELCollection.add(new DataPacket(samples));
+                            if(mRecording){
+                                mRecords.get(4).addToChOne(dp.getChOne());
+                                mRecords.get(4).addToChTwo(dp.getChTwo());
+                                mRecords.get(4).addToChThree(dp.getChThree());
+                            }
                             if (mShowAccel) {
-                                String str = "Packet Number: " + samples[1] + "{Accel Samples: ";
-                                for (int i = 2; i < samples.length; i += 3) {
+                                for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
-                                    str += (samples[i] + "-");
                                     mChannelTwo.updateGraph(samples[i + 1]);
-                                    str += (samples[i + 1] + "-");
                                     mChannelThree.updateGraph(samples[i + 2]);
-                                    str += (samples[i + 2] + "-");
                                 }
-                                str += "}";
-                                Log.d(TAG, str.replace("-}", "}"));
+                                String str = "{ACCEL Samples: " +
+                                        "chOne: " + dp.getChOne() +
+                                        " chTwo: " + dp.getChTwo() +
+                                        " chThree: " + dp.getChThree() + "}";
+                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -460,6 +455,7 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.IMPEDANCE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.IMPEDANCE_DATA);
                                 if(!mInitDataDispOn){
@@ -467,16 +463,17 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording)
-                                mIMPEDANCECollection.add(new DataPacket(samples));
+                            if(mRecording){
+                                mRecords.get(5).addToChOne(dp.getChOne());
+                                mRecords.get(5).addToChTwo(dp.getChTwo());
+                                mRecords.get(5).addToChThree(dp.getChThree());
+                            }
                             if (mShowImpedance) {
-                                String str = "Packet Number: " + samples[1] + "{Impedance Samples: ";
-                                for (int i = 2; i < samples.length; i++) {
+                                for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
-                                    str += (samples[i] + "-");
                                 }
-                                str += "}";
-                                Log.d(TAG, str.replace("-}", "}"));
+                                String str = "{IMPEDANCE Samples: " + dp.getChOne() + "}";
+                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -777,68 +774,22 @@ public class MainActivity extends Activity {
                     File file;
                     for(int i = 0; i<mRecords.size(); i++) {
                         Record record = mRecords.get(i);
-                        Type type = new TypeToken<ArrayList<DataPacket>>() {
-                        }.getType();
-
-                        switch (record.getDataType()) {
-                            case 0:
-                                if(!mECG1Collection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mECG1Collection, type));
-                                    mECG1Collection.clear();
-                                }
-                                break;
-                            case 1:
-                                if(!mECG3Collection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mECG3Collection, type));
-                                    mECG3Collection.clear();
-                                }
-                                break;
-                            case 2:
-                                if(!mPPG1Collection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mPPG1Collection, type));
-                                    mPPG1Collection.clear();
-                                }
-                                break;
-                            case 3:
-                                if(!mPPG2Collection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mPPG2Collection, type));
-                                    mPPG2Collection.clear();
-                                }
-                                break;
-                            case 4:
-                                if(!mACCELCollection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mACCELCollection, type));
-                                    mACCELCollection.clear();
-                                }
-                                break;
-                            case 5:
-                                if(!mIMPEDANCECollection.isEmpty()) {
-                                    record.setData(new Gson().toJson(mIMPEDANCECollection, type));
-                                    mIMPEDANCECollection.clear();
-                                    break;
-                                }
-                            default:
-                                break;
-                        }
-                        String dataTypeStr = resolveDataType(record.getDataType());
-                        String fileName = record.getSensor() + "_" +
-                                dataTypeStr + "_" +
-                                record.getTimeStamp() + ".txt";
+                        Date date = new Date(record.getTimeStamp());
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
+                        String dataType = record.getType();
+                        String fileName = dataType + "_" + sdf.format(date) + ".txt";
                         file = new File(dir, fileName);
-                        if(!record.getData().equals("")) {
+                        if(!record.getChOne().equals("")) {
                             try {
                                 FileWriter fw = new FileWriter(file, true);
                                 fw.append(record.toJson());
                                 fw.flush();
                                 fw.close();
-                                showMessage(dataTypeStr + " Record Saved");
+                                showMessage(dataType + " Record Saved");
                             } catch (IOException e) {
                                 Log.e(TAG, e.toString());
                                 showMessage("Problem writing to Storage");
                             }
-                        }
-                        else{
-                            showMessage("No " + dataTypeStr + " data recorded");
                         }
                     }
                     mRecords.clear();
@@ -899,33 +850,6 @@ public class MainActivity extends Activity {
             ((TextView) findViewById(R.id.timer_view)).setText("");
             refreshTimer();
         }
-    }
-
-    private String resolveDataType(int intValue){
-        String stringValue;
-        switch (intValue){
-            case 0:
-                stringValue = Sensor.ECG_ONE_DATA;
-                break;
-            case 1:
-                stringValue = Sensor.ECG_THREE_DATA;
-                break;
-            case 2:
-                stringValue = Sensor.PPG_ONE_DATA;
-                break;
-            case 3:
-                stringValue = Sensor.PPG_TWO_DATA;
-                break;
-            case 4:
-                stringValue = Sensor.ACCEL_DATA;
-                break;
-            case 5:
-                stringValue = Sensor.IMPEDANCE_DATA;
-                break;
-            default:
-                stringValue = "";
-        }
-        return stringValue;
     }
 
     private void showMessage(final String msg) {

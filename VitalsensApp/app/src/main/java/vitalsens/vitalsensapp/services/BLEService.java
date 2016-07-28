@@ -437,11 +437,10 @@ public class BLEService extends Service {
         int packetNumber = (data[1] & 0XFF);
         int numPacketsLost;
 
-        int sensorData[] = new int[14];
+        int sensorData[] = new int[13];
         sensorData[0] = dataId;
-        sensorData[1] = packetNumber;
 
-        for(int i=2, j=2; i < sensorData.length; i+=2, j+=3){
+        for(int i=1, j=2; i < sensorData.length; i+=2, j+=3){
             sensorData[i] = (data[j] & 0XFF) << 4 | (data[j+1] & 0XF0) >> 4;
             sensorData[i+1] = (data[j+1] & 0X0F) << 8 | (data[j+2] & 0XFF);
         }
