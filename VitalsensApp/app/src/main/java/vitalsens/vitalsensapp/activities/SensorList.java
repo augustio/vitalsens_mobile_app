@@ -1,6 +1,7 @@
 package vitalsens.vitalsensapp.activities;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -10,11 +11,13 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,6 +26,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,6 +59,8 @@ public class SensorList extends Activity {
     private Button btnConnect, btnScanCancel;
     private TextView btnBack;
 
+    private String mSensorId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +72,30 @@ public class SensorList extends Activity {
         btnBack = (TextView) findViewById(R.id.btn_back);
 
         mHandler = new Handler();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter Sensor Id");
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                mSensorId = input.getText().toString();
+                populateList();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+                setResult(Activity.RESULT_CANCELED);
+                finish();
+            }
+        });
+
+        builder.show();
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
@@ -92,8 +122,6 @@ public class SensorList extends Activity {
 
             filters.add(ecgFilter);
         }
-
-        populateList();
 
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -199,8 +227,9 @@ public class SensorList extends Activity {
         }
 
         mDevRssiValues.put(sensor.getAddress(), rssi);
-        if (!sensorFound) {
+        if (!sensorFound && sensor.getName().equals(mSensorId)) {
             mSensorList.add(sensor);
+            scanLeDevice(false);
             mDeviceAdapter.notifyDataSetChanged();
         }
     }
