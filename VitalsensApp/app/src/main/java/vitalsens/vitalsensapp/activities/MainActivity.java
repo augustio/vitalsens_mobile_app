@@ -17,10 +17,13 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.InputType;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -537,7 +540,32 @@ public class MainActivity extends Activity {
             case REQUEST_SELECT_DEVICE:
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     mSensorAddresses = data.getStringArrayListExtra("SENSOR_LIST");
-                    mService.connect(mSensorAddresses);
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Enter Sensor Id");
+                    final EditText input = new EditText(this);
+                    input.setInputType(InputType.TYPE_CLASS_TEXT);
+                    builder.setView(input);
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            mPatientId = input.getText().toString();
+                            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                            imm.toggleSoftInput(0, 0);
+                            mService.connect(mSensorAddresses);
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            mPatientId = "default_patient";
+                            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                            imm.toggleSoftInput(0, 0);
+                            mService.connect(mSensorAddresses);
+                        }
+                    });
+
+                    builder.show();
                 }
                 break;
             case REQUEST_ENABLE_BT:
