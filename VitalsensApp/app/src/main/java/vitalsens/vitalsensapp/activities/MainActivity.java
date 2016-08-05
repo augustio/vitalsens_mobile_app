@@ -18,7 +18,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.InputType;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -29,20 +28,15 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
-import vitalsens.vitalsensapp.activities.util.SystemUiHider;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
 import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
@@ -81,6 +75,7 @@ public class MainActivity extends Activity {
     private int mRecTimerCounter, min, sec, hr;
     private int mNextIndex;
     private String mTimerString;
+    private String mSensorId;
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
     private boolean mRecording;
@@ -135,6 +130,7 @@ public class MainActivity extends Activity {
 
         mHandler = new Handler();
         mConnectedSensors = new ArrayList<>();
+        mSensorId = "";
         mRecords = new ArrayList<>();
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
@@ -146,7 +142,7 @@ public class MainActivity extends Activity {
         min = sec =  hr = 0;
         mTimerString = "";
 
-        mPatientId = "p101";
+        mPatientId = "";
 
         mChannelOne = new ChannelOneFragment();
         mChannelTwo = new ChannelTwoFragment();
@@ -183,6 +179,7 @@ public class MainActivity extends Activity {
                             mService.disconnect(null, mSensorAddresses);
                         }
                         Intent newIntent = new Intent(MainActivity.this, SensorList.class);
+                        newIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
                         startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
                         mUserInitiatedDisconnection = true;
@@ -248,6 +245,7 @@ public class MainActivity extends Activity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }else {
             Intent newIntent = new Intent(MainActivity.this, SensorList.class);
+            newIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
             startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
         }
     }
@@ -545,6 +543,7 @@ public class MainActivity extends Activity {
                     builder.setTitle("Enter Sensor Id");
                     final EditText input = new EditText(this);
                     input.setInputType(InputType.TYPE_CLASS_TEXT);
+                    input.setText(mPatientId);
                     builder.setView(input);
                     builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         @Override
@@ -749,6 +748,7 @@ public class MainActivity extends Activity {
         Log.d(TAG, "Connected to" + sensor.getName() +
                 " : " + sensor.getAddress());
         mConnectedSensors.add(sensor);
+        mSensorId = sensor.getName();
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText("Disconnect");
         if(mReconnecting){

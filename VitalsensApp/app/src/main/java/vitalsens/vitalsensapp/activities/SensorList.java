@@ -41,6 +41,7 @@ import vitalsens.vitalsensapp.R;
 public class SensorList extends Activity {
 
     public static final String TAG = "SensorList";
+    public static final String CURRENT_SENSOR_ID = "currentSensor";
 
     private static final String[] UUIDS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e",
                                             "0000180D-0000-1000-8000-00805f9b34fb"};
@@ -64,19 +65,31 @@ public class SensorList extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_sensor_list);
 
         btnConnect = (Button) findViewById(R.id.btn_connect);
         btnConnect.setEnabled(false);
-        btnScanCancel = (Button) findViewById(R.id.btn_cancel);
+        btnScanCancel = (Button) findViewById(R.id.btn_scan_cancel);
         btnBack = (TextView) findViewById(R.id.btn_back);
 
         mHandler = new Handler();
+
+        mSensorList = new ArrayList<>();
+        mDeviceAdapter = new DeviceAdapter(this, mSensorList);
+        mDevRssiValues = new HashMap<>();
+        mSelectedSensors = new ArrayList<>();
+
+        Bundle extras = getIntent().getExtras();
+        if (extras != null){
+            mSensorId = extras.getString(Intent.EXTRA_TEXT);
+        }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter Sensor Id");
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setText(mSensorId);
         builder.setView(input);
 
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -159,14 +172,16 @@ public class SensorList extends Activity {
         });
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putString(CURRENT_SENSOR_ID, mSensorId);
+
+        super.onSaveInstanceState(outState);
+    }
+
     private void populateList() {
         /* Initialize device list container */
         Log.d(TAG, "populateList");
-        mSensorList = new ArrayList<>();
-        mDeviceAdapter = new DeviceAdapter(this, mSensorList);
-        mDevRssiValues = new HashMap<>();
-        mSelectedSensors = new ArrayList<>();
-
         ListView newSensorsListView = (ListView) findViewById(R.id.new_sensors);
         newSensorsListView.setAdapter(mDeviceAdapter);
         newSensorsListView.setOnItemClickListener(mSensorClickListener);
@@ -183,6 +198,8 @@ public class SensorList extends Activity {
                     mScanning = false;
                     mLEScanner.stopScan(mLeScanCallback);
                     btnScanCancel.setText(R.string.scan);
+                    if(mSensorList.size() == 0)
+                        showMessage(mSensorId + " not found!");
                 }
             }, SCAN_PERIOD);
 
@@ -330,5 +347,15 @@ public class SensorList extends Activity {
     public void onBackPressed() {
         super.onBackPressed();
         scanLeDevice(false);
+    }
+
+    private void showMessage(final String msg) {
+        Runnable showMessage = new Runnable() {
+            public void run() {
+                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        };
+        mHandler.post(showMessage);
+
     }
 }
