@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
     private TextView btnRecord, connectedDevices, curDispDataType,
-            batLevel, curTemperature;
+            batLevel, curTemperature, hrValue;
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
@@ -118,6 +118,7 @@ public class MainActivity extends Activity {
         btnRecord = (TextView) findViewById(R.id.btn_record);
         curTemperature = (TextView) findViewById(R.id.cur_temp);
         batLevel = (TextView) findViewById(R.id.bat_level);
+        hrValue = (TextView) findViewById(R.id.hr_value);
         TextView btnInc = (TextView) findViewById(R.id.btn_inc);
         TextView btnDec = (TextView) findViewById(R.id.btn_dec);
         Button btnHistory = (Button) findViewById(R.id.btn_history);
@@ -512,6 +513,23 @@ public class MainActivity extends Activity {
                     Log.e(TAG, e.getMessage());
                 }
             }
+            if(action.equals(BLEService.HR)){
+                final int hr = intent.getIntExtra(Intent.EXTRA_TEXT, 1000);
+                try {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(hr != 1000){
+                                hrValue.setText("Heart Rate: " + hr);
+                            }else{
+                                hrValue.setText("Heart Rate: N/A");
+                            }
+                        }
+                    });
+                }catch(Exception e){
+                    Log.e(TAG, e.getMessage());
+                }
+            }
         }
     };
 
@@ -528,6 +546,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY);
         intentFilter.addAction(BLEService.TEMP_VALUE);
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
+        intentFilter.addAction(BLEService.HR);
         return intentFilter;
     }
 
@@ -768,6 +787,7 @@ public class MainActivity extends Activity {
         connectedDevices.setText("");
         curTemperature.setText("");
         batLevel.setText("");
+        hrValue.setText("");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
