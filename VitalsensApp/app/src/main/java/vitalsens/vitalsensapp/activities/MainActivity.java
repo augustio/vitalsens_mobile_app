@@ -40,7 +40,6 @@ import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
 import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
-import vitalsens.vitalsensapp.models.DataPacket;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.models.Sensor;
 import vitalsens.vitalsensapp.services.BLEService;
@@ -305,7 +304,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.ECG_ONE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.ECG_ONE_DATA);
                                 if(!mInitDataDispOn){
@@ -314,13 +312,13 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording)
-                                mRecords.get(0).addToChOne(dp.getChOne());
+                                for(int i = 1; i < samples.length; i++){
+                                    mRecords.get(0).addToChOne(samples[i]);
+                                }
                             if (mShowECGOne) {
                                 for(int i = 1; i < samples.length; i++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
-                                String str = "{ECG1 Samples: " + dp.getChOne() + "}";
-                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -331,7 +329,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.ECG_THREE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.ECG_THREE_DATA);
                                 if(!mInitDataDispOn){
@@ -340,9 +337,11 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording){
-                                mRecords.get(1).addToChOne(dp.getChOne());
-                                mRecords.get(1).addToChTwo(dp.getChTwo());
-                                mRecords.get(1).addToChThree(dp.getChThree());
+                                for(int i = 1; i < samples.length; i += 3){
+                                    mRecords.get(1).addToChOne(samples[i]);
+                                    mRecords.get(1).addToChTwo(samples[i + 1]);
+                                    mRecords.get(1).addToChThree(samples[i + 2]);
+                                }
                             }
                             if (mShowECGThree) {
                                 for(int i = 1; i < samples.length; i += 3){
@@ -350,11 +349,6 @@ public class MainActivity extends Activity {
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                     mChannelThree.updateGraph(samples[i + 2]);
                                 }
-                                String str = "{ECG3 Samples: " +
-                                        "chOne: " + dp.getChOne() +
-                                        " chTwo: " + dp.getChTwo() +
-                                        " chThree: " + dp.getChThree() + "}";
-                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -365,7 +359,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.PPG_ONE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.PPG_ONE_DATA);
                                 if(!mInitDataDispOn){
@@ -374,14 +367,14 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording){
-                                mRecords.get(2).addToChOne(dp.getChOne());
+                                for(int i = 1; i < samples.length; i++){
+                                    mRecords.get(2).addToChOne(samples[i]);
+                                }
                             }
                             if (mShowPPGOne) {
                                 for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
-                                String str = "{PPG1 Samples: " + dp.getChOne() + "}";
-                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -392,7 +385,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.PPG_TWO_DATA)) {
                                 mAvailableDataTypes.add(Sensor.PPG_TWO_DATA);
                                 if(!mInitDataDispOn){
@@ -401,18 +393,16 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording){
-                                mRecords.get(3).addToChOne(dp.getChOne());
-                                mRecords.get(3).addToChTwo(dp.getChTwo());
+                                for(int i = 1; i < samples.length; i += 2){
+                                    mRecords.get(3).addToChOne(samples[i]);
+                                    mRecords.get(3).addToChTwo(samples[i + 1]);
+                                }
                             }
                             if (mShowPPGTwo) {
                                 for(int i = 1; i < samples.length; i += 2){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                 }
-                                String str = "{PPG2 Samples: " +
-                                        "chOne: " + dp.getChOne() +
-                                        " chTwo: " + dp.getChTwo() + "}";
-                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -423,7 +413,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.ACCEL_DATA)) {
                                 mAvailableDataTypes.add(Sensor.ACCEL_DATA);
                                 if(!mInitDataDispOn){
@@ -432,9 +421,11 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording){
-                                mRecords.get(4).addToChOne(dp.getChOne());
-                                mRecords.get(4).addToChTwo(dp.getChTwo());
-                                mRecords.get(4).addToChThree(dp.getChThree());
+                                for(int i = 1; i < samples.length; i += 3){
+                                    mRecords.get(4).addToChOne(samples[i]);
+                                    mRecords.get(4).addToChTwo(samples[i + 1]);
+                                    mRecords.get(4).addToChThree(samples[i + 2]);
+                                }
                             }
                             if (mShowAccel) {
                                 for(int i = 1; i < samples.length; i += 3){
@@ -442,11 +433,6 @@ public class MainActivity extends Activity {
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                     mChannelThree.updateGraph(samples[i + 2]);
                                 }
-                                String str = "{ACCEL Samples: " +
-                                        "chOne: " + dp.getChOne() +
-                                        " chTwo: " + dp.getChTwo() +
-                                        " chThree: " + dp.getChThree() + "}";
-                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -457,7 +443,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            DataPacket dp = new DataPacket(samples);
                             if(!mAvailableDataTypes.contains(Sensor.IMPEDANCE_DATA)) {
                                 mAvailableDataTypes.add(Sensor.IMPEDANCE_DATA);
                                 if(!mInitDataDispOn){
@@ -466,16 +451,14 @@ public class MainActivity extends Activity {
                                 }
                             }
                             if(mRecording){
-                                mRecords.get(5).addToChOne(dp.getChOne());
-                                mRecords.get(5).addToChTwo(dp.getChTwo());
-                                mRecords.get(5).addToChThree(dp.getChThree());
+                                for(int i = 1; i < samples.length; i++) {
+                                    mRecords.get(5).addToChOne(samples[i]);
+                                }
                             }
                             if (mShowImpedance) {
                                 for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
-                                String str = "{IMPEDANCE Samples: " + dp.getChOne() + "}";
-                                Log.d(TAG, str);
                             }
                         }
                     }
@@ -827,7 +810,7 @@ public class MainActivity extends Activity {
                         String dataType = record.getType();
                         String fileName = dataType + "_" + sdf.format(date) + ".txt";
                         file = new File(dir, fileName);
-                        if(!record.getChOne().equals("")) {
+                        if(!record.isEmpty()) {
                             try {
                                 FileWriter fw = new FileWriter(file, true);
                                 fw.append(record.toJson());

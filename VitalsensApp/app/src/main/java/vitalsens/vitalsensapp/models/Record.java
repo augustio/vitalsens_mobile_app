@@ -2,15 +2,17 @@ package vitalsens.vitalsensapp.models;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+
 public class Record {
     private long sequenceId;
     private long timeStamp;
     private String patientId;
     private long duration;
     private String type;
-    private String chOne;
-    private String chTwo;
-    private String chThree;
+    private ArrayList<Integer> chOne;
+    private ArrayList<Integer> chTwo;
+    private ArrayList<Integer> chThree;
 
     public Record(){
     }
@@ -20,9 +22,9 @@ public class Record {
         this.timeStamp = timeStamp;
         this.patientId = patientId;
         duration = 0;
-        chOne = "";
-        chTwo = "";
-        chThree = "";
+        chOne = new ArrayList<>();
+        chTwo = new ArrayList<>();
+        chThree = new ArrayList<>();
         switch (type){
             case 0:
                 this.type = Sensor.ECG_ONE_DATA;
@@ -65,16 +67,25 @@ public class Record {
         return duration;
     }
 
-    public String getChOne(){
-        return chOne;
+    public ArrayList<Integer> getChOne(){
+        if(chOne.size() > 0)
+            return chOne;
+        else
+            return null;
     }
 
-    public String getChTwo(){
-        return chTwo;
+    public ArrayList<Integer> getChTwo(){
+        if(chTwo.size() > 0)
+            return chTwo;
+        else
+            return null;
     }
 
-    public String getChThree(){
-        return chThree;
+    public ArrayList<Integer> getChThree(){
+        if(chThree.size() > 0)
+            return chThree;
+        else
+            return null;
     }
 
     public void setSequenceId(long sequenceId) {
@@ -97,25 +108,20 @@ public class Record {
         this.duration = duration;
     }
 
-    public void addToChOne(String chOneData){
-        if(!chOne.equals("")){
-            chOne+=",";
-        }
-        chOne+=chOneData;
+    public void addToChOne(int data){
+        chOne.add(data);
     }
 
-    public void addToChThree(String chThreeData){
-        if(!chThree.equals("")){
-            chThree+=",";
-        }
-        chThree+=chThreeData;
+    public void addToChTwo(int data){
+        chTwo.add(data);
     }
 
-    public void addToChTwo(String chTwoData){
-        if(!chTwo.equals("")){
-            chTwo+=",";
-        }
-        chTwo+=chTwoData;
+    public void addToChThree(int data){
+        chThree.add(data);
+    }
+
+    public boolean isEmpty(){
+        return (getChOne() == null);
     }
 
     public String toJson(){
