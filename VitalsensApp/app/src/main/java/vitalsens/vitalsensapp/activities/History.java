@@ -39,7 +39,7 @@ public class History extends Activity {
     private static final String SERVER_ERROR = "No Response From Server!";
     private static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
     private static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
-    private static final String SERVER_URL = "http://52.51.162.106:5000/api/record";
+    private static final String SERVER_URL = "http://52.210.133.58:5000/api/record";
 
     private TextView accessStatus;
     private ArrayAdapter<String> mListAdapter;
@@ -226,6 +226,7 @@ public class History extends Activity {
             writer.close();
 
             responseCode = urlConnection.getResponseCode();
+            Log.e("Response Code: ", ""+responseCode);
             if(responseCode == HttpURLConnection.HTTP_OK){
                 inputStream = urlConnection.getInputStream();
                 result = convertInputStreamToString(inputStream);
