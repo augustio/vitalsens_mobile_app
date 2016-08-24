@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
     private static final int THRE_CHANNELS_LAYOUT = 3;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    private static final int MAX_DATA_RECORDING_TIME_IN_MINS = 600;
+    private static final int MAX_DATA_RECORDING_TIME = 300; //In seconds
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
     private static final int ONE_SECOND_IN_MILLIS = 1000;
@@ -794,7 +794,7 @@ public class MainActivity extends Activity {
 
     }
 
-    private void saveRecords(){
+    private void saveRecords(final long duration){
         if(isExternalStorageWritable()){
             new Thread(new Runnable(){
                 public void run(){
@@ -805,6 +805,7 @@ public class MainActivity extends Activity {
                     File file;
                     for(int i = 0; i<mRecords.size(); i++) {
                         Record record = mRecords.get(i);
+                        record.setDuration(duration);
                         Date date = new Date(record.getTimeStamp());
                         SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
                         String dataType = record.getType();
@@ -850,11 +851,11 @@ public class MainActivity extends Activity {
                     min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
                 }
                 updateTimer();
-                if (mRecTimerCounter >= MAX_DATA_RECORDING_TIME_IN_MINS) {
+                if (mRecTimerCounter >= MAX_DATA_RECORDING_TIME) {
                     stopRecordingData();
                     return;
                 }
-                if ((MAX_DATA_RECORDING_TIME_IN_MINS - mRecTimerCounter) < 5)//Five seconds to the end of timer
+                if ((MAX_DATA_RECORDING_TIME - mRecTimerCounter) < 5)//Five seconds to the end of timer
                     ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.green));
                 mRecTimerCounter++;
             mHandler.postDelayed(mRecordTimer, ONE_SECOND_IN_MILLIS);
@@ -874,7 +875,7 @@ public class MainActivity extends Activity {
 
     private void stopRecordingData(){
         if(mRecording) {
-            saveRecords();
+            saveRecords(mRecTimerCounter);
             mRecording = false;
             btnRecord.setText("Record");
             mHandler.removeCallbacks(mRecordTimer);
