@@ -226,7 +226,6 @@ public class History extends Activity {
             writer.close();
 
             responseCode = urlConnection.getResponseCode();
-            Log.e("Response Code: ", ""+responseCode);
             if(responseCode == HttpURLConnection.HTTP_OK){
                 inputStream = urlConnection.getInputStream();
                 result = convertInputStreamToString(inputStream);
