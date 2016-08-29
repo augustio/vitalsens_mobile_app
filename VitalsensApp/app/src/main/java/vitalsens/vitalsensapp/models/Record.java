@@ -8,7 +8,8 @@ public class Record {
     private long sequenceId;
     private long timeStamp;
     private String patientId;
-    private long duration;
+    private long start;
+    private long end;
     private String type;
     private ArrayList<Integer> chOne;
     private ArrayList<Integer> chTwo;
@@ -17,11 +18,12 @@ public class Record {
     public Record(){
     }
 
-    public Record(long sequenceId, long timeStamp, String patientId, int type){
+    public Record(long sequenceId, long timeStamp, String patientId, long start, int type){
         this.sequenceId = sequenceId;
         this.timeStamp = timeStamp;
         this.patientId = patientId;
-        duration = 0;
+        this.start = start;
+        end = 0;
         chOne = new ArrayList<>();
         chTwo = new ArrayList<>();
         chThree = new ArrayList<>();
@@ -63,8 +65,12 @@ public class Record {
         return type;
     }
 
-    public long getDuration(){
-        return duration;
+    public long getStart(){
+        return start;
+    }
+
+    public long getEnd(){
+        return end;
     }
 
     public ArrayList<Integer> getChOne(){
@@ -104,8 +110,12 @@ public class Record {
         this.type = type;
     }
 
-    public void setDuration(long duration){
-        this.duration = duration;
+    public void setStart(long start){
+        this.start = start;
+    }
+
+    public void setEnd(long end){
+        this.end = end;
     }
 
     public void addToChOne(int data){
@@ -133,11 +143,12 @@ public class Record {
     public void fromJson(String json){
         Gson gson = new Gson();
         Record record = gson.fromJson(json, Record.class);
-        this.sequenceId = record.getSequenceId();
-        this.timeStamp = record.getTimeStamp();
-        this.patientId = record.getPatientId();
-        this.type = record.getType();
-        duration = record.getDuration();
+        sequenceId = record.getSequenceId();
+        timeStamp = record.getTimeStamp();
+        patientId = record.getPatientId();
+        type = record.getType();
+        start = record.getStart();
+        end = record.getEnd();
         chOne = record.getChOne();
         chTwo = record.getChTwo();
         chThree = record.getChThree();

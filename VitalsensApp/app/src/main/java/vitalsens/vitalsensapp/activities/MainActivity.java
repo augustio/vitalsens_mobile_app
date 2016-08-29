@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
     private static final int THRE_CHANNELS_LAYOUT = 3;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    private static final int MAX_DATA_RECORDING_TIME = 300; //In seconds
+    private static final int MAX_DATA_RECORDING_TIME = 60; //In seconds
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
     private static final int ONE_SECOND_IN_MILLIS = 1000;
@@ -198,7 +198,7 @@ public class MainActivity extends Activity {
                     else {
                         long timeStamp = System.currentTimeMillis();
                         for(int i = 0; i < 6; i++){
-                            mRecords.add( new Record(1, timeStamp, mPatientId, i));
+                            mRecords.add( new Record(1, timeStamp, mPatientId, timeStamp, i));
                         }
                         mRecording = true;
                         btnRecord.setText("Stop");
@@ -311,10 +311,11 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording)
-                                for(int i = 1; i < samples.length; i++){
+                            if(mRecording) {
+                                for (int i = 1; i < samples.length; i++) {
                                     mRecords.get(0).addToChOne(samples[i]);
                                 }
+                            }
                             if (mShowECGOne) {
                                 for(int i = 1; i < samples.length; i++){
                                     mChannelOne.updateGraph(samples[i]);
@@ -805,7 +806,7 @@ public class MainActivity extends Activity {
                     File file;
                     for(int i = 0; i<mRecords.size(); i++) {
                         Record record = mRecords.get(i);
-                        record.setDuration(duration);
+                        record.setEnd(record.getStart() + duration);
                         Date date = new Date(record.getTimeStamp());
                         SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
                         String dataType = record.getType();
@@ -875,7 +876,7 @@ public class MainActivity extends Activity {
 
     private void stopRecordingData(){
         if(mRecording) {
-            saveRecords(mRecTimerCounter);
+            saveRecords(mRecTimerCounter * 1000);
             mRecording = false;
             btnRecord.setText("Record");
             mHandler.removeCallbacks(mRecordTimer);
