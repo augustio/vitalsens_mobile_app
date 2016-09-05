@@ -759,8 +759,10 @@ public class MainActivity extends Activity {
         }
         if(connectedDevicesStr.equals(""))
             connectedDevices.setText(sensor.getName());
-        else
-            connectedDevices.setText(connectedDevicesStr + " " + sensor.getName());
+        else{
+            String str = connectedDevicesStr + " " + sensor.getName();
+            connectedDevices.setText(str);
+        }
     }
 
     private void handleGattDisconnectionEvent(){
@@ -876,7 +878,7 @@ public class MainActivity extends Activity {
 
     private void stopRecordingData(){
         if(mRecording) {
-            saveRecords(mRecTimerCounter * 1000);
+            saveRecords(mRecTimerCounter * ONE_SECOND_IN_MILLIS);
             mRecording = false;
             btnRecord.setText("Record");
             mHandler.removeCallbacks(mRecordTimer);
@@ -892,6 +894,5 @@ public class MainActivity extends Activity {
             }
         };
         mHandler.post(showMessage);
-
     }
 }
