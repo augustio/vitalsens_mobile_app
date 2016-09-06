@@ -203,7 +203,7 @@ public class MainActivity extends Activity {
                             mRecords.add( new Record(1, timeStamp, mPatientId, timeStamp, i));
                         }
                         mRecording = true;
-                        btnRecord.setText("Stop");
+                        btnRecord.setText(R.string.stop);
                         mRecordTimer.run();
                     }
                 }
@@ -316,12 +316,18 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording) {
+                            if(mRecording && mShowECGOne){
+                                for (int i = 1; i < samples.length; i++) {
+                                    mRecords.get(0).addToChOne(samples[i]);
+                                    mChannelOne.updateGraph(samples[i]);
+                                }
+                            }
+                            else if(mRecording ) {
                                 for (int i = 1; i < samples.length; i++) {
                                     mRecords.get(0).addToChOne(samples[i]);
                                 }
                             }
-                            if (mShowECGOne) {
+                            else if (mShowECGOne) {
                                 for(int i = 1; i < samples.length; i++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -342,14 +348,25 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
-                            if(mRecording){
+                            if(mRecording && mShowECGThree){
+                                for(int i = 1; i < samples.length; i += 3){
+                                    mRecords.get(1).addToChOne(samples[i]);
+                                    mRecords.get(1).addToChTwo(samples[i + 1]);
+                                    mRecords.get(1).addToChThree(samples[i + 2]);
+
+                                    mChannelOne.updateGraph(samples[i]);
+                                    mChannelTwo.updateGraph(samples[i + 1]);
+                                    mChannelThree.updateGraph(samples[i + 2]);
+                                }
+                            }
+                            else if(mRecording){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(1).addToChOne(samples[i]);
                                     mRecords.get(1).addToChTwo(samples[i + 1]);
                                     mRecords.get(1).addToChThree(samples[i + 2]);
                                 }
                             }
-                            if (mShowECGThree) {
+                            else if (mShowECGThree) {
                                 for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -398,6 +415,15 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
+                            if(mRecording && mShowPPGTwo){
+                                for(int i = 1; i < samples.length; i += 2){
+                                    mRecords.get(3).addToChOne(samples[i]);
+                                    mRecords.get(3).addToChTwo(samples[i + 1]);
+
+                                    mChannelOne.updateGraph(samples[i]);
+                                    mChannelTwo.updateGraph(samples[i + 1]);
+                                }
+                            }
                             if(mRecording){
                                 for(int i = 1; i < samples.length; i += 2){
                                     mRecords.get(3).addToChOne(samples[i]);
@@ -424,6 +450,17 @@ public class MainActivity extends Activity {
                                 if(!mInitDataDispOn){
                                     mInitDataDispOn = true;
                                     displayData();
+                                }
+                            }
+                            if(mRecording && mShowAccel){
+                                for(int i = 1; i < samples.length; i += 3){
+                                    mRecords.get(4).addToChOne(samples[i]);
+                                    mRecords.get(4).addToChTwo(samples[i + 1]);
+                                    mRecords.get(4).addToChThree(samples[i + 2]);
+
+                                    mChannelOne.updateGraph(samples[i]);
+                                    mChannelTwo.updateGraph(samples[i + 1]);
+                                    mChannelThree.updateGraph(samples[i + 2]);
                                 }
                             }
                             if(mRecording){
@@ -456,6 +493,12 @@ public class MainActivity extends Activity {
                                     displayData();
                                 }
                             }
+                            if(mRecording && mShowImpedance){
+                                for(int i = 1; i < samples.length; i++) {
+                                    mRecords.get(5).addToChOne(samples[i]);
+                                    mChannelOne.updateGraph(samples[i]);
+                                }
+                            }
                             if(mRecording){
                                 for(int i = 1; i < samples.length; i++) {
                                     mRecords.get(5).addToChOne(samples[i]);
@@ -475,10 +518,13 @@ public class MainActivity extends Activity {
                 try {
                     runOnUiThread(new Runnable() {
                         public void run() {
+                            String tempStr;
                             if (tempValue != 1000) {
-                                curTemperature.setText(tempValue + "\u00B0C");
+                                tempStr = tempValue + "\u00B0C";
+                                curTemperature.setText(tempStr);
                             }else{
-                                curTemperature.setText("Temp: N/A");
+                                tempStr = "Temp: N/A";
+                                curTemperature.setText(tempStr);
                             }
                         }
                     });
@@ -491,10 +537,13 @@ public class MainActivity extends Activity {
                 try {
                     runOnUiThread(new Runnable() {
                         public void run() {
+                            String batLevelStr;
                             if (batteryLevel != 200) {
-                                batLevel.setText("Battery: " + batteryLevel + "%");
+                                batLevelStr = "Battery: " + batteryLevel + "%";
+                                batLevel.setText(batLevelStr);
                             }else{
-                                batLevel.setText("Battery: N/A");
+                                batLevelStr = "Battery: N/A";
+                                batLevel.setText(batLevelStr);
                             }
                         }
                     });
@@ -508,10 +557,13 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            String hrStr;
                             if(hr != 1000){
-                                hrValue.setText("Heart Rate: " + hr);
+                                hrStr = "Heart Rate: " + hr;
+                                hrValue.setText(hrStr);
                             }else{
-                                hrValue.setText("Heart Rate: N/A");
+                                hrStr = "Heart Rate: N/A";
+                                hrValue.setText(hrStr);
                             }
                         }
                     });
@@ -747,7 +799,7 @@ public class MainActivity extends Activity {
         mConnectedSensors.add(sensor);
         mSensorId = sensor.getName();
         mConnectionState=BLEService.STATE_CONNECTED;
-        btnConnectDisconnect.setText("Disconnect");
+        btnConnectDisconnect.setText(R.string.disconnect);
         if(mReconnecting){
             mReconnecting = false;
         }
@@ -762,7 +814,7 @@ public class MainActivity extends Activity {
     private void handleGattDisconnectionEvent(){
         mConnectedSensors.clear();
         mConnectionState = BLEService.STATE_DISCONNECTED;
-        btnConnectDisconnect.setText("Connect");
+        btnConnectDisconnect.setText(R.string.connect);
         curDispDataType.setText("");
         connectedDevices.setText("");
         curTemperature.setText("");

@@ -40,5 +40,6 @@
     <string name="sensor_id">SENSOR ID</string>
     <string name="patient_id">PATIENT ID</string>
     <string name="title_activity_connect_dialog">ConnectDialog</string>
+    <string name="stop">Stop</string>
 
 </resources>
