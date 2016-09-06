@@ -1,7 +1,6 @@
 package vitalsens.vitalsensapp.activities;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -11,13 +10,11 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +23,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,8 +39,8 @@ public class SensorList extends Activity {
     public static final String TAG = "SensorList";
     public static final String CURRENT_SENSOR_ID = "currentSensor";
 
-    private static final String[] UUIDS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e",
-                                            "0000180D-0000-1000-8000-00805f9b34fb"};
+    private static final String[] UUIDS = {"6e400001-b5a3-f393-e0a9-e50e24dcca9e", //UART Service UUID
+                                            "0000180D-0000-1000-8000-00805f9b34fb"}; //Heart Rate Service UUID
     private static final long SCAN_PERIOD = 10000;
     private static final int MAX_SENSORS = 4;
 
@@ -80,35 +76,8 @@ public class SensorList extends Activity {
         mDevRssiValues = new HashMap<>();
         mSelectedSensors = new ArrayList<>();
 
-        Bundle extras = getIntent().getExtras();
-        if (extras != null){
-            mSensorId = extras.getString(Intent.EXTRA_TEXT);
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Enter Sensor Id");
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setText(mSensorId);
-        builder.setView(input);
-
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mSensorId = input.getText().toString();
-                populateList();
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-                setResult(Activity.RESULT_CANCELED);
-                finish();
-            }
-        });
-
-        builder.show();
+        Intent intent = getIntent();
+        mSensorId = intent.getStringExtra(Intent.EXTRA_TEXT);
 
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
@@ -135,6 +104,8 @@ public class SensorList extends Activity {
 
             filters.add(ecgFilter);
         }
+
+        populateList();
 
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override

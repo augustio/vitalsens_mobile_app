@@ -17,12 +17,9 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.text.InputType;
 import android.util.Log;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -43,6 +40,7 @@ import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.models.Sensor;
 import vitalsens.vitalsensapp.services.BLEService;
+import vitalsens.vitalsensapp.utils.ConnectDialog;
 
 public class MainActivity extends Activity {
 
@@ -54,6 +52,7 @@ public class MainActivity extends Activity {
     private static final int THRE_CHANNELS_LAYOUT = 3;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
+    private static final int REQUEST_CONNECT_PARAMS = 3;
     private static final int MAX_DATA_RECORDING_TIME = 60; //In seconds
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
@@ -178,9 +177,12 @@ public class MainActivity extends Activity {
                             mUserInitiatedDisconnection = true;
                             mService.disconnect(null, mSensorAddresses);
                         }
-                        Intent newIntent = new Intent(MainActivity.this, SensorList.class);
-                        newIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
-                        startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
+                        Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
+                        ArrayList<String> connParams = new ArrayList<>();
+                        connParams.add(mSensorId);
+                        connParams.add(mPatientId);
+                        newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
+                        startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
                         mUserInitiatedDisconnection = true;
                         mService.disconnect(mConnectedSensors, null);
@@ -244,9 +246,12 @@ public class MainActivity extends Activity {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }else {
-            Intent newIntent = new Intent(MainActivity.this, SensorList.class);
-            newIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
-            startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
+            Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
+            ArrayList<String> connParams = new ArrayList<>();
+            connParams.add(mSensorId);
+            connParams.add(mPatientId);
+            newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
+            startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
         }
     }
 
@@ -541,33 +546,7 @@ public class MainActivity extends Activity {
             case REQUEST_SELECT_DEVICE:
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     mSensorAddresses = data.getStringArrayListExtra("SENSOR_LIST");
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Enter Sensor Id");
-                    final EditText input = new EditText(this);
-                    input.setInputType(InputType.TYPE_CLASS_TEXT);
-                    input.setText(mPatientId);
-                    builder.setView(input);
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            mPatientId = input.getText().toString();
-                            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                            imm.toggleSoftInput(0, 0);
-                            mService.connect(mSensorAddresses);
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            mPatientId = "default_patient";
-                            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                            imm.toggleSoftInput(0, 0);
-                            mService.connect(mSensorAddresses);
-                        }
-                    });
-
-                    builder.show();
+                    mService.connect(mSensorAddresses);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -578,6 +557,21 @@ public class MainActivity extends Activity {
                     Log.d(TAG, "BT not enabled");
                     showMessage("Problem in BT Turning ON ");
                     finish();
+                }
+                break;
+            case REQUEST_CONNECT_PARAMS:
+                if(resultCode == Activity.RESULT_OK && data != null){
+                    ArrayList<String> connParams = data.getStringArrayListExtra(Intent.EXTRA_TEXT);
+                    if(connParams != null && connParams.size() == 2) {
+                        mSensorId = connParams.get(0);
+                        mPatientId = connParams.get(1);
+                        Log.e(TAG, mSensorId + " " + mPatientId);
+                    }
+                    Intent getSensorIntent = new Intent(MainActivity.this, SensorList.class);
+                    getSensorIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
+                    startActivityForResult(getSensorIntent, REQUEST_SELECT_DEVICE);
+                }else if(resultCode == Activity.RESULT_CANCELED){
+                    Log.d(TAG, "User cancled request");
                 }
                 break;
             default:
