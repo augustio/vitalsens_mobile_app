@@ -597,8 +597,16 @@ public class MainActivity extends Activity {
 
             case REQUEST_SELECT_DEVICE:
                 if (resultCode == Activity.RESULT_OK && data != null) {
-                    mSensorAddresses = data.getStringArrayListExtra("SENSOR_LIST");
+                    mSensorAddresses = data.getStringArrayListExtra(SensorList.EXTRA_SENSOR_ADDRESSES);
                     mService.connect(mSensorAddresses);
+                }else if(resultCode == SensorList.DEVICE_NOT_FOUND){
+                    showMessage(mSensorId + " not found, try again");
+                    Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
+                    ArrayList<String> connParams = new ArrayList<>();
+                    connParams.add(mSensorId);
+                    connParams.add(mPatientId);
+                    newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
+                    startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -926,7 +934,7 @@ public class MainActivity extends Activity {
         if(mRecording) {
             saveRecords(mRecTimerCounter * ONE_SECOND_IN_MILLIS);
             mRecording = false;
-            btnRecord.setText("Record");
+            btnRecord.setText(R.string.record);
             mHandler.removeCallbacks(mRecordTimer);
             ((TextView) findViewById(R.id.timer_view)).setText("");
             refreshTimer();

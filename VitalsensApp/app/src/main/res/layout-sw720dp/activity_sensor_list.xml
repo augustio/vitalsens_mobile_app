@@ -20,72 +20,42 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/background">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:background="@android:color/darker_gray">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="@string/scan_sensor_title"
+            android:textSize="24sp"
+            android:textColor="@color/black"/>
+    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:orientation="horizontal"
-        android:background="@drawable/pairing_header"
-        android:layout_marginTop="50dp"
-        android:layout_marginBottom="50dp">
-
-        <TextView
-            android:id="@+id/btn_back"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:layout_alignParentStart="true"
-            android:clickable="true"/>
-
-        <TextView
-            android:id="@+id/title_devices"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_centerInParent="true"
-            android:paddingTop="25dp"
-            android:paddingStart="25dp"
-            android:text="@string/connect_devices"
-            android:textSize="25sp"
-            android:textColor="@color/black"/>
-
-    </RelativeLayout>
-
-    <ListView
-        android:id="@+id/new_sensors"
-        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:divider="@android:color/transparent"
-        android:dividerHeight="3dp"
-        android:listSelector="@drawable/device_element_sel_bg"
-        android:stackFromBottom="false" />
+        android:layout_gravity="center">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
+        <ProgressBar
+            android:id="@+id/scan_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            style="@android:style/Widget.ProgressBar.Large"
+            android:layout_marginBottom="10dp"/>
 
-        <Button
-            android:id="@+id/btn_scan_cancel"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="40dp"
-            android:background="@drawable/blue_button"
-            android:textSize="25sp"
-            android:paddingBottom="2dp"
+        <TextView
+            android:id="@+id/scanning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/scan_progress"
             android:textColor="@color/white"
-            android:text="@string/scan"/>
-
-        <Button
-            android:id="@+id/btn_connect"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="40dp"
-            android:background="@drawable/blue_button"
-            android:textSize="25sp"
-            android:paddingBottom="2dp"
-            android:textColor="@color/white"
-            android:text="@string/connect" />
-
-
-    </LinearLayout>
+            android:textSize="24sp"
+            android:text="@string/scanning"/>
+    </RelativeLayout>
 </LinearLayout>

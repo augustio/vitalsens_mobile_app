@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.app.Activity;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -72,7 +71,8 @@ public class ConnectDialog extends Activity {
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showMessage("You must enter connection params to proceed");
+                setResult(Activity.RESULT_CANCELED);
+                finish();
             }
         });
     }

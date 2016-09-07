@@ -6,10 +6,10 @@
     <string name="action_settings">Settings</string>
     <string name="ble_not_supported">Bluetooth Low Energy not supported</string>
     <string name="select_sensors">Select sensors</string>
-    <string name="scanning">Scanning for sensors&#8230;</string>
+    <string name="scanning">Scanning for</string>
     <string name="scan">Scan</string>
     <string name="cancel">Cancel</string>
-    <string name="cancel_caps">CANCEL</string>
+    <string name="cancel_caps">Cancel</string>
     <string name="connect">Connect</string>
     <string name="paired">paired</string>
     <string name="disconnect">Disconnect</string>
@@ -34,7 +34,7 @@
     <string name="action_send_to_cloud">Send To Cloud</string>
     <string name="action_send_to_email">Send To Email</string>
     <string name="logo_desc">vitalsens logo</string>
-    <string name="connect_devices">Connect devices</string>
+    <string name="scan_sensor_title">Sensors Scanner</string>
     <string name="devices">Devices</string>
     <string name="empty">""</string>
     <string name="sensor_id">SENSOR ID</string>
