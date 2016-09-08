@@ -349,43 +349,6 @@ public class BLEService extends Service {
         }
     }
 
-    /*public void disconnect(final ArrayList<String> sensorAddresses) {
-        if (mBluetoothAdapter == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized ");
-            return;
-        }
-
-        if(mDisconnectionThread == null){
-            mDisconnectionThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    disconnectionLoop(sensorAddresses);
-                    mDisconnectionThread.interrupt();
-                    mDisconnectionThread = null;
-                }
-            });
-
-            mDisconnectionThread.start();
-        }
-    }
-
-    private void disconnectionLoop(final ArrayList<Object> sensorAddresses){
-        if(sensorAddresses == null)
-            return;
-        for (Object str : sensorAddresses){
-            BluetoothGatt gatt = mConnectedSensors.get(str);
-            if(gatt != null){
-                gatt.disconnect();
-            }
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException e) {
-                Log.d(TAG, e.getMessage());
-            }
-        }
-    }*/
-
-
     public void enableNotification(final ArrayList<BluetoothGattCharacteristic> characteristics, final BluetoothGatt gatt) {
         if(characteristics == null)
             return;
@@ -402,7 +365,6 @@ public class BLEService extends Service {
             mNotificationThread.start();
         }
     }
-
 
     private void notificationLoop(final ArrayList<BluetoothGattCharacteristic> characteristics, BluetoothGatt gatt){
         for(BluetoothGattCharacteristic ch : characteristics){
