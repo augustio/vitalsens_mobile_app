@@ -77,9 +77,9 @@ public class MainActivity extends Activity {
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
     private boolean mRecording;
-    private boolean mInitDataDispOn;
     private boolean mUserInitiatedDisconnection;
     private boolean mReconnecting;
+    private boolean mDataDisplayOn;
 
     private String mPatientId;
 
@@ -134,13 +134,13 @@ public class MainActivity extends Activity {
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
-        mInitDataDispOn = false;
         mUserInitiatedDisconnection = false;
         mReconnecting = false;
+        mDataDisplayOn = false;
 
         min = sec =  hr = 0;
+        mNextIndex = 0;
         mTimerString = "";
-
         mPatientId = "";
 
         mChannelOne = new ChannelOneFragment();
@@ -309,25 +309,16 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(!mAvailableDataTypes.contains(Sensor.ECG_ONE_DATA)) {
-                                mAvailableDataTypes.add(Sensor.ECG_ONE_DATA);
-                                if(!mInitDataDispOn){
-                                    mInitDataDispOn = true;
-                                    displayData();
-                                }
-                            }
                             if(mRecording && mShowECGOne){
                                 for (int i = 1; i < samples.length; i++) {
                                     mRecords.get(0).addToChOne(samples[i]);
                                     mChannelOne.updateGraph(samples[i]);
                                 }
-                            }
-                            else if(mRecording ) {
+                            } else if(mRecording ) {
                                 for (int i = 1; i < samples.length; i++) {
                                     mRecords.get(0).addToChOne(samples[i]);
                                 }
-                            }
-                            else if (mShowECGOne) {
+                            } else if (mShowECGOne) {
                                 for(int i = 1; i < samples.length; i++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -341,13 +332,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(!mAvailableDataTypes.contains(Sensor.ECG_THREE_DATA)) {
-                                mAvailableDataTypes.add(Sensor.ECG_THREE_DATA);
-                                if(!mInitDataDispOn){
-                                    mInitDataDispOn = true;
-                                    displayData();
-                                }
-                            }
                             if(mRecording && mShowECGThree){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(1).addToChOne(samples[i]);
@@ -358,15 +342,13 @@ public class MainActivity extends Activity {
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                     mChannelThree.updateGraph(samples[i + 2]);
                                 }
-                            }
-                            else if(mRecording){
+                            } else if(mRecording){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(1).addToChOne(samples[i]);
                                     mRecords.get(1).addToChTwo(samples[i + 1]);
                                     mRecords.get(1).addToChThree(samples[i + 2]);
                                 }
-                            }
-                            else if (mShowECGThree) {
+                            } else if (mShowECGThree) {
                                 for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -382,19 +364,16 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(!mAvailableDataTypes.contains(Sensor.PPG_ONE_DATA)) {
-                                mAvailableDataTypes.add(Sensor.PPG_ONE_DATA);
-                                if(!mInitDataDispOn){
-                                    mInitDataDispOn = true;
-                                    displayData();
+                            if(mRecording && mShowPPGOne){
+                                for(int i = 1; i < samples.length; i++){
+                                    mRecords.get(2).addToChOne(samples[i]);
+                                    mChannelOne.updateGraph(samples[i]);
                                 }
-                            }
-                            if(mRecording){
+                            } else if(mRecording){
                                 for(int i = 1; i < samples.length; i++){
                                     mRecords.get(2).addToChOne(samples[i]);
                                 }
-                            }
-                            if (mShowPPGOne) {
+                            } else if (mShowPPGOne) {
                                 for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -408,13 +387,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(!mAvailableDataTypes.contains(Sensor.PPG_TWO_DATA)) {
-                                mAvailableDataTypes.add(Sensor.PPG_TWO_DATA);
-                                if(!mInitDataDispOn){
-                                    mInitDataDispOn = true;
-                                    displayData();
-                                }
-                            }
                             if(mRecording && mShowPPGTwo){
                                 for(int i = 1; i < samples.length; i += 2){
                                     mRecords.get(3).addToChOne(samples[i]);
@@ -423,14 +395,12 @@ public class MainActivity extends Activity {
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                 }
-                            }
-                            if(mRecording){
+                            } else if(mRecording){
                                 for(int i = 1; i < samples.length; i += 2){
                                     mRecords.get(3).addToChOne(samples[i]);
                                     mRecords.get(3).addToChTwo(samples[i + 1]);
                                 }
-                            }
-                            if (mShowPPGTwo) {
+                            } else if (mShowPPGTwo) {
                                 for(int i = 1; i < samples.length; i += 2){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -445,13 +415,6 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(!mAvailableDataTypes.contains(Sensor.ACCEL_DATA)) {
-                                mAvailableDataTypes.add(Sensor.ACCEL_DATA);
-                                if(!mInitDataDispOn){
-                                    mInitDataDispOn = true;
-                                    displayData();
-                                }
-                            }
                             if(mRecording && mShowAccel){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(4).addToChOne(samples[i]);
@@ -462,15 +425,13 @@ public class MainActivity extends Activity {
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                     mChannelThree.updateGraph(samples[i + 2]);
                                 }
-                            }
-                            if(mRecording){
+                            } else if(mRecording){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(4).addToChOne(samples[i]);
                                     mRecords.get(4).addToChTwo(samples[i + 1]);
                                     mRecords.get(4).addToChThree(samples[i + 2]);
                                 }
-                            }
-                            if (mShowAccel) {
+                            } else if (mShowAccel) {
                                 for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -486,25 +447,16 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(!mAvailableDataTypes.contains(Sensor.IMPEDANCE_DATA)) {
-                                mAvailableDataTypes.add(Sensor.IMPEDANCE_DATA);
-                                if(!mInitDataDispOn){
-                                    mInitDataDispOn = true;
-                                    displayData();
-                                }
-                            }
                             if(mRecording && mShowImpedance){
                                 for(int i = 1; i < samples.length; i++) {
                                     mRecords.get(5).addToChOne(samples[i]);
                                     mChannelOne.updateGraph(samples[i]);
                                 }
-                            }
-                            if(mRecording){
+                            } else if(mRecording){
                                 for(int i = 1; i < samples.length; i++) {
                                     mRecords.get(5).addToChOne(samples[i]);
                                 }
-                            }
-                            if (mShowImpedance) {
+                            } else if (mShowImpedance) {
                                 for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -754,10 +706,12 @@ public class MainActivity extends Activity {
         chThree.setVisibility(View.GONE);
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo
                 = mShowAccel = mShowImpedance = false;
-        mInitDataDispOn = false;
     }
 
     private void displayData(){
+
+        if(mAvailableDataTypes.size() <= mNextIndex)
+            return;
 
         String dataType = mAvailableDataTypes.get(mNextIndex);
 
@@ -805,7 +759,11 @@ public class MainActivity extends Activity {
         Log.d(TAG, "Connected to" + sensor.getName() +
                 " : " + sensor.getAddress());
         mConnectedSensors.add(sensor);
-        mSensorId = sensor.getName();
+        addAvailableDataType(mSensorId);
+        if(!mDataDisplayOn) {
+            displayData();
+            mDataDisplayOn = true;
+        }
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText(R.string.disconnect);
         if(mReconnecting){
@@ -835,8 +793,8 @@ public class MainActivity extends Activity {
         chThree.setVisibility(View.GONE);
         mNextIndex = 0;
         mAvailableDataTypes.clear();
-        mInitDataDispOn = false;
         mReconnecting = false;
+        mDataDisplayOn = false;
         clearGraphLayout();
         if(mRecording)
             stopRecordingData();
@@ -948,5 +906,24 @@ public class MainActivity extends Activity {
             }
         };
         mHandler.post(showMessage);
+    }
+
+    private void addAvailableDataType(String sensorId){
+        String type = sensorId.substring(0, 3);
+        switch(type.toUpperCase()){
+            case "ECG":
+                mAvailableDataTypes.add(Sensor.ECG_THREE_DATA);
+                mAvailableDataTypes.add(Sensor.ACCEL_DATA);
+                break;
+            case "PPG":
+                mAvailableDataTypes.add(Sensor.PPG_TWO_DATA);
+                break;
+            case "ACL":
+                mAvailableDataTypes.add(Sensor.ACCEL_DATA);
+                break;
+            case "IMP":
+                mAvailableDataTypes.add(Sensor.IMPEDANCE_DATA);
+                break;
+        }
     }
 }
