@@ -20,28 +20,65 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/bat_level"
+                android:id="@+id/patient_id"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="7dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="24dp"
                 android:textSize="20sp"
-                android:textColor="@color/white"/>
+                android:textColor="@color/darkgrey"/>
 
-            <TextView
-                android:id="@+id/cur_temp"
+            <View
+                android:layout_width="160dp"
+                android:layout_height="1dp"
+                android:layout_marginTop="8dp"
+                android:background="@color/red" />
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="7dp"
-                android:textSize="20sp"
-                android:textColor="@color/white"/>
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:textSize="20sp"
+                    android:textColor="@color/red"
+                    android:text="@string/hr"/>
+                <TextView
+                    android:id="@+id/hr_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="20sp"
+                    android:textColor="@color/white"/>
+            </LinearLayout>
 
-            <TextView
-            android:id="@+id/hr_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="7dp"
-            android:textSize="20sp"
-            android:textColor="@color/white"/>
+            <View
+                android:layout_width="160dp"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:background="@color/red" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="20sp"
+                    android:textColor="@color/red"
+                    android:text="@string/temp"/>
+                <TextView
+                    android:id="@+id/cur_temp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="20sp"
+                    android:textColor="@color/whitegrey"/>
+            </LinearLayout>
+
 
         </LinearLayout>
 
@@ -52,6 +89,29 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <LinearLayout
+                android:id="@+id/bat_level_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/bat_level_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:textSize="14sp"
+                    android:textColor="@color/whitegrey"/>
+
+                <TextView
+                    android:id="@+id/bat_level"
+                    android:layout_width="32dp"
+                    android:layout_height="16dp"/>
+            </LinearLayout>
+
             <Button
                 android:id="@+id/btn_connect"
                 android:layout_width="250dp"
@@ -60,6 +120,7 @@
                 android:layout_marginTop="7dp"
                 android:paddingStart="30dp"
                 android:paddingEnd="0dp"
+                android:layout_below="@+id/bat_level_layout"
                 android:background="@drawable/connect_btn_bg"
                 android:text="@string/connect"
                 android:textSize="22sp"/>
