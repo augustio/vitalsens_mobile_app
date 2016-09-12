@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
     private TextView btnRecord, connectedDevices, curDispDataType,
-            batLevel, curTemperature, hrValue;
+            batLevel, curTemperature, hrValue, patientId, batLevelTxt;
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
@@ -117,7 +117,9 @@ public class MainActivity extends Activity {
         btnRecord = (TextView) findViewById(R.id.btn_record);
         curTemperature = (TextView) findViewById(R.id.cur_temp);
         batLevel = (TextView) findViewById(R.id.bat_level);
+        batLevelTxt = (TextView) findViewById(R.id.bat_level_text);
         hrValue = (TextView) findViewById(R.id.hr_value);
+        patientId = (TextView) findViewById(R.id.patient_id);
         TextView btnInc = (TextView) findViewById(R.id.btn_inc);
         TextView btnDec = (TextView) findViewById(R.id.btn_dec);
         Button btnHistory = (Button) findViewById(R.id.btn_history);
@@ -439,9 +441,6 @@ public class MainActivity extends Activity {
                             if (tempValue != 1000) {
                                 tempStr = tempValue + "\u00B0C";
                                 curTemperature.setText(tempStr);
-                            }else{
-                                tempStr = "Temp: N/A";
-                                curTemperature.setText(tempStr);
                             }
                         }
                     });
@@ -454,13 +453,24 @@ public class MainActivity extends Activity {
                 try {
                     runOnUiThread(new Runnable() {
                         public void run() {
-                            String batLevelStr;
-                            if (batteryLevel != 200) {
-                                batLevelStr = "Battery: " + batteryLevel + "%";
-                                batLevel.setText(batLevelStr);
-                            }else{
-                                batLevelStr = "Battery: N/A";
-                                batLevel.setText(batLevelStr);
+                            String batLevelStr = batteryLevel + "%";
+                            batLevelTxt.setText(batLevelStr);
+                            if(batteryLevel == 100){
+                                batLevel.setBackgroundResource(R.drawable.battery7);
+                            }else if(batteryLevel >= 80) {
+                                batLevel.setBackgroundResource(R.drawable.battery6);
+                            }else if(batteryLevel >= 60) {
+                                batLevel.setBackgroundResource(R.drawable.battery5);
+                            }else if(batteryLevel >= 50) {
+                                batLevel.setBackgroundResource(R.drawable.battery4);
+                            }else if(batteryLevel >= 40) {
+                                batLevel.setBackgroundResource(R.drawable.battery3);
+                            }else if(batteryLevel >= 25) {
+                                batLevel.setBackgroundResource(R.drawable.battery2);
+                            }else if(batteryLevel >= 10) {
+                                batLevel.setBackgroundResource(R.drawable.battery1);
+                            }else if(batteryLevel < 10) {
+                                batLevel.setBackgroundResource(R.drawable.battery0);
                             }
                         }
                     });
@@ -740,6 +750,7 @@ public class MainActivity extends Activity {
             String str = connectedDevicesStr + " " + sensor.getName();
             connectedDevices.setText(str);
         }
+        patientId.setText(mPatientId);
     }
 
     private void handleGattDisconnectionEvent(){
@@ -749,8 +760,10 @@ public class MainActivity extends Activity {
         curDispDataType.setText("");
         connectedDevices.setText("");
         curTemperature.setText("");
-        batLevel.setText("");
+        batLevel.setBackgroundResource(0);
+        batLevelTxt.setText("");
         hrValue.setText("");
+        patientId.setText("");
         mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
                 mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);

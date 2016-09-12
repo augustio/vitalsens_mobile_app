@@ -41,5 +41,7 @@
     <string name="patient_id">PATIENT ID</string>
     <string name="title_activity_connect_dialog">ConnectDialog</string>
     <string name="stop">Stop</string>
+    <string name="hr">HR</string>
+    <string name="temp">Temp.</string>
 
 </resources>
