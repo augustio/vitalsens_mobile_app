@@ -309,17 +309,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && mShowECGOne){
-                                for (int i = 1; i < samples.length; i++) {
-                                    mRecords.get(0).addToChOne(samples[i]);
-                                    mChannelOne.updateGraph(samples[i]);
-                                }
-                            } else if(mRecording ) {
-                                for (int i = 1; i < samples.length; i++) {
+                            if(mRecording){
+                                for(int i = 1; i < samples.length; i ++){
                                     mRecords.get(0).addToChOne(samples[i]);
                                 }
-                            } else if (mShowECGOne) {
-                                for(int i = 1; i < samples.length; i++){
+                            }
+                            if (mShowECGOne && samples[1] > 0) {
+                                for (int i = 1; i < samples.length; i ++) {
                                     mChannelOne.updateGraph(samples[i]);
                                 }
                             }
@@ -332,24 +328,15 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && mShowECGThree){
-                                for(int i = 1; i < samples.length; i += 3){
-                                    mRecords.get(1).addToChOne(samples[i]);
-                                    mRecords.get(1).addToChTwo(samples[i + 1]);
-                                    mRecords.get(1).addToChThree(samples[i + 2]);
-
-                                    mChannelOne.updateGraph(samples[i]);
-                                    mChannelTwo.updateGraph(samples[i + 1]);
-                                    mChannelThree.updateGraph(samples[i + 2]);
-                                }
-                            } else if(mRecording){
+                            if(mRecording){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(1).addToChOne(samples[i]);
                                     mRecords.get(1).addToChTwo(samples[i + 1]);
                                     mRecords.get(1).addToChThree(samples[i + 2]);
                                 }
-                            } else if (mShowECGThree) {
-                                for(int i = 1; i < samples.length; i += 3){
+                            }
+                            if (mShowECGThree && samples[1] > 0) {
+                                for (int i = 1; i < samples.length; i += 3) {
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
                                     mChannelThree.updateGraph(samples[i + 2]);
@@ -364,17 +351,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && mShowPPGOne){
-                                for(int i = 1; i < samples.length; i++){
-                                    mRecords.get(2).addToChOne(samples[i]);
-                                    mChannelOne.updateGraph(samples[i]);
-                                }
-                            } else if(mRecording){
-                                for(int i = 1; i < samples.length; i++){
-                                    mRecords.get(2).addToChOne(samples[i]);
-                                }
-                            } else if (mShowPPGOne) {
+                            if(mRecording){
                                 for(int i = 1; i < samples.length; i ++){
+                                    mRecords.get(2).addToChOne(samples[i]);
+                                }
+                            }
+                            if (mShowPPGOne && samples[1] > 0) {
+                                for (int i = 1; i < samples.length; i ++) {
                                     mChannelOne.updateGraph(samples[i]);
                                 }
                             }
@@ -387,20 +370,13 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && mShowPPGTwo){
-                                for(int i = 1; i < samples.length; i += 2){
-                                    mRecords.get(3).addToChOne(samples[i]);
-                                    mRecords.get(3).addToChTwo(samples[i + 1]);
-
-                                    mChannelOne.updateGraph(samples[i]);
-                                    mChannelTwo.updateGraph(samples[i + 1]);
-                                }
-                            } else if(mRecording){
+                            if(mRecording){
                                 for(int i = 1; i < samples.length; i += 2){
                                     mRecords.get(3).addToChOne(samples[i]);
                                     mRecords.get(3).addToChTwo(samples[i + 1]);
                                 }
-                            } else if (mShowPPGTwo) {
+                            }
+                            if (mShowPPGTwo && samples[1] > 0) {
                                 for(int i = 1; i < samples.length; i += 2){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -415,23 +391,14 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && mShowAccel){
-                                for(int i = 1; i < samples.length; i += 3){
-                                    mRecords.get(4).addToChOne(samples[i]);
-                                    mRecords.get(4).addToChTwo(samples[i + 1]);
-                                    mRecords.get(4).addToChThree(samples[i + 2]);
-
-                                    mChannelOne.updateGraph(samples[i]);
-                                    mChannelTwo.updateGraph(samples[i + 1]);
-                                    mChannelThree.updateGraph(samples[i + 2]);
-                                }
-                            } else if(mRecording){
+                            if(mRecording){
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(4).addToChOne(samples[i]);
                                     mRecords.get(4).addToChTwo(samples[i + 1]);
                                     mRecords.get(4).addToChThree(samples[i + 2]);
                                 }
-                            } else if (mShowAccel) {
+                            }
+                            if (mShowAccel && samples[1] > 0) {
                                 for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -447,16 +414,12 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && mShowImpedance){
-                                for(int i = 1; i < samples.length; i++) {
-                                    mRecords.get(5).addToChOne(samples[i]);
-                                    mChannelOne.updateGraph(samples[i]);
-                                }
-                            } else if(mRecording){
+                            if(mRecording){
                                 for(int i = 1; i < samples.length; i++) {
                                     mRecords.get(5).addToChOne(samples[i]);
                                 }
-                            } else if (mShowImpedance) {
+                            }
+                            if (mShowImpedance && samples[1] > 0) {
                                 for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }

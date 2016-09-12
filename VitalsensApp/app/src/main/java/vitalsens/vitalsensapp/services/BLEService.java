@@ -386,7 +386,7 @@ public class BLEService extends Service {
     private int calculatePacketLoss(int pktNum, int prevPktNum){
         if(prevPktNum < 0)
             return 0;
-        else if(prevPktNum == 255)
+        else if(prevPktNum == 255 || prevPktNum > pktNum)
             return (pktNum + 255) - prevPktNum;
         else
             return pktNum - (prevPktNum + 1);
@@ -411,6 +411,7 @@ public class BLEService extends Service {
         int numPacketsLost;
 
         int sensorData[] = new int[13];
+        int lostData [] = {0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
         sensorData[0] = dataId;
 
         for(int i=1, j=2; i < sensorData.length; i+=2, j+=3){
@@ -422,30 +423,49 @@ public class BLEService extends Service {
             case ECG_ONE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG1PktNum);
                 mPrevECG1PktNum = packetNumber;
-                if( numPacketsLost> 0)
+                if( numPacketsLost > 0) {
+                    lostData[0] = dataId;
+                    for(int i = 0; i < numPacketsLost; i++){
+                        broadcastUpdate(ONE_CHANNEL_ECG, lostData);
+                    }
                     Log.e(TAG, "Packet Lost (ECG1): " + numPacketsLost);
+                }
                 broadcastUpdate(ONE_CHANNEL_ECG, sensorData);
                 break;
             case ECG_THREE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG3PktNum);
                 mPrevECG3PktNum = packetNumber;
-                if( numPacketsLost> 0)
+                if( numPacketsLost > 0) {
+                    lostData[0] = dataId;
+                    for(int i = 0; i < numPacketsLost; i++){
+                        broadcastUpdate(THREE_CHANNEL_ECG, lostData);
+                    }
                     Log.e(TAG, "Packet Lost (ECG3): " + numPacketsLost);
+                }
                 broadcastUpdate(THREE_CHANNEL_ECG, sensorData);
                 break;
             case PPG_ONE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG1PktNum);
                 mPrevPPG1PktNum = packetNumber;
-                if( numPacketsLost> 0)
+                if( numPacketsLost > 0) {
+                    lostData[0] = dataId;
+                    for(int i = 0; i < numPacketsLost; i++){
+                        broadcastUpdate(ONE_CHANNEL_PPG, lostData);
+                    }
                     Log.e(TAG, "Packet Lost (PPG1): " + numPacketsLost);
-                Log.e(TAG, "Sending ppg2");
+                }
                 broadcastUpdate(ONE_CHANNEL_PPG, sensorData);
                 break;
             case PPG_TWO_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG2PktNum);
                 mPrevPPG2PktNum = packetNumber;
-                if( numPacketsLost> 0)
+                if( numPacketsLost > 0) {
+                    lostData[0] = dataId;
+                    for(int i = 0; i < numPacketsLost; i++){
+                        broadcastUpdate(TWO_CHANNEL_PPG, lostData);
+                    }
                     Log.e(TAG, "Packet Lost (PPG2): " + numPacketsLost);
+                }
                 broadcastUpdate(TWO_CHANNEL_PPG, sensorData);
                 break;
             case ACCELERATION_THREE_CHANNEL:
