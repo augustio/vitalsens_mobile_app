@@ -99,7 +99,7 @@ public class BLEService extends Service {
     private final static int SHIFT_LEFT_16BITS = 16;
     private final static int GET_BIT24 = 0x00400000;
     private final static int FIRST_BIT_MASK = 0x01;
-    private final static int MAX_RX_PKT_INTERVAL = 500;
+    private final static int MAX_RX_PKT_INTERVAL = 3000;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -190,7 +190,6 @@ public class BLEService extends Service {
             if(characteristic.getUuid().equals(RX_CHAR_UUID)) {
                 if(mTimerOn) {
                     mHandler.removeCallbacks(rxPktIntervalTimer);
-                    Log.w(TAG, "RX DATA Interval: " + (System.currentTimeMillis() - mTimerStart));
                 }
                 processRXData(characteristic.getValue());
                 mTimerStart = System.currentTimeMillis();
@@ -427,6 +426,7 @@ public class BLEService extends Service {
 
         int dataId = ((data[0] & 0XFF) >> 5);
         int packetNumber = (data[1] & 0XFF);
+        Log.w(TAG, "Packet Number: " + ""+packetNumber);
         int numPacketsLost;
 
         int sensorData[] = new int[13];
@@ -557,7 +557,7 @@ public class BLEService extends Service {
                 disconnect(null, mConnectedSensorAddresses);
             }
 
-            mHandler.postDelayed(rxPktIntervalTimer, 16);
+            mHandler.postDelayed(rxPktIntervalTimer, 100);
         }
     };
 

@@ -347,32 +347,6 @@ public class MainActivity extends Activity {
                         }
                     }
                 }).run();
-
-                /*new Thread() {
-                    public void run() {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (samples != null) {
-                                    if(mRecording){
-                                        for(int i = 1; i < samples.length; i += 3){
-                                            mRecords.get(1).addToChOne(samples[i]);
-                                            mRecords.get(1).addToChTwo(samples[i + 1]);
-                                            mRecords.get(1).addToChThree(samples[i + 2]);
-                                        }
-                                    }
-                                    if (mShowECGThree && samples[1] > 0) {
-                                        for (int i = 1; i < samples.length; i += 3) {
-                                            mChannelOne.updateGraph(samples[i]);
-                                            mChannelTwo.updateGraph(samples[i + 1]);
-                                            mChannelThree.updateGraph(samples[i + 2]);
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-                }.start();*/
             }
             if (action.equals(BLEService.ONE_CHANNEL_PPG)) {
                 final int[] samples = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
