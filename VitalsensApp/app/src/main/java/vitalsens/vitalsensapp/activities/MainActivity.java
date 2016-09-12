@@ -68,7 +68,8 @@ public class MainActivity extends Activity {
     private ArrayList<Sensor> mConnectedSensors;
     private ArrayList<Record> mRecords;
     private ArrayList<String> mAvailableDataTypes;
-    ArrayList<String> mSensorAddresses;
+    private ArrayList<String> mSensorAddresses;
+    private Runnable mAutoConnectTask;
     private int mConnectionState;
     private int mRecTimerCounter, min, sec, hr;
     private int mNextIndex;
@@ -173,6 +174,7 @@ public class MainActivity extends Activity {
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
                         if(mReconnecting){
+                            mHandler.removeCallbacks(mAutoConnectTask);
                             mReconnecting = false;
                             mUserInitiatedDisconnection = true;
                             mService.disconnect(null, mSensorAddresses);
@@ -345,6 +347,32 @@ public class MainActivity extends Activity {
                         }
                     }
                 }).run();
+
+                /*new Thread() {
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (samples != null) {
+                                    if(mRecording){
+                                        for(int i = 1; i < samples.length; i += 3){
+                                            mRecords.get(1).addToChOne(samples[i]);
+                                            mRecords.get(1).addToChTwo(samples[i + 1]);
+                                            mRecords.get(1).addToChThree(samples[i + 2]);
+                                        }
+                                    }
+                                    if (mShowECGThree && samples[1] > 0) {
+                                        for (int i = 1; i < samples.length; i += 3) {
+                                            mChannelOne.updateGraph(samples[i]);
+                                            mChannelTwo.updateGraph(samples[i + 1]);
+                                            mChannelThree.updateGraph(samples[i + 2]);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }.start();*/
             }
             if (action.equals(BLEService.ONE_CHANNEL_PPG)) {
                 final int[] samples = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
@@ -766,10 +794,15 @@ public class MainActivity extends Activity {
             mSensorAddresses.clear();
         }
         else{
-            mService.connect(mSensorAddresses);
             mReconnecting = true;
+            mAutoConnectTask = new Runnable() {
+                @Override
+                public void run() {
+                    mService.connect(mSensorAddresses);
+                }
+            };
+            mHandler.postDelayed(mAutoConnectTask, 250);
         }
-
     }
 
     private void saveRecords(final long duration){

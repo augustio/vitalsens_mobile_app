@@ -28,6 +28,7 @@ package vitalsens.vitalsensapp.services;
         import android.content.Context;
         import android.content.Intent;
         import android.os.Binder;
+        import android.os.Handler;
         import android.os.IBinder;
         import android.support.v4.content.LocalBroadcastManager;
         import android.util.Log;
@@ -98,6 +99,7 @@ public class BLEService extends Service {
     private final static int SHIFT_LEFT_16BITS = 16;
     private final static int GET_BIT24 = 0x00400000;
     private final static int FIRST_BIT_MASK = 0x01;
+    private final static int MAX_RX_PKT_INTERVAL = 500;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -115,6 +117,10 @@ public class BLEService extends Service {
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
+    private Handler mHandler = new Handler();
+    private long mTimerStart;
+    private boolean mTimerOn;
+    private ArrayList<String> mConnectedSensorAddresses = new ArrayList<>();
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
@@ -122,7 +128,10 @@ public class BLEService extends Service {
             String intentAction;
             Sensor sensor = new Sensor(gatt.getDevice().getName(), gatt.getDevice().getAddress());
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                mConnectedSensors.put(sensor.getAddress(), gatt);
+                String address = sensor.getAddress();
+                mConnectedSensors.put(address, gatt);
+                mConnectedSensorAddresses.add(address);
+                mTimerOn = false;
                 mConnectionState = STATE_CONNECTED;
                 intentAction = ACTION_GATT_CONNECTED;
                 broadcastUpdate(intentAction, sensor.toJson());
@@ -130,14 +139,17 @@ public class BLEService extends Service {
                         gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 gatt.close();
-                Log.d(TAG, "Disconnected from" + sensor.getName() +
-                        " : " + sensor.getAddress());
+
                 mConnectedSensors.remove(sensor.getAddress());
                 mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic =
                         mHRCharacteristic = null;
                 if(mConnectedSensors.isEmpty()) {
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
+                    Log.d(TAG, "Disconnected from all sensors");
                     mConnectionState = STATE_DISCONNECTED;
+                    mHandler.removeCallbacks(rxPktIntervalTimer);
+                    mConnectedSensorAddresses.clear();
+                    mTimerOn = false;
                     mPrevECG1PktNum = mPrevECG3PktNum = mPrevPPG1PktNum =
                             mPrevPPG2PktNum = mPrevACCELPktNum = mPrevIMPEDPktNum = -1;
                 }
@@ -176,7 +188,14 @@ public class BLEService extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
             if(characteristic.getUuid().equals(RX_CHAR_UUID)) {
+                if(mTimerOn) {
+                    mHandler.removeCallbacks(rxPktIntervalTimer);
+                    Log.w(TAG, "RX DATA Interval: " + (System.currentTimeMillis() - mTimerStart));
+                }
                 processRXData(characteristic.getValue());
+                mTimerStart = System.currentTimeMillis();
+                rxPktIntervalTimer.run();
+                mTimerOn = true;
             }
             if(characteristic.getUuid().equals(HT_MEASUREMENT_CHARACTERISTIC_UUID)){
                 try {
@@ -263,8 +282,8 @@ public class BLEService extends Service {
         return true;
     }
 
-    public void connect(final ArrayList<String> sensors) {
-        if(sensors == null)
+    public void connect(final ArrayList<String> sensorAddresses) {
+        if(sensorAddresses == null)
             return;
         if (mBluetoothAdapter == null) {
             Log.w(TAG, "BluetoothAdapter not initialized ");
@@ -275,7 +294,7 @@ public class BLEService extends Service {
             mConnectionThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    connectionLoop(sensors);
+                    connectionLoop(sensorAddresses);
                     mConnectionThread.interrupt();
                     mConnectionThread = null;
                 }
@@ -286,9 +305,9 @@ public class BLEService extends Service {
     }
 
 
-    private void connectionLoop(final ArrayList<String> sensors){
-        for(int i = 0; i < sensors.size(); i++){
-            mBluetoothAdapter.getRemoteDevice(sensors.get(i))
+    private void connectionLoop(final ArrayList<String> sensorAddresses){
+        for(int i = 0; i < sensorAddresses.size(); i++){
+            mBluetoothAdapter.getRemoteDevice(sensorAddresses.get(i))
                     .connectGatt(getApplicationContext(), false, mGattCallback);
             try {
                 Thread.sleep(250);
@@ -527,5 +546,19 @@ public class BLEService extends Service {
             return mantissa;
         }
     }
+
+    private Runnable rxPktIntervalTimer = new Runnable() {
+        @Override
+        public void run() {
+            long interval = System.currentTimeMillis() - mTimerStart;
+            if(interval >= MAX_RX_PKT_INTERVAL){
+                mTimerStart = 0;
+                mHandler.removeCallbacks(rxPktIntervalTimer);
+                disconnect(null, mConnectedSensorAddresses);
+            }
+
+            mHandler.postDelayed(rxPktIntervalTimer, 16);
+        }
+    };
 
 }
