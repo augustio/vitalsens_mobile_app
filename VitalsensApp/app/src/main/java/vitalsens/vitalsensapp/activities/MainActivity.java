@@ -303,14 +303,15 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording){
+                            //if(mRecording){
+                            if(mRecording && samples[1] > 0){
                                 if(mECG3RecCounter >= MAX_DATA_RECORDING_TIME){
                                     mECG3RecCounter = 0;
                                     long now = System.currentTimeMillis();
                                     Record record = mRecords.get(1);
                                     record.setEnd(now);
                                     mService.sendToCloud(record);
-                                    mRecords.set(1, new Record(now, mPatientId, now, 1));
+                                    mRecords.set(1, new Record(mRecTimeStamp, mPatientId, now, 1));
                                 }
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(1).addToChOne(samples[i]);
@@ -743,14 +744,16 @@ public class MainActivity extends Activity {
         mStartRecordingTask = new Runnable() {
             @Override
             public void run() {
-                mRecording = true;
                 mRecTimeStamp = System.currentTimeMillis();
+                for(int i = 0; i < 6; i++)
+                    mRecords.add(null);
                 for(String type : mAvailableDataTypes){
                     int dataId = Sensor.DATA_TYPES.get(type);
                     Record rec = new Record(mRecTimeStamp, mPatientId, mRecTimeStamp, dataId);
                     rec.setStatus(Record.RECORD_START);
-                    mRecords.add(rec);
+                    mRecords.add(dataId, rec);
                 }
+                mRecording = true;
                 mRecordTimer.run();
             }
         };
@@ -831,6 +834,8 @@ public class MainActivity extends Activity {
             long timeStamp = System.currentTimeMillis();
             for(int i = 0; i < mRecords.size(); i++){
                 Record rec = mRecords.get(i);
+                if(rec == null)
+                    continue;
                 if(!rec.isEmpty()) {
                     rec.setEnd(timeStamp);
                     rec.setStatus(Record.RECORD_END);
