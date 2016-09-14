@@ -747,7 +747,9 @@ public class MainActivity extends Activity {
                 mRecTimeStamp = System.currentTimeMillis();
                 for(String type : mAvailableDataTypes){
                     int dataId = Sensor.DATA_TYPES.get(type);
-                    mRecords.add( new Record(mRecTimeStamp, mPatientId, mRecTimeStamp, dataId));
+                    Record rec = new Record(mRecTimeStamp, mPatientId, mRecTimeStamp, dataId);
+                    rec.setStatus(Record.RECORD_START);
+                    mRecords.add(rec);
                 }
                 mRecordTimer.run();
             }
@@ -831,6 +833,7 @@ public class MainActivity extends Activity {
                 Record rec = mRecords.get(i);
                 if(!rec.isEmpty()) {
                     rec.setEnd(timeStamp);
+                    rec.setStatus(Record.RECORD_END);
                     mService.sendToCloud(rec);
                 }
             }

@@ -5,10 +5,15 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 
 public class Record {
+
+    public static final int RECORD_START = 0;
+    public static final int RECORD_END = 1;
+
     private long timeStamp;
     private String patientId;
     private long start;
     private long end;
+    private int status;
     private String type;
     private ArrayList<Integer> chOne;
     private ArrayList<Integer> chTwo;
@@ -22,6 +27,7 @@ public class Record {
         this.patientId = patientId;
         this.start = start;
         end = 0;
+        status = -1;
         chOne = new ArrayList<>();
         chTwo = new ArrayList<>();
         chThree = new ArrayList<>();
@@ -67,6 +73,10 @@ public class Record {
         return end;
     }
 
+    public int getStatus(){
+        return status;
+    }
+
     public ArrayList<Integer> getChOne(){
         if(chOne.size() > 0)
             return new ArrayList<>(chOne);
@@ -108,6 +118,10 @@ public class Record {
         this.end = end;
     }
 
+    public void setStatus(int status){
+        this.status = status;
+    }
+
     public void addToChOne(int data){
         chOne.add(data);
     }
@@ -138,6 +152,7 @@ public class Record {
         type = record.getType();
         start = record.getStart();
         end = record.getEnd();
+        status = record.getStatus();
         chOne = record.getChOne();
         chTwo = record.getChTwo();
         chThree = record.getChThree();
@@ -150,6 +165,7 @@ public class Record {
         rec.chThree = this.getChThree();
         rec.start = this.start;
         rec.end = this.end;
+        rec.status = this.status;
         rec.patientId = this.patientId;
         rec.timeStamp = this.timeStamp;
 

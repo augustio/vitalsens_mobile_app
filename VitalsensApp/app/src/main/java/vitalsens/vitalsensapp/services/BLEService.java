@@ -617,7 +617,7 @@ public class BLEService extends Service {
             }
 
         } catch (Exception e) {
-            Log.d("InputStream", e.getLocalizedMessage());
+            Log.d("OutputStream", e.getLocalizedMessage());
             result =  CONNECTION_ERROR;
             saveRecords(record);
         }
@@ -627,6 +627,7 @@ public class BLEService extends Service {
 
     public void sendToCloud(Record record){
         if(hasNetworkConnection()) {
+            Log.w(TAG, "RECORD STATUS: " + record.getStatus());
             new HttpAsyncTask().execute(record);
         }else{
             saveRecords(record);
