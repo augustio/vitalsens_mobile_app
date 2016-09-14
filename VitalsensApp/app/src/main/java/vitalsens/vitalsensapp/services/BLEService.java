@@ -16,6 +16,7 @@
 
 package vitalsens.vitalsensapp.services;
 
+        import android.app.Activity;
         import android.app.Service;
         import android.bluetooth.BluetoothAdapter;
         import android.bluetooth.BluetoothGatt;
@@ -27,18 +28,35 @@ package vitalsens.vitalsensapp.services;
         import android.bluetooth.BluetoothProfile;
         import android.content.Context;
         import android.content.Intent;
+        import android.net.ConnectivityManager;
+        import android.net.NetworkInfo;
+        import android.os.AsyncTask;
         import android.os.Binder;
+        import android.os.Environment;
         import android.os.Handler;
         import android.os.IBinder;
         import android.support.v4.content.LocalBroadcastManager;
         import android.util.Log;
 
+        import java.io.BufferedReader;
+        import java.io.File;
+        import java.io.FileWriter;
+        import java.io.IOException;
+        import java.io.InputStream;
+        import java.io.InputStreamReader;
+        import java.io.OutputStreamWriter;
+        import java.net.HttpURLConnection;
+        import java.net.URL;
+        import java.text.SimpleDateFormat;
         import java.util.ArrayList;
+        import java.util.Date;
         import java.util.HashMap;
         import java.util.List;
+        import java.util.Locale;
         import java.util.Map;
         import java.util.UUID;
 
+        import vitalsens.vitalsensapp.models.Record;
         import vitalsens.vitalsensapp.models.Sensor;
 
 
@@ -64,6 +82,8 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.ACTION_GATT_DISCONNECTED";
     public final static String ACTION_GATT_SERVICES_DISCOVERED =
             "vitalsens.vitalsensapp.ACTION_GATT_SERVICES_DISCOVERED";
+    public final static String ACTION_CLOUD_ACCESS_RESULT =
+            "vitalsens.vitalsensapp.ACTION_CLOUD_ACCESS_RESULT";
     public static final String ONE_CHANNEL_ECG =
             "vitalsens.vitalsensapp.ONE_CHANNEL_ECG";
     public static final String THREE_CHANNEL_ECG =
@@ -100,6 +120,13 @@ public class BLEService extends Service {
     private final static int GET_BIT24 = 0x00400000;
     private final static int FIRST_BIT_MASK = 0x01;
     private final static int MAX_RX_PKT_INTERVAL = 3000;
+
+    private static final String SERVER_ERROR = "No Response From Server!";
+    private static final String DATA_SENT = "data sent";
+    private static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
+    private static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
+    private static final String SERVER_URL = "http://52.210.133.58:5000/api/record";
+    private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -426,7 +453,6 @@ public class BLEService extends Service {
 
         int dataId = ((data[0] & 0XFF) >> 5);
         int packetNumber = (data[1] & 0XFF);
-        Log.w(TAG, "Packet Number: " + ""+packetNumber);
         int numPacketsLost;
 
         int sensorData[] = new int[13];
@@ -560,5 +586,106 @@ public class BLEService extends Service {
             mHandler.postDelayed(rxPktIntervalTimer, 100);
         }
     };
+
+    public String post(String serverUrl, Record record){
+        String result;
+        URL url;
+        HttpURLConnection urlConnection;
+        int responseCode;
+        try {
+            url = new URL(serverUrl);
+            urlConnection = (HttpURLConnection)url.openConnection();
+            urlConnection.setDoOutput(true);
+            urlConnection.setChunkedStreamingMode(0);
+            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestProperty("Accept", "application/json");
+            urlConnection.setRequestMethod("POST");
+
+            String json = record.toJson();
+
+            OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
+            writer.write(json);
+            writer.flush();
+            writer.close();
+
+            responseCode = urlConnection.getResponseCode();
+            if(responseCode == HttpURLConnection.HTTP_OK){
+                result = DATA_SENT;
+            }else {
+                result = SERVER_ERROR;
+                saveRecords(record);
+            }
+
+        } catch (Exception e) {
+            Log.d("InputStream", e.getLocalizedMessage());
+            result =  CONNECTION_ERROR;
+            saveRecords(record);
+        }
+
+        return result;
+    }
+
+    public void sendToCloud(Record record){
+        if(hasNetworkConnection()) {
+            new HttpAsyncTask().execute(record);
+        }else{
+            saveRecords(record);
+        }
+    }
+
+    private class HttpAsyncTask extends AsyncTask<Record, String, String> {
+        @Override
+        protected String doInBackground(Record... records) {
+            return post(SERVER_URL, records[0]);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            broadcastUpdate(ACTION_CLOUD_ACCESS_RESULT, result);
+        }
+    }
+
+    public boolean hasNetworkConnection(){
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        return (networkInfo != null && networkInfo.isConnected());
+    }
+
+    private static void saveRecords(final Record record){
+        if(isExternalStorageWritable()){
+            new Thread(new Runnable(){
+                public void run(){
+                    File root = android.os.Environment.getExternalStorageDirectory();
+                    File dir = new File (root.getAbsolutePath() + DIRECTORY_NAME);
+                    if(!dir.isDirectory())
+                        dir.mkdirs();
+                    File file;
+                    Date date = new Date(record.getTimeStamp());
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
+                    String dataType = record.getType();
+                    String fileName = dataType + "_" + sdf.format(date) + ".txt";
+                    file = new File(dir, fileName);
+                    if(!record.isEmpty()) {
+                        try {
+                            FileWriter fw = new FileWriter(file, true);
+                            fw.append(record.toJson());
+                            fw.flush();
+                            fw.close();
+                            Log.d(TAG, dataType + " Record Saved");
+                        } catch (IOException e) {
+                            Log.e(TAG, e.toString());
+                            Log.e(TAG, "Problem writing to Storage");
+                        }
+                    }
+                }
+            }).start();
+        }
+        else
+            Log.e(TAG, "Cannot write to storage");
+    }
+
+    private static boolean isExternalStorageWritable() {
+        return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
+    }
 
 }

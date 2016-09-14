@@ -2,6 +2,9 @@ package vitalsens.vitalsensapp.models;
 
 import com.google.gson.Gson;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class Sensor {
     private String name;
@@ -14,6 +17,18 @@ public class Sensor {
     public static final String PPG_TWO_DATA = "Two_Channels_PPG";
     public static final String ACCEL_DATA = "Accelerometer";
     public static final String IMPEDANCE_DATA = "Impedance Pneumography";
+
+    public static final Map<String, Integer> DATA_TYPES;
+    static
+    {
+        DATA_TYPES = new HashMap<String, Integer>();
+        DATA_TYPES.put(ECG_ONE_DATA, 0);
+        DATA_TYPES.put(ECG_THREE_DATA, 1);
+        DATA_TYPES.put(PPG_ONE_DATA, 2);
+        DATA_TYPES.put(PPG_TWO_DATA, 3);
+        DATA_TYPES.put(ACCEL_DATA, 4);
+        DATA_TYPES.put(IMPEDANCE_DATA, 5);
+    }
 
     public Sensor(){
         name = "";

@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 
 public class Record {
-    private long sequenceId;
     private long timeStamp;
     private String patientId;
     private long start;
@@ -18,8 +17,7 @@ public class Record {
     public Record(){
     }
 
-    public Record(long sequenceId, long timeStamp, String patientId, long start, int type){
-        this.sequenceId = sequenceId;
+    public Record(long timeStamp, String patientId, long start, int type){
         this.timeStamp = timeStamp;
         this.patientId = patientId;
         this.start = start;
@@ -49,10 +47,6 @@ public class Record {
         }
     }
 
-    public long getSequenceId() {
-        return sequenceId;
-    }
-
     public long getTimeStamp(){
         return timeStamp;
     }
@@ -75,27 +69,23 @@ public class Record {
 
     public ArrayList<Integer> getChOne(){
         if(chOne.size() > 0)
-            return chOne;
+            return new ArrayList<>(chOne);
         else
             return null;
     }
 
     public ArrayList<Integer> getChTwo(){
         if(chTwo.size() > 0)
-            return chTwo;
+            return new ArrayList<>(chTwo);
         else
             return null;
     }
 
     public ArrayList<Integer> getChThree(){
         if(chThree.size() > 0)
-            return chThree;
+            return new ArrayList<>(chThree);
         else
             return null;
-    }
-
-    public void setSequenceId(long sequenceId) {
-        this.sequenceId = sequenceId;
     }
 
     public void setTimeStamp(long timeStamp){
@@ -143,7 +133,6 @@ public class Record {
     public void fromJson(String json){
         Gson gson = new Gson();
         Record record = gson.fromJson(json, Record.class);
-        sequenceId = record.getSequenceId();
         timeStamp = record.getTimeStamp();
         patientId = record.getPatientId();
         type = record.getType();
@@ -152,5 +141,18 @@ public class Record {
         chOne = record.getChOne();
         chTwo = record.getChTwo();
         chThree = record.getChThree();
+    }
+
+    public Record copy(){
+        Record rec = new Record();
+        rec.chOne = this.getChOne();
+        rec.chTwo = this.getChTwo();
+        rec.chThree = this.getChThree();
+        rec.start = this.start;
+        rec.end = this.end;
+        rec.patientId = this.patientId;
+        rec.timeStamp = this.timeStamp;
+
+        return rec;
     }
 }

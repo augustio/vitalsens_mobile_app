@@ -13,7 +13,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -21,17 +20,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
@@ -60,7 +52,7 @@ public class MainActivity extends Activity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
-    private TextView btnRecord, connectedDevices, curDispDataType,
+    private TextView connectedDevices, curDispDataType,
             batLevel, curTemperature, hrValue, patientId, batLevelTxt;
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
@@ -69,20 +61,19 @@ public class MainActivity extends Activity {
     private ArrayList<Record> mRecords;
     private ArrayList<String> mAvailableDataTypes;
     private ArrayList<String> mSensorAddresses;
-    private Runnable mAutoConnectTask;
+    private Runnable mAutoConnectTask, mStartRecordingTask;
     private int mConnectionState;
-    private int mRecTimerCounter, min, sec, hr;
+    private int min, sec, hr;
+    private int mRecTimerCounter, mECG3RecCounter, mACCELRecCounter;
     private int mNextIndex;
-    private String mTimerString;
-    private String mSensorId;
+    private long mRecTimeStamp;
+    private String mTimerString, mSensorId, mPatientId;;
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
     private boolean mReconnecting;
     private boolean mDataDisplayOn;
-
-    private String mPatientId;
 
     private ChannelOneFragment mChannelOne;
     private ChannelTwoFragment mChannelTwo;
@@ -114,7 +105,6 @@ public class MainActivity extends Activity {
         }
 
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
-        btnRecord = (TextView) findViewById(R.id.btn_record);
         curTemperature = (TextView) findViewById(R.id.cur_temp);
         batLevel = (TextView) findViewById(R.id.bat_level);
         batLevelTxt = (TextView) findViewById(R.id.bat_level_text);
@@ -125,7 +115,6 @@ public class MainActivity extends Activity {
         Button btnHistory = (Button) findViewById(R.id.btn_history);
         curDispDataType = (TextView) findViewById(R.id.cur_disp_dataType);
         connectedDevices = (TextView) findViewById(R.id.connected_devices);
-        RelativeLayout btnRecordLayout = (RelativeLayout)findViewById(R.id.btn_record_layout);
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
         chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
         chThree = (LinearLayout) findViewById(R.id.channel3_fragment);
@@ -142,6 +131,7 @@ public class MainActivity extends Activity {
         mDataDisplayOn = false;
 
         min = sec =  hr = 0;
+        mRecTimerCounter = mECG3RecCounter = mACCELRecCounter = 0;
         mNextIndex = 0;
         mTimerString = "";
         mPatientId = "";
@@ -190,25 +180,6 @@ public class MainActivity extends Activity {
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
                         mUserInitiatedDisconnection = true;
                         mService.disconnect(mConnectedSensors, null);
-                    }
-                }
-            }
-        });
-
-        btnRecordLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(mConnectionState == BLEService.STATE_CONNECTED){
-                    if(mRecording)
-                        stopRecordingData();
-                    else {
-                        long timeStamp = System.currentTimeMillis();
-                        for(int i = 0; i < 6; i++){
-                            mRecords.add( new Record(1, timeStamp, mPatientId, timeStamp, i));
-                        }
-                        mRecording = true;
-                        btnRecord.setText(R.string.stop);
-                        mRecordTimer.run();
                     }
                 }
             }
@@ -333,6 +304,14 @@ public class MainActivity extends Activity {
                     public void run() {
                         if (samples != null) {
                             if(mRecording){
+                                if(mECG3RecCounter >= MAX_DATA_RECORDING_TIME){
+                                    mECG3RecCounter = 0;
+                                    long now = System.currentTimeMillis();
+                                    Record record = mRecords.get(1);
+                                    record.setEnd(now);
+                                    mService.sendToCloud(record);
+                                    mRecords.set(1, new Record(now, mPatientId, now, 1));
+                                }
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(1).addToChOne(samples[i]);
                                     mRecords.get(1).addToChTwo(samples[i + 1]);
@@ -456,16 +435,18 @@ public class MainActivity extends Activity {
                             String batLevelStr = batteryLevel + "%";
                             batLevelTxt.setText(batLevelStr);
                             if(batteryLevel == 100){
-                                batLevel.setBackgroundResource(R.drawable.battery7);
+                                batLevel.setBackgroundResource(R.drawable.battery8);
                             }else if(batteryLevel >= 80) {
-                                batLevel.setBackgroundResource(R.drawable.battery6);
+                                batLevel.setBackgroundResource(R.drawable.battery7);
                             }else if(batteryLevel >= 60) {
-                                batLevel.setBackgroundResource(R.drawable.battery5);
+                                batLevel.setBackgroundResource(R.drawable.battery6);
                             }else if(batteryLevel >= 50) {
-                                batLevel.setBackgroundResource(R.drawable.battery4);
+                                batLevel.setBackgroundResource(R.drawable.battery5);
                             }else if(batteryLevel >= 40) {
+                                batLevel.setBackgroundResource(R.drawable.battery4);
+                            }else if(batteryLevel >= 30) {
                                 batLevel.setBackgroundResource(R.drawable.battery3);
-                            }else if(batteryLevel >= 25) {
+                            }else if(batteryLevel >= 20) {
                                 batLevel.setBackgroundResource(R.drawable.battery2);
                             }else if(batteryLevel >= 10) {
                                 batLevel.setBackgroundResource(R.drawable.battery1);
@@ -498,6 +479,10 @@ public class MainActivity extends Activity {
                     Log.e(TAG, e.getMessage());
                 }
             }
+            if(action.equals(BLEService.ACTION_CLOUD_ACCESS_RESULT)){
+                final String result = intent.getStringExtra(Intent.EXTRA_TEXT);
+                showMessage(result);
+            }
         }
     };
 
@@ -515,6 +500,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.TEMP_VALUE);
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
         intentFilter.addAction(BLEService.HR);
+        intentFilter.addAction(BLEService.ACTION_CLOUD_ACCESS_RESULT);
         return intentFilter;
     }
 
@@ -744,13 +730,29 @@ public class MainActivity extends Activity {
         if(mReconnecting){
             mReconnecting = false;
         }
-        if(connectedDevicesStr.equals(""))
-            connectedDevices.setText(sensor.getName());
+        if(connectedDevicesStr.equals("")) {
+            String str = "Connected to " + sensor.getName();
+            connectedDevices.setText(str);
+        }
         else{
             String str = connectedDevicesStr + " " + sensor.getName();
             connectedDevices.setText(str);
         }
         patientId.setText(mPatientId);
+
+        mStartRecordingTask = new Runnable() {
+            @Override
+            public void run() {
+                mRecording = true;
+                mRecTimeStamp = System.currentTimeMillis();
+                for(String type : mAvailableDataTypes){
+                    int dataId = Sensor.DATA_TYPES.get(type);
+                    mRecords.add( new Record(mRecTimeStamp, mPatientId, mRecTimeStamp, dataId));
+                }
+                mRecordTimer.run();
+            }
+        };
+        mHandler.postDelayed(mStartRecordingTask, 5000);
     }
 
     private void handleGattDisconnectionEvent(){
@@ -792,49 +794,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void saveRecords(final long duration){
-        if(isExternalStorageWritable()){
-            new Thread(new Runnable(){
-                public void run(){
-                    File root = android.os.Environment.getExternalStorageDirectory();
-                    File dir = new File (root.getAbsolutePath() + DIRECTORY_NAME);
-                    if(!dir.isDirectory())
-                        dir.mkdirs();
-                    File file;
-                    for(int i = 0; i<mRecords.size(); i++) {
-                        Record record = mRecords.get(i);
-                        record.setEnd(record.getStart() + duration);
-                        Date date = new Date(record.getTimeStamp());
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
-                        String dataType = record.getType();
-                        String fileName = dataType + "_" + sdf.format(date) + ".txt";
-                        file = new File(dir, fileName);
-                        if(!record.isEmpty()) {
-                            try {
-                                FileWriter fw = new FileWriter(file, true);
-                                fw.append(record.toJson());
-                                fw.flush();
-                                fw.close();
-                                showMessage(dataType + " Record Saved");
-                            } catch (IOException e) {
-                                Log.e(TAG, e.toString());
-                                showMessage("Problem writing to Storage");
-                            }
-                        }
-                    }
-                    mRecords.clear();
-                }
-            }).start();
-        }
-        else
-            showMessage("Cannot write to storage");
-    }
-
-
-    public boolean isExternalStorageWritable() {
-        return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
-    }
-
     private Runnable mRecordTimer = new Runnable() {
         @Override
         public void run() {
@@ -849,21 +808,15 @@ public class MainActivity extends Activity {
                     min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
                 }
                 updateTimer();
-                if (mRecTimerCounter >= MAX_DATA_RECORDING_TIME) {
-                    stopRecordingData();
-                    return;
-                }
-                if ((MAX_DATA_RECORDING_TIME - mRecTimerCounter) < 5)//Five seconds to the end of timer
-                    ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.green));
-                mRecTimerCounter++;
+                mRecTimerCounter++; mECG3RecCounter++; mACCELRecCounter++;
             mHandler.postDelayed(mRecordTimer, ONE_SECOND_IN_MILLIS);
         }
     };
 
     private void refreshTimer(){
         mRecTimerCounter = 1;
+        mECG3RecCounter = mACCELRecCounter = 0;
         hr = min = sec = 0;
-        ((TextView) findViewById(R.id.timer_view)).setTextColor(getResources().getColor(R.color.black));
     }
 
     private void updateTimer(){
@@ -873,9 +826,16 @@ public class MainActivity extends Activity {
 
     private void stopRecordingData(){
         if(mRecording) {
-            saveRecords(mRecTimerCounter * ONE_SECOND_IN_MILLIS);
+            long timeStamp = System.currentTimeMillis();
+            for(int i = 0; i < mRecords.size(); i++){
+                Record rec = mRecords.get(i);
+                if(!rec.isEmpty()) {
+                    rec.setEnd(timeStamp);
+                    mService.sendToCloud(rec);
+                }
+            }
             mRecording = false;
-            btnRecord.setText(R.string.record);
+            mRecords.clear();
             mHandler.removeCallbacks(mRecordTimer);
             ((TextView) findViewById(R.id.timer_view)).setText("");
             refreshTimer();
