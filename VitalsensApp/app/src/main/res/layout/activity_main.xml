@@ -88,30 +88,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/bat_level_layout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_alignParentEnd="true"
-                android:layout_marginTop="5dp"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:id="@+id/bat_level_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="3dp"
-                    android:textSize="10sp"
-                    android:textColor="@color/whitegrey"/>
-
-                <TextView
-                    android:id="@+id/bat_level"
-                    android:layout_width="22dp"
-                    android:layout_height="12dp"
-                    android:layout_marginTop="3dp"/>
-            </LinearLayout>
-
             <Button
                 android:id="@+id/btn_connect"
                 android:layout_width="200dp"
@@ -120,7 +96,6 @@
                 android:layout_marginTop="5dp"
                 android:paddingStart="20dp"
                 android:paddingEnd="0dp"
-                android:layout_below="@+id/bat_level_layout"
                 android:background="@drawable/connect_btn_bg"
                 android:text="@string/connect"
                 android:textSize="18sp"/>
@@ -136,6 +111,30 @@
                 android:background="@drawable/history_btn_bg"
                 android:text="@string/history"
                 android:textSize="18sp"/>
+
+            <LinearLayout
+                android:id="@+id/bat_level_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@id/btn_history"
+                android:layout_marginTop="5dp">
+
+                <TextView
+                    android:id="@+id/bat_level_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="3dp"
+                    android:layout_marginTop="5dp"
+                    android:textSize="15sp"
+                    android:textColor="@color/whitegrey"/>
+
+                <TextView
+                    android:id="@+id/bat_level"
+                    android:layout_width="32dp"
+                    android:layout_height="24dp"/>
+            </LinearLayout>
 
         </RelativeLayout>
 
