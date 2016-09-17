@@ -750,7 +750,6 @@ public class MainActivity extends Activity {
                 for(String type : mAvailableDataTypes){
                     int dataId = Sensor.DATA_TYPES.get(type);
                     Record rec = new Record(mRecTimeStamp, mPatientId, mRecTimeStamp, dataId);
-                    rec.setStatus(Record.RECORD_START);
                     mRecords.add(dataId, rec);
                 }
                 mRecording = true;
@@ -838,7 +837,6 @@ public class MainActivity extends Activity {
                     continue;
                 if(!rec.isEmpty()) {
                     rec.setEnd(timeStamp);
-                    rec.setStatus(Record.RECORD_END);
                     mService.sendToCloud(rec);
                 }
             }
