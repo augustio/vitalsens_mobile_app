@@ -38,9 +38,12 @@ package vitalsens.vitalsensapp.services;
         import android.support.v4.content.LocalBroadcastManager;
         import android.util.Log;
 
+        import java.io.BufferedReader;
         import java.io.File;
         import java.io.FileWriter;
         import java.io.IOException;
+        import java.io.InputStream;
+        import java.io.InputStreamReader;
         import java.io.OutputStreamWriter;
         import java.net.HttpURLConnection;
         import java.net.URL;
@@ -118,11 +121,11 @@ public class BLEService extends Service {
     private final static int FIRST_BIT_MASK = 0x01;
     private final static int MAX_RX_PKT_INTERVAL = 3000;
 
-    private static final String SERVER_ERROR = "No Response From Server!";
+    public static final String SERVER_ERROR = "No Response From Server!";
     private static final String DATA_SENT = "data sent";
     private static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
-    private static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
-    private static final String SERVER_URL = "http://52.210.133.58:5000/api/record";
+    public static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
+    private static final String SERVER_URL = "http://52.51.162.106:5000/api/record";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
 
     private BluetoothManager mBluetoothManager;
@@ -586,6 +589,7 @@ public class BLEService extends Service {
 
     public String post(String serverUrl, Record record){
         String result;
+        InputStream inputStream;
         URL url;
         HttpURLConnection urlConnection;
         int responseCode;
@@ -607,7 +611,8 @@ public class BLEService extends Service {
 
             responseCode = urlConnection.getResponseCode();
             if(responseCode == HttpURLConnection.HTTP_OK){
-                result = DATA_SENT;
+                inputStream = urlConnection.getInputStream();
+                result = convertInputStreamToString(inputStream);
             }else {
                 result = SERVER_ERROR;
                 saveRecords(record);
@@ -683,6 +688,17 @@ public class BLEService extends Service {
 
     private static boolean isExternalStorageWritable() {
         return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
+    }
+
+    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null)
+            result += line;
+
+        inputStream.close();
+        return result;
     }
 
 }

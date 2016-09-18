@@ -23,6 +23,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 import vitalsens.vitalsensapp.R;
@@ -74,6 +76,7 @@ public class MainActivity extends Activity {
     private boolean mUserInitiatedDisconnection;
     private boolean mReconnecting;
     private boolean mDataDisplayOn;
+    private boolean mShowAnalysis;
 
     private ChannelOneFragment mChannelOne;
     private ChannelTwoFragment mChannelTwo;
@@ -129,6 +132,7 @@ public class MainActivity extends Activity {
         mUserInitiatedDisconnection = false;
         mReconnecting = false;
         mDataDisplayOn = false;
+        mShowAnalysis = false;
 
         min = sec =  hr = 0;
         mRecTimerCounter = mECG3RecCounter = mACCELRecCounter = 0;
@@ -482,7 +486,7 @@ public class MainActivity extends Activity {
             }
             if(action.equals(BLEService.ACTION_CLOUD_ACCESS_RESULT)){
                 final String result = intent.getStringExtra(Intent.EXTRA_TEXT);
-                showMessage(result);
+                updateAnalysedResult(result);
             }
         }
     };
@@ -779,6 +783,7 @@ public class MainActivity extends Activity {
         mAvailableDataTypes.clear();
         mReconnecting = false;
         mDataDisplayOn = false;
+        mShowAnalysis = false;
         clearGraphLayout();
         if(mRecording)
             stopRecordingData();
@@ -873,6 +878,14 @@ public class MainActivity extends Activity {
             case "IMP":
                 mAvailableDataTypes.add(Sensor.IMPEDANCE_DATA);
                 break;
+        }
+    }
+
+    private void updateAnalysedResult(String result){
+        try{
+            JSONObject res = new JSONObject(result);
+        }catch(Exception e){
+            Log.d(TAG, e.getLocalizedMessage());
         }
     }
 }
