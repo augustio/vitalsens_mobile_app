@@ -628,7 +628,7 @@ public class BLEService extends Service {
     }
 
     public void sendToCloud(Record record){
-        if(hasNetworkConnection()) {
+        if(hasNetworkConnection() && !record.isEmpty()) {
             new HttpAsyncTask().execute(record);
         }else{
             saveRecords(record);

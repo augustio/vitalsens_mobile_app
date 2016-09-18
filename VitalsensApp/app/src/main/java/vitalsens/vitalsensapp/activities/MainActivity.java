@@ -379,7 +379,15 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording){
+                            if(mRecording && samples[1] > 0){
+                                if(mACCELRecCounter >= MAX_DATA_RECORDING_TIME){
+                                    mACCELRecCounter = 0;
+                                    long now = System.currentTimeMillis();
+                                    Record record = mRecords.get(4);
+                                    record.setEnd(now);
+                                    mService.sendToCloud(record);
+                                    mRecords.set(1, new Record(mRecTimeStamp, mPatientId, now, 1));
+                                }
                                 for(int i = 1; i < samples.length; i += 3){
                                     mRecords.get(4).addToChOne(samples[i]);
                                     mRecords.get(4).addToChTwo(samples[i + 1]);
