@@ -516,7 +516,7 @@ public class BLEService extends Service {
             case ACCELERATION_THREE_CHANNEL:
                 /*Get negative acceleration values. Max unsigned value = 4096.
                 * Max positive signed value = 2047*/
-                for(int i = 0; i < 14; i++){
+                for(int i = 0; i < sensorData.length; i++){
                     int value = sensorData[i];
                     if(value > 2047) {
                         sensorData[i] = value - 4096;
