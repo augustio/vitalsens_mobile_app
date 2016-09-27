@@ -793,8 +793,10 @@ public class MainActivity extends Activity {
         mDataDisplayOn = false;
         mShowAnalysis = false;
         clearGraphLayout();
-        if(mRecording)
+        if(mRecording) {
+            mRecording = false;
             stopRecordingData();
+        }
         if(mUserInitiatedDisconnection) {
             mUserInitiatedDisconnection = false;
             mSensorAddresses.clear();
@@ -842,23 +844,20 @@ public class MainActivity extends Activity {
     }
 
     private void stopRecordingData(){
-        if(mRecording) {
-            long timeStamp = System.currentTimeMillis();
-            for(int i = 0; i < mRecords.size(); i++){
-                Record rec = mRecords.get(i);
-                if(rec == null)
-                    continue;
-                if(!rec.isEmpty()) {
-                    rec.setEnd(timeStamp);
-                    mService.sendToCloud(rec);
-                }
+        long timeStamp = System.currentTimeMillis();
+        for(int i = 0; i < mRecords.size(); i++){
+            Record rec = mRecords.get(i);
+            if(rec == null)
+                continue;
+            if(!rec.isEmpty()) {
+                rec.setEnd(timeStamp);
+                mService.sendToCloud(rec);
             }
-            mRecording = false;
-            mRecords.clear();
-            mHandler.removeCallbacks(mRecordTimer);
-            ((TextView) findViewById(R.id.timer_view)).setText("");
-            refreshTimer();
         }
+        mRecords.clear();
+        mHandler.removeCallbacks(mRecordTimer);
+        ((TextView) findViewById(R.id.timer_view)).setText("");
+        refreshTimer();
     }
 
     private void showMessage(final String msg) {
