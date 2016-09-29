@@ -66,7 +66,8 @@ public class MainActivity extends Activity {
     private Runnable mAutoConnectTask, mStartRecordingTask;
     private int mConnectionState;
     private int min, sec, hr;
-    private int mRecTimerCounter, mECG3RecCounter, mACCELRecCounter;
+    private int mRecTimerCounter, mECG1RecCounter, mECG3RecCounter,
+            mPPG1RecCounter, mPPG2RecCounter, mACCELRecCounter,mIMPEDRecCounter;
     private int mNextIndex;
     private long mRecTimeStamp;
     private String mTimerString, mSensorId, mPatientId;;
@@ -76,6 +77,7 @@ public class MainActivity extends Activity {
     private boolean mUserInitiatedDisconnection;
     private boolean mReconnecting;
     private boolean mDataDisplayOn;
+    private boolean mSamplesRecieved;
     private boolean mShowAnalysis;
 
     private ChannelOneFragment mChannelOne;
@@ -132,10 +134,12 @@ public class MainActivity extends Activity {
         mUserInitiatedDisconnection = false;
         mReconnecting = false;
         mDataDisplayOn = false;
+        mSamplesRecieved = false;
         mShowAnalysis = false;
 
         min = sec =  hr = 0;
-        mRecTimerCounter = mECG3RecCounter = mACCELRecCounter = 0;
+        mRecTimerCounter = mECG1RecCounter = mECG3RecCounter = mPPG1RecCounter
+                = mPPG2RecCounter = mACCELRecCounter = mIMPEDRecCounter =  0;
         mNextIndex = 0;
         mTimerString = "";
         mPatientId = "";
@@ -288,12 +292,21 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            mSamplesRecieved = true;
                             if(mRecording){
+                                if(mECG1RecCounter >= MAX_DATA_RECORDING_TIME){
+                                    mECG1RecCounter = 0;
+                                    long now = System.currentTimeMillis();
+                                    Record record = mRecords.get(0);
+                                    record.setEnd(now);
+                                    mService.sendToCloud(record);
+                                    mRecords.set(0, new Record(mRecTimeStamp, mPatientId, now, 0));
+                                }
                                 for(int i = 1; i < samples.length; i ++){
                                     mRecords.get(0).addToChOne(samples[i]);
                                 }
                             }
-                            if (mShowECGOne && samples[1] > 0) {
+                            if (mShowECGOne) {
                                 for (int i = 1; i < samples.length; i ++) {
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -307,8 +320,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            //if(mRecording){
-                            if(mRecording && samples[1] > 0){
+                            mSamplesRecieved = true;
+                            if(mRecording){
                                 if(mECG3RecCounter >= MAX_DATA_RECORDING_TIME){
                                     mECG3RecCounter = 0;
                                     long now = System.currentTimeMillis();
@@ -323,7 +336,7 @@ public class MainActivity extends Activity {
                                     mRecords.get(1).addToChThree(samples[i + 2]);
                                 }
                             }
-                            if (mShowECGThree && samples[1] > 0) {
+                            if (mShowECGThree) {
                                 for (int i = 1; i < samples.length; i += 3) {
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -339,12 +352,21 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            mSamplesRecieved = true;
                             if(mRecording){
+                                if(mPPG1RecCounter >= MAX_DATA_RECORDING_TIME){
+                                    mPPG1RecCounter = 0;
+                                    long now = System.currentTimeMillis();
+                                    Record record = mRecords.get(2);
+                                    record.setEnd(now);
+                                    mService.sendToCloud(record);
+                                    mRecords.set(2, new Record(mRecTimeStamp, mPatientId, now, 2));
+                                }
                                 for(int i = 1; i < samples.length; i ++){
                                     mRecords.get(2).addToChOne(samples[i]);
                                 }
                             }
-                            if (mShowPPGOne && samples[1] > 0) {
+                            if (mShowPPGOne) {
                                 for (int i = 1; i < samples.length; i ++) {
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -358,13 +380,22 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            mSamplesRecieved = true;
                             if(mRecording){
+                                if(mPPG2RecCounter >= MAX_DATA_RECORDING_TIME){
+                                    mPPG2RecCounter = 0;
+                                    long now = System.currentTimeMillis();
+                                    Record record = mRecords.get(3);
+                                    record.setEnd(now);
+                                    mService.sendToCloud(record);
+                                    mRecords.set(3, new Record(mRecTimeStamp, mPatientId, now,3));
+                                }
                                 for(int i = 1; i < samples.length; i += 2){
                                     mRecords.get(3).addToChOne(samples[i]);
                                     mRecords.get(3).addToChTwo(samples[i + 1]);
                                 }
                             }
-                            if (mShowPPGTwo && samples[1] > 0) {
+                            if (mShowPPGTwo) {
                                 for(int i = 1; i < samples.length; i += 2){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -379,7 +410,8 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
-                            if(mRecording && samples[1] > 0){
+                            mSamplesRecieved = true;
+                            if(mRecording){
                                 if(mACCELRecCounter >= MAX_DATA_RECORDING_TIME){
                                     mACCELRecCounter = 0;
                                     long now = System.currentTimeMillis();
@@ -394,7 +426,7 @@ public class MainActivity extends Activity {
                                     mRecords.get(4).addToChThree(samples[i + 2]);
                                 }
                             }
-                            if (mShowAccel && samples[1] > 0) {
+                            if (mShowAccel) {
                                 for(int i = 1; i < samples.length; i += 3){
                                     mChannelOne.updateGraph(samples[i]);
                                     mChannelTwo.updateGraph(samples[i + 1]);
@@ -410,12 +442,21 @@ public class MainActivity extends Activity {
                 (new Runnable() {
                     public void run() {
                         if (samples != null) {
+                            mSamplesRecieved = true;
                             if(mRecording){
+                                if(mIMPEDRecCounter >= MAX_DATA_RECORDING_TIME){
+                                    mIMPEDRecCounter = 0;
+                                    long now = System.currentTimeMillis();
+                                    Record record = mRecords.get(5);
+                                    record.setEnd(now);
+                                    mService.sendToCloud(record);
+                                    mRecords.set(5, new Record(mRecTimeStamp, mPatientId, now, 5));
+                                }
                                 for(int i = 1; i < samples.length; i++) {
                                     mRecords.get(5).addToChOne(samples[i]);
                                 }
                             }
-                            if (mShowImpedance && samples[1] > 0) {
+                            if (mShowImpedance) {
                                 for(int i = 1; i < samples.length; i ++){
                                     mChannelOne.updateGraph(samples[i]);
                                 }
@@ -792,6 +833,7 @@ public class MainActivity extends Activity {
         mReconnecting = false;
         mDataDisplayOn = false;
         mShowAnalysis = false;
+        mSamplesRecieved = false;
         clearGraphLayout();
         if(mRecording) {
             mRecording = false;
@@ -816,6 +858,7 @@ public class MainActivity extends Activity {
     private Runnable mRecordTimer = new Runnable() {
         @Override
         public void run() {
+            if(mSamplesRecieved) {
                 if (mRecTimerCounter < SECONDS_IN_ONE_MINUTE) {
                     sec = mRecTimerCounter;
                 } else if (mRecTimerCounter < SECONDS_IN_ONE_HOUR) {
@@ -827,14 +870,22 @@ public class MainActivity extends Activity {
                     min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
                 }
                 updateTimer();
-                mRecTimerCounter++; mECG3RecCounter++; mACCELRecCounter++;
+                mRecTimerCounter++;
+                mECG1RecCounter++;
+                mECG3RecCounter++;
+                mPPG1RecCounter++;
+                mPPG2RecCounter++;
+                mACCELRecCounter++;
+                mIMPEDRecCounter++;
+            }
             mHandler.postDelayed(mRecordTimer, ONE_SECOND_IN_MILLIS);
         }
     };
 
     private void refreshTimer(){
         mRecTimerCounter = 1;
-        mECG3RecCounter = mACCELRecCounter = 0;
+        mECG1RecCounter = mECG3RecCounter = mPPG1RecCounter = mPPG2RecCounter
+                = mACCELRecCounter = mIMPEDRecCounter =  0;
         hr = min = sec = 0;
     }
 

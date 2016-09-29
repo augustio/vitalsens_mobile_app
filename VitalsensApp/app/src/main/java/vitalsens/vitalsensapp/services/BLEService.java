@@ -75,6 +75,7 @@ public class BLEService extends Service {
     public static final int PPG_TWO_CHANNEL = 3;
     public static final int ACCELERATION_THREE_CHANNEL = 4;
     public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
+    public static final int NAN = -4096;
 
     public final static String ACTION_GATT_CONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
@@ -456,7 +457,9 @@ public class BLEService extends Service {
         int numPacketsLost;
 
         int sensorData[] = new int[13];
-        int lostData [] = {0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+        int lostData [] = new int[13];
+        for(int i = 0; i < lostData.length; i++)
+            lostData[i] = NAN;
         sensorData[0] = dataId;
 
         for(int i=1, j=2; i < sensorData.length; i+=2, j+=3){
@@ -524,15 +527,25 @@ public class BLEService extends Service {
                 }
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevACCELPktNum);
                 mPrevACCELPktNum = packetNumber;
-                if( numPacketsLost> 0)
+                if( numPacketsLost > 0) {
+                    lostData[0] = dataId;
+                    for(int i = 0; i < numPacketsLost; i++){
+                        broadcastUpdate(THREE_CHANNEL_ACCELERATION, lostData);
+                    }
                     Log.e(TAG, "Packet Lost (ACCELERATION): " + numPacketsLost);
+                }
                 broadcastUpdate(THREE_CHANNEL_ACCELERATION, sensorData);
                 break;
             case IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
                 mPrevIMPEDPktNum = packetNumber;
-                if( numPacketsLost> 0)
+                if( numPacketsLost > 0) {
+                    lostData[0] = dataId;
+                    for(int i = 0; i < numPacketsLost; i++){
+                        broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, lostData);
+                    }
                     Log.e(TAG, "Packet Lost (IMPEDANCE PNEUMOGRAPHY): " + numPacketsLost);
+                }
                 broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, sensorData);
                 break;
             default:
@@ -628,7 +641,9 @@ public class BLEService extends Service {
     }
 
     public void sendToCloud(Record record){
-        if(hasNetworkConnection() && !record.isEmpty()) {
+        if(record.isEmpty())
+            return;
+        if(hasNetworkConnection()) {
             new HttpAsyncTask().execute(record);
         }else{
             saveRecords(record);
@@ -662,7 +677,7 @@ public class BLEService extends Service {
                     if(!dir.isDirectory())
                         dir.mkdirs();
                     File file;
-                    Date date = new Date(record.getTimeStamp());
+                    Date date = new Date(record.getStart());
                     SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
                     String dataType = record.getType();
                     String fileName = dataType + "_" + sdf.format(date) + ".txt";

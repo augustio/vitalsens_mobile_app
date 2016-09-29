@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import org.achartengine.GraphicalView;
 
+import vitalsens.vitalsensapp.services.BLEService;
 import vitalsens.vitalsensapp.utils.LineGraphView;
 
 public class ChannelThreeFragment extends Fragment {
@@ -47,7 +48,10 @@ public class ChannelThreeFragment extends Fragment {
             if(mLineGraph.getItemCount() > xValueCounter){
                 mLineGraph.removeValue(xValueCounter);
             }
-            mLineGraph.addValue(xValueCounter, xValueCounter, value);
+            if(value == BLEService.NAN)
+                mLineGraph.addValue(xValueCounter, xValueCounter, mLineGraph.getValue(xValueCounter-1));
+            else
+                mLineGraph.addValue(xValueCounter, xValueCounter, value);
             xValueCounter++;
             mGraphView.repaint();
         }

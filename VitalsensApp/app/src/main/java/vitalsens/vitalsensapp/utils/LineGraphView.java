@@ -47,6 +47,16 @@ public class LineGraphView {
         mSeries.add(index, x, y);
     }
 
+    public int getValue(int index){
+        if(mSeries.getItemCount() > 0){
+            if(index < 0)
+                index = 0;
+            return (int)mSeries.getY(index);
+        }
+        else
+            return 0;
+    }
+
     public int getItemCount(){
         return mSeries.getItemCount();
     }
