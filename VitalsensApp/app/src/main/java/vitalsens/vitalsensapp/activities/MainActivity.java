@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -25,6 +26,11 @@ import android.widget.Toast;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import vitalsens.vitalsensapp.R;
@@ -40,6 +46,7 @@ public class MainActivity extends Activity {
 
     private static final String TAG = "VitalsensApp";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
+    private static final String PATIENT_DEVICE_IDS_FILE_PATH = "patient_device_ids.txt";
     private static final int MAIN_LAYOUT = 0;
     private static final int ONE_CHANNEL_LAYOUT = 1;
     private static final int TWO_CHANNELS_LAYOUT = 2;
@@ -163,6 +170,8 @@ public class MainActivity extends Activity {
         setGraphLayout(MAIN_LAYOUT);
 
         service_init();
+
+        getPatientAndDeviceIds();
 
         btnConnectDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -634,6 +643,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        savePatientAndDeviceIds();
         Log.d(TAG, "onPause");
         super.onPause();
     }
@@ -945,5 +955,58 @@ public class MainActivity extends Activity {
         }catch(Exception e){
             Log.d(TAG, e.getLocalizedMessage());
         }
+    }
+
+    private void savePatientAndDeviceIds() {
+        if (isExternalStorageWritable()) {
+            File root = android.os.Environment.getExternalStorageDirectory();
+            File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME);
+            if (!dir.isDirectory())
+                dir.mkdirs();
+            File file = new File(dir, PATIENT_DEVICE_IDS_FILE_PATH);
+            try {
+                FileWriter fw = new FileWriter(file);
+                fw.write(mPatientId + "\n" + mSensorId);
+                fw.flush();
+                fw.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+                Log.e(TAG, "Problem writing to Storage");
+            }
+        }else{
+            showMessage("Cannot write to storage!");
+        }
+    }
+
+    private void getPatientAndDeviceIds(){
+        if(!isExternalStorageReadable()) {
+            showMessage("Cannot access external storage");
+        }
+        File root = android.os.Environment.getExternalStorageDirectory();
+        File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME);
+        File file = new File(dir, PATIENT_DEVICE_IDS_FILE_PATH);
+        if (file.exists()) {
+            try {
+                BufferedReader buf = new BufferedReader(new FileReader(file));
+                mPatientId = buf.readLine();
+                mSensorId = buf.readLine();
+                buf.close();
+            } catch (Exception e) {
+                Log.e(TAG, e.toString());
+                showMessage("Problem accessing mFile");
+            }
+        }else{
+            showMessage("No saved ids");
+        }
+    }
+
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        return (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state));
+    }
+
+    private static boolean isExternalStorageWritable() {
+        return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
     }
 }
