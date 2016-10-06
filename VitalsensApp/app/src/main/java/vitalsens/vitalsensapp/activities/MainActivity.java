@@ -607,7 +607,6 @@ public class MainActivity extends Activity {
                     if(connParams != null && connParams.size() == 2) {
                         mSensorId = connParams.get(0);
                         mPatientId = connParams.get(1);
-                        Log.e(TAG, mSensorId + " " + mPatientId);
                     }
                     Intent getSensorIntent = new Intent(MainActivity.this, SensorList.class);
                     getSensorIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
