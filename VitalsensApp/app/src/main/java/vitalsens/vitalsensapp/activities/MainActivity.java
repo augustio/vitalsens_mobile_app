@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private static final int REQUEST_ENABLE_BT = 2;
     private static final int REQUEST_CONNECT_PARAMS = 3;
     private static final int MAX_DATA_RECORDING_TIME = 60; //In seconds
+    private static final int FULL_RECORD_DURATION = 30; //In minutes
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
     private static final int ONE_SECOND_IN_MILLIS = 1000;
@@ -73,7 +74,7 @@ public class MainActivity extends Activity {
     private Runnable mAutoConnectTask, mStartRecordingTask;
     private int mConnectionState;
     private int min, sec, hr;
-    private int mRecTimerCounter, mECG1RecCounter, mECG3RecCounter,
+    private int mRecTimerCounter, mECG1RecCounter, mECG3RecCounter, mECG3FullRecCounter,
             mPPG1RecCounter, mPPG2RecCounter, mACCELRecCounter,mIMPEDRecCounter;
     private int mNextIndex;
     private long mRecTimeStamp;
@@ -145,7 +146,7 @@ public class MainActivity extends Activity {
         mShowAnalysis = false;
 
         min = sec =  hr = 0;
-        mRecTimerCounter = mECG1RecCounter = mECG3RecCounter = mPPG1RecCounter
+        mRecTimerCounter = mECG1RecCounter = mECG3RecCounter = mECG3FullRecCounter = mPPG1RecCounter
                 = mPPG2RecCounter = mACCELRecCounter = mIMPEDRecCounter =  0;
         mNextIndex = 0;
         mTimerString = "";
@@ -337,6 +338,11 @@ public class MainActivity extends Activity {
                                     Record record = mRecords.get(1);
                                     record.setEnd(now);
                                     mService.sendToCloud(record);
+                                    mECG3FullRecCounter++;
+                                    if(mECG3FullRecCounter >= FULL_RECORD_DURATION){
+                                        mRecTimeStamp = now;
+                                        mECG3FullRecCounter = 0;
+                                    }
                                     mRecords.set(1, new Record(mRecTimeStamp, mPatientId, now, 1));
                                 }
                                 for(int i = 1; i < samples.length; i += 3){
