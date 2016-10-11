@@ -632,7 +632,7 @@ public class BLEService extends Service {
             }
 
         } catch (Exception e) {
-            Log.d("OutputStream", e.getLocalizedMessage());
+            Log.d("OutputStream", " " + e.getLocalizedMessage());
             result =  CONNECTION_ERROR;
             saveRecords(record);
         }
@@ -672,20 +672,21 @@ public class BLEService extends Service {
         if(isExternalStorageWritable()){
             new Thread(new Runnable(){
                 public void run(){
+                    Record tempRecord = record.copy();
                     File root = android.os.Environment.getExternalStorageDirectory();
                     File dir = new File (root.getAbsolutePath() + DIRECTORY_NAME);
                     if(!dir.isDirectory())
                         dir.mkdirs();
                     File file;
-                    Date date = new Date(record.getStart());
+                    Date date = new Date(tempRecord.getStart());
                     SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
-                    String dataType = record.getType();
+                    String dataType = tempRecord.getType();
                     String fileName = dataType + "_" + sdf.format(date) + ".txt";
                     file = new File(dir, fileName);
-                    if(!record.isEmpty()) {
+                    if(!tempRecord.isEmpty()) {
                         try {
                             FileWriter fw = new FileWriter(file, true);
-                            fw.append(record.toJson());
+                            fw.append(tempRecord.toJson());
                             fw.flush();
                             fw.close();
                             Log.d(TAG, dataType + " Record Saved");

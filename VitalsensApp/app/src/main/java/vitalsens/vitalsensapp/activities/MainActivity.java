@@ -353,9 +353,15 @@ public class MainActivity extends Activity {
                             }
                             if (mShowECGThree) {
                                 for (int i = 1; i < samples.length; i += 3) {
-                                    mChannelOne.updateGraph(samples[i]);
-                                    mChannelTwo.updateGraph(samples[i + 1]);
-                                    mChannelThree.updateGraph(samples[i + 2]);
+                                    if(samples[i] == BLEService.NAN) {
+                                        mChannelOne.updateGraph(samples[i]);
+                                        mChannelTwo.updateGraph(samples[i + 1]);
+                                        mChannelThree.updateGraph(samples[i + 2]);
+                                    }else{
+                                        mChannelOne.updateGraph(samples[i + 2] - samples[i + 1]);
+                                        mChannelTwo.updateGraph(samples[i] - samples[i + 1]);
+                                        mChannelThree.updateGraph(samples[i] - samples[i + 2]);
+                                    }
                                 }
                             }
                         }
@@ -534,13 +540,11 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            String hrStr;
                             if(hr != 1000){
-                                hrStr = "Heart Rate: " + hr;
+                                String hrStr = hr + " BPM";
                                 hrValue.setText(hrStr);
                             }else{
-                                hrStr = "Heart Rate: N/A";
-                                hrValue.setText(hrStr);
+                                hrValue.setText(R.string.hr_NA);
                             }
                         }
                     });
