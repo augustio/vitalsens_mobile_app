@@ -886,7 +886,7 @@ public class MainActivity extends Activity {
                 } else {
                     hr = mRecTimerCounter / SECONDS_IN_ONE_HOUR;
                     min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) / SECONDS_IN_ONE_MINUTE;
-                    min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
+                    sec = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
                 }
                 updateTimer();
                 mRecTimerCounter++;
