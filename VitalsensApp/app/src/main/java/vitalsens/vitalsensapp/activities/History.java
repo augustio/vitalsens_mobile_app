@@ -172,14 +172,15 @@ public class History extends Activity {
             showMessage("Invalid file format");
             return null;
         }
-        Record record = new Record();
+        Record record;
         File file = new File(path);
         if (!isEmptyFile(file)) {
             try {
                 BufferedReader buf = new BufferedReader(new FileReader(file));
-                record.fromJson(buf.readLine());
+                record = Record.fromJson(buf.readLine());
                 buf.close();
             } catch (Exception e) {
+                record = null;
                 Log.e(TAG, e.toString());
                 showMessage("Problem accessing mFile");
             }
@@ -218,7 +219,7 @@ public class History extends Activity {
             urlConnection.setRequestProperty("Accept", "application/json");
             urlConnection.setRequestMethod("POST");
 
-            String json = record.toJson();
+            String json = Record.toJson(record);
 
             OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
             writer.write(json);

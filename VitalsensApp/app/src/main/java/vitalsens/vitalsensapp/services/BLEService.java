@@ -19,6 +19,7 @@ package vitalsens.vitalsensapp.services;
         import android.app.Activity;
         import android.app.Service;
         import android.bluetooth.BluetoothAdapter;
+        import android.bluetooth.BluetoothDevice;
         import android.bluetooth.BluetoothGatt;
         import android.bluetooth.BluetoothGattCallback;
         import android.bluetooth.BluetoothGattCharacteristic;
@@ -57,8 +58,6 @@ package vitalsens.vitalsensapp.services;
         import java.util.UUID;
 
         import vitalsens.vitalsensapp.models.Record;
-        import vitalsens.vitalsensapp.models.Sensor;
-
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -67,8 +66,9 @@ package vitalsens.vitalsensapp.services;
 public class BLEService extends Service {
     private final static String TAG = BLEService.class.getSimpleName();
 
-    public static final int STATE_DISCONNECTED = 0;
-    public static final int STATE_CONNECTED = 2;
+    public static final int STATE_DISCONNECTED = 10;
+    public static final int STATE_CONNECTING = 20;
+    public static final int STATE_CONNECTED = 30;
     public static final int ECG_ONE_CHANNEL = 0;
     public static final int ECG_THREE_CHANNEL = 1;
     public static final int PPG_ONE_CHANNEL = 2;
@@ -123,8 +123,8 @@ public class BLEService extends Service {
     private final static int MAX_RX_PKT_INTERVAL = 3000;
 
     public static final String SERVER_ERROR = "No Response From Server!";
-    private static final String DATA_SENT = "data sent";
-    private static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
+    public static final String EMPTY_RECORD = "No data recorded";
+    public static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
     public static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
     private static final String SERVER_URL = "http://52.51.162.106:5000/api/record";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
@@ -148,38 +148,35 @@ public class BLEService extends Service {
     private Handler mHandler = new Handler();
     private long mTimerStart;
     private boolean mTimerOn;
-    private ArrayList<String> mConnectedSensorAddresses = new ArrayList<>();
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction;
-            Sensor sensor = new Sensor(gatt.getDevice().getName(), gatt.getDevice().getAddress());
+            String sensorAddress = gatt.getDevice().getAddress();
+            String deviceName = gatt.getDevice().getName();
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                String address = sensor.getAddress();
-                mConnectedSensors.put(address, gatt);
-                mConnectedSensorAddresses.add(address);
+                mConnectedSensors.put(sensorAddress, gatt);
                 mTimerOn = false;
                 mConnectionState = STATE_CONNECTED;
-                intentAction = ACTION_GATT_CONNECTED;
-                broadcastUpdate(intentAction, sensor.toJson());
+                broadcastUpdate(ACTION_GATT_CONNECTED, deviceName);
                 Log.d(TAG, "Attempting to start service discovery:" +
                         gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 gatt.close();
-
-                mConnectedSensors.remove(sensor.getAddress());
-                mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic =
-                        mHRCharacteristic = null;
+                mConnectedSensors.remove(sensorAddress);
+                Log.d(TAG, "Disconnected from " + deviceName + ": " + sensorAddress);
+                mConnectionState = STATE_DISCONNECTED;
                 if(mConnectedSensors.isEmpty()) {
-                    broadcastUpdate(ACTION_GATT_DISCONNECTED);
-                    Log.d(TAG, "Disconnected from all sensors");
                     mConnectionState = STATE_DISCONNECTED;
                     mHandler.removeCallbacks(rxPktIntervalTimer);
-                    mConnectedSensorAddresses.clear();
                     mTimerOn = false;
+                    mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic =
+                            mHRCharacteristic = null;
                     mPrevECG1PktNum = mPrevECG3PktNum = mPrevPPG1PktNum =
                             mPrevPPG2PktNum = mPrevACCELPktNum = mPrevIMPEDPktNum = -1;
+
+                    broadcastUpdate(ACTION_GATT_DISCONNECTED);
+                    Log.d(TAG, "Disconnected from all sensors");
                 }
             }
         }
@@ -239,6 +236,16 @@ public class BLEService extends Service {
             if(characteristic.getUuid().equals(HR_CHARACTERISTIC_UUID)){
                 int hr = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
                 broadcastUpdate(HR, hr);
+            }
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            if(status != BluetoothGatt.GATT_SUCCESS ){
+                Log.d(TAG, "GATT operation failed with status = " + status);
+            }
+            else {
+                Log.d(TAG,  "Descriptor written: uuid: " + descriptor.getCharacteristic().getUuid().toString() + " status = " + status );
             }
         }
     };
@@ -333,9 +340,14 @@ public class BLEService extends Service {
 
 
     private void connectionLoop(final ArrayList<String> sensorAddresses){
-        for(int i = 0; i < sensorAddresses.size(); i++){
-            mBluetoothAdapter.getRemoteDevice(sensorAddresses.get(i))
-                    .connectGatt(getApplicationContext(), false, mGattCallback);
+        for(String address : sensorAddresses){
+            if(mConnectedSensors.containsKey(address)){
+                BluetoothGatt gatt = mConnectedSensors.get(address);
+                gatt.connect();
+            }else{
+                mBluetoothAdapter.getRemoteDevice(address)
+                        .connectGatt(getApplicationContext(), false, mGattCallback);
+            }
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
@@ -344,7 +356,7 @@ public class BLEService extends Service {
         }
     }
 
-    public void disconnect(final ArrayList<Sensor> sensors, final ArrayList<String> sensorAddresses) {
+    public void disconnect(final ArrayList<String> sensorAddresses) {
         if (mBluetoothAdapter == null) {
             Log.w(TAG, "BluetoothAdapter not initialized ");
             return;
@@ -354,7 +366,7 @@ public class BLEService extends Service {
             mDisconnectionThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    disconnectionLoop(sensors, sensorAddresses);
+                    disconnectionLoop(sensorAddresses);
                     mDisconnectionThread.interrupt();
                     mDisconnectionThread = null;
                 }
@@ -364,25 +376,10 @@ public class BLEService extends Service {
         }
     }
 
-    private void disconnectionLoop(final ArrayList<Sensor> sensors,final ArrayList<String> sensorAddresses ){
-        if(sensors == null && sensorAddresses == null)
-            return;
-        if(sensors == null){
-            for (String str : sensorAddresses) {
-                BluetoothGatt gatt = mConnectedSensors.get(str);
-                if (gatt != null) {
-                    gatt.disconnect();
-                }
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    Log.d(TAG, e.getMessage());
-                }
-            }
-        }
-        else {
-            for (Sensor sensor : sensors) {
-                BluetoothGatt gatt = mConnectedSensors.get(sensor.getAddress());
+    private void disconnectionLoop(final ArrayList<String> sensorAddresses){
+        if(sensorAddresses != null){
+            for (String address : sensorAddresses) {
+                BluetoothGatt gatt = mConnectedSensors.get(address);
                 if (gatt != null) {
                     gatt.disconnect();
                 }
@@ -421,7 +418,7 @@ public class BLEService extends Service {
                 gatt.writeDescriptor(descriptor);
 
                 try {
-                    Thread.sleep(300);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     Log.d(TAG, e.getMessage());
                 }
@@ -593,10 +590,10 @@ public class BLEService extends Service {
             if(interval >= MAX_RX_PKT_INTERVAL){
                 mTimerStart = 0;
                 mHandler.removeCallbacks(rxPktIntervalTimer);
-                disconnect(null, mConnectedSensorAddresses);
+                disconnect(new ArrayList<>(mConnectedSensors.keySet()));
             }
 
-            mHandler.postDelayed(rxPktIntervalTimer, 100);
+            mHandler.postDelayed(rxPktIntervalTimer, 10);
         }
     };
 
@@ -615,7 +612,7 @@ public class BLEService extends Service {
             urlConnection.setRequestProperty("Accept", "application/json");
             urlConnection.setRequestMethod("POST");
 
-            String json = record.toJson();
+            String json = Record.toJson(record);
 
             OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
             writer.write(json);
@@ -641,11 +638,12 @@ public class BLEService extends Service {
     }
 
     public void sendToCloud(Record record){
-        if(record.isEmpty())
-            return;
-        if(hasNetworkConnection()) {
+        if(record.isEmpty()) {
+            broadcastUpdate(ACTION_CLOUD_ACCESS_RESULT, EMPTY_RECORD);
+        }else if(hasNetworkConnection()) {
             new HttpAsyncTask().execute(record);
         }else{
+            broadcastUpdate(ACTION_CLOUD_ACCESS_RESULT, NO_NETWORK_CONNECTION);
             saveRecords(record);
         }
     }
@@ -672,21 +670,20 @@ public class BLEService extends Service {
         if(isExternalStorageWritable()){
             new Thread(new Runnable(){
                 public void run(){
-                    Record tempRecord = record.copy();
                     File root = android.os.Environment.getExternalStorageDirectory();
                     File dir = new File (root.getAbsolutePath() + DIRECTORY_NAME);
                     if(!dir.isDirectory())
                         dir.mkdirs();
                     File file;
-                    Date date = new Date(tempRecord.getStart());
+                    Date date = new Date(record.getStart());
                     SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss", Locale.US);
-                    String dataType = tempRecord.getType();
+                    String dataType = record.getType();
                     String fileName = dataType + "_" + sdf.format(date) + ".txt";
                     file = new File(dir, fileName);
-                    if(!tempRecord.isEmpty()) {
+                    if(!record.isEmpty()) {
                         try {
                             FileWriter fw = new FileWriter(file, true);
-                            fw.append(tempRecord.toJson());
+                            fw.append(Record.toJson(record));
                             fw.flush();
                             fw.close();
                             Log.d(TAG, dataType + " Record Saved");
