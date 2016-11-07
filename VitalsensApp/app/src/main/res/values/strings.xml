@@ -44,5 +44,7 @@
     <string name="hr">HR</string>
     <string name="temp">Temp.</string>
     <string name="hr_NA">Heart Rate: N/A</string>
+    <string name="initiating_auto_connect">Initiating Auto-connect &#8230;</string>
+    <string name="connecting_to_remote_device">Connecting to remote device(s) &#8230;</string>
 
 </resources>

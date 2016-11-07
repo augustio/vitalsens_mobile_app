@@ -78,12 +78,12 @@ public class MainActivity extends Activity {
     private int mNextIndex;
     private long mRecStart, mRecSegmentStart;
     private int mRecTimerCounter;
+    private int mNumConnectedSensors;
     private String mTimerString, mSensorId, mPatientId;;
     private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
             mShowPPGTwo, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
-    private boolean mReconnecting;
     private boolean mDataDisplayOn;
     private boolean mSamplesRecieved;
     private boolean mRecSegmentTimeUp, mRecTimeUp;
@@ -140,7 +140,6 @@ public class MainActivity extends Activity {
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
         mUserInitiatedDisconnection = false;
-        mReconnecting = false;
         mDataDisplayOn = false;
         mSamplesRecieved = false;
         mShowAnalysis = false;
@@ -149,6 +148,7 @@ public class MainActivity extends Activity {
         min = sec =  hr = 0;
         mNextIndex = 0;
         mRecTimerCounter = 0;
+        mNumConnectedSensors = 0;
         mTimerString = "";
         mPatientId = "";
 
@@ -183,18 +183,16 @@ public class MainActivity extends Activity {
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
-                        if(mReconnecting){
-                            mHandler.removeCallbacks(mAutoConnectTask);
-                            mReconnecting = false;
-                            mUserInitiatedDisconnection = true;
-                            mService.disconnect(mSensorAddresses);
-                        }
                         Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
                         ArrayList<String> connParams = new ArrayList<>();
                         connParams.add(mSensorId);
                         connParams.add(mPatientId);
                         newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
                         startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
+                    } else if(mConnectionState == BLEService.STATE_CONNECTING){
+                        mHandler.removeCallbacks(mAutoConnectTask);
+                        mUserInitiatedDisconnection = true;
+                        mService.disconnect(mSensorAddresses);
                     } else if (mConnectionState == BLEService.STATE_CONNECTED) {
                         mUserInitiatedDisconnection = true;
                         mService.disconnect(mSensorAddresses);
@@ -570,6 +568,8 @@ public class MainActivity extends Activity {
             case REQUEST_SELECT_DEVICE:
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     mSensorAddresses = data.getStringArrayListExtra(SensorList.EXTRA_SENSOR_ADDRESSES);
+                    mConnectionState = BLEService.STATE_CONNECTING;
+                    connectedDevices.setText(R.string.connecting_to_remote_device);
                     mService.connect(mSensorAddresses);
                 }else if(resultCode == SensorList.DEVICE_NOT_FOUND){
                     showMessage(mSensorId + " not found, try again");
@@ -773,7 +773,6 @@ public class MainActivity extends Activity {
 
 
     private void handleGattConnectionEvent(String sensorName) {
-        String connectedDevicesStr = connectedDevices.getText().toString();
         Log.d(TAG, "Connected to " + sensorName);
         addAvailableDataType(mSensorId);
         if(!mDataDisplayOn) {
@@ -782,17 +781,15 @@ public class MainActivity extends Activity {
         }
         mConnectionState=BLEService.STATE_CONNECTED;
         btnConnectDisconnect.setText(R.string.disconnect);
-        if(mReconnecting){
-            mReconnecting = false;
-        }
-        if(connectedDevicesStr.equals("")) {
+        if(mNumConnectedSensors == 0) {
             String str = "Connected to " + sensorName;
             connectedDevices.setText(str);
         }
         else{
-            String str = connectedDevicesStr + " " + sensorName;
+            String str = connectedDevices.getText().toString() + "," + sensorName;
             connectedDevices.setText(str);
         }
+        mNumConnectedSensors++;
         patientId.setText(mPatientId);
 
         mStartRecordingTask = new Runnable() {
@@ -829,8 +826,8 @@ public class MainActivity extends Activity {
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
         mNextIndex = 0;
+        mNumConnectedSensors = 0;
         mAvailableDataTypes.clear();
-        mReconnecting = false;
         mDataDisplayOn = false;
         mShowAnalysis = false;
         mSamplesRecieved = false;
@@ -847,11 +844,14 @@ public class MainActivity extends Activity {
         }
         else{
             btnConnectDisconnect.setText(R.string.disconnect);
-            mReconnecting = true;
+            btnConnectDisconnect.setEnabled(false);
             mAutoConnectTask = new Runnable() {
                 @Override
                 public void run() {
+                    mConnectionState = BLEService.STATE_CONNECTING;
+                    connectedDevices.setText(R.string.initiating_auto_connect);
                     mService.connect(mSensorAddresses);
+                    btnConnectDisconnect.setEnabled(true);
                 }
             };
             mHandler.postDelayed(mAutoConnectTask, PRE_AUTO_RECONNECTION_PAUSE_DURATION);
