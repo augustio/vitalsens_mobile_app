@@ -601,25 +601,28 @@ public class BLEService extends Service {
         String result;
         InputStream inputStream;
         URL url;
-        HttpURLConnection urlConnection;
-        int responseCode;
+        HttpURLConnection urlConnection = null;
+        int responseCode = HttpURLConnection.HTTP_NOT_FOUND;
         try {
             url = new URL(serverUrl);
             urlConnection = (HttpURLConnection)url.openConnection();
-            urlConnection.setDoOutput(true);
-            urlConnection.setChunkedStreamingMode(0);
-            urlConnection.setRequestProperty("Content-Type", "application/json");
-            urlConnection.setRequestProperty("Accept", "application/json");
-            urlConnection.setRequestMethod("POST");
+            if(urlConnection != null) {
+                urlConnection.setConnectTimeout(10000);
+                urlConnection.setDoOutput(true);
+                urlConnection.setChunkedStreamingMode(0);
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setRequestProperty("Accept", "application/json");
+                urlConnection.setRequestMethod("POST");
 
-            String json = Record.toJson(record);
+                String json = Record.toJson(record);
 
-            OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
-            writer.write(json);
-            writer.flush();
-            writer.close();
+                OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
+                writer.write(json);
+                writer.flush();
+                writer.close();
 
-            responseCode = urlConnection.getResponseCode();
+                responseCode = urlConnection.getResponseCode();
+            }
             if(responseCode == HttpURLConnection.HTTP_OK){
                 inputStream = urlConnection.getInputStream();
                 result = convertInputStreamToString(inputStream);
@@ -632,6 +635,10 @@ public class BLEService extends Service {
             Log.d("OutputStream", " " + e.getLocalizedMessage());
             result =  CONNECTION_ERROR;
             saveRecords(record);
+        }finally{
+            if(urlConnection != null) {
+                urlConnection.disconnect();
+            }
         }
 
         return result;
