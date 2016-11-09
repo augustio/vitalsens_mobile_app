@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -72,7 +73,8 @@ public class MainActivity extends Activity {
     private ArrayList<Record> mRecords;
     private ArrayList<String> mAvailableDataTypes;
     private ArrayList<String> mSensorAddresses;
-    private Runnable mAutoConnectTask, mStartRecordingTask;
+    private CountDownTimer mAutoConnectTimer;
+    private CountDownTimer mRecordStartTimer;
     private int mConnectionState;
     private int min, sec, hr;
     private int mNextIndex;
@@ -134,6 +136,8 @@ public class MainActivity extends Activity {
         chThree = (LinearLayout) findViewById(R.id.channel3_fragment);
 
         mHandler = new Handler();
+        mRecordStartTimer = null;
+        mAutoConnectTimer = null;
         mSensorId = "";
         mRecords = new ArrayList<>();
         mAvailableDataTypes = new ArrayList<>();
@@ -189,11 +193,7 @@ public class MainActivity extends Activity {
                         connParams.add(mPatientId);
                         newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
                         startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
-                    } else if(mConnectionState == BLEService.STATE_CONNECTING){
-                        mHandler.removeCallbacks(mAutoConnectTask);
-                        mUserInitiatedDisconnection = true;
-                        mService.disconnect(mSensorAddresses);
-                    } else if (mConnectionState == BLEService.STATE_CONNECTED) {
+                    } else{
                         mUserInitiatedDisconnection = true;
                         mService.disconnect(mSensorAddresses);
                     }
@@ -792,9 +792,12 @@ public class MainActivity extends Activity {
         mNumConnectedSensors++;
         patientId.setText(mPatientId);
 
-        mStartRecordingTask = new Runnable() {
-            @Override
-            public void run() {
+        mRecordStartTimer = new CountDownTimer(PRE_RECORD_START_DURATION, 1000){
+            public void onTick(long millisUntilFinished) {
+                Log.w(TAG, "seconds remaining: " + millisUntilFinished / 1000);
+            }
+
+            public void onFinish() {
                 mRecStart = System.currentTimeMillis();
                 mRecSegmentStart = mRecStart;
                 for(int i = 0; i < 6; i++)
@@ -807,8 +810,7 @@ public class MainActivity extends Activity {
                 mRecording = true;
                 mRecordTimer.run();
             }
-        };
-        mHandler.postDelayed(mStartRecordingTask, PRE_RECORD_START_DURATION);
+        }.start();
     }
 
     private void handleGattDisconnectionEvent(){
@@ -828,6 +830,10 @@ public class MainActivity extends Activity {
         mNextIndex = 0;
         mNumConnectedSensors = 0;
         mAvailableDataTypes.clear();
+        if(mRecordStartTimer != null)
+            mRecordStartTimer.cancel();
+        if(mAutoConnectTimer != null)
+            mAutoConnectTimer.cancel();
         mDataDisplayOn = false;
         mShowAnalysis = false;
         mSamplesRecieved = false;
@@ -842,21 +848,23 @@ public class MainActivity extends Activity {
             mUserInitiatedDisconnection = false;
             mSensorAddresses.clear();
         }
-        else{
+        else {
             btnConnectDisconnect.setText(R.string.disconnect);
             btnConnectDisconnect.setEnabled(false);
-            mAutoConnectTask = new Runnable() {
-                @Override
-                public void run() {
+            mAutoConnectTimer = new CountDownTimer(PRE_AUTO_RECONNECTION_PAUSE_DURATION, 1000) {
+
+                public void onTick(long millisUntilFinished) {
+                    Log.w(TAG, "seconds remaining: " + millisUntilFinished / 1000);
+                }
+
+                public void onFinish() {
                     mConnectionState = BLEService.STATE_CONNECTING;
                     connectedDevices.setText(R.string.initiating_auto_connect);
                     mService.connect(mSensorAddresses);
                     btnConnectDisconnect.setEnabled(true);
                 }
-            };
-            mHandler.postDelayed(mAutoConnectTask, PRE_AUTO_RECONNECTION_PAUSE_DURATION);
+            }.start();
         }
-        mHandler.removeCallbacks(mStartRecordingTask);
     }
 
     private Runnable mRecordTimer = new Runnable() {
