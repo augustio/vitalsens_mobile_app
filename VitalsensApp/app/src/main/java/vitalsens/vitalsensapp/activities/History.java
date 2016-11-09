@@ -213,6 +213,7 @@ public class History extends Activity {
         try {
             url = new URL(serverUrl);
             urlConnection = (HttpURLConnection)url.openConnection();
+            urlConnection.setConnectTimeout(10000);
             urlConnection.setDoOutput(true);
             urlConnection.setChunkedStreamingMode(0);
             urlConnection.setRequestProperty("Content-Type", "application/json");
