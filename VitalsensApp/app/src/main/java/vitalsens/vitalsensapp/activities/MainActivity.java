@@ -20,6 +20,7 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -100,6 +101,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         int samplesDispWindowSize;
         int screenSize = getResources().getConfiguration().screenLayout &
                 Configuration.SCREENLAYOUT_SIZE_MASK;
@@ -860,7 +864,6 @@ public class MainActivity extends Activity {
             stopRecordingData();
         }
         if(mUserInitiatedDisconnection) {
-            Log.e(TAG, "USER INITIATED DISCONNECTION");
             mUserInitiatedDisconnection = false;
             mSensorAddresses.clear();
             mConnectionState = BLEService.STATE_DISCONNECTED;
