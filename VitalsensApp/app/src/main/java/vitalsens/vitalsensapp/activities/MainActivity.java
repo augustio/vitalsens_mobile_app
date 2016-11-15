@@ -192,7 +192,6 @@ public class MainActivity extends Activity {
                     Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
-                    btnConnectDisconnect.setEnabled(false);
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
                         Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
                         ArrayList<String> connParams = new ArrayList<>();
@@ -591,6 +590,7 @@ public class MainActivity extends Activity {
                     mConnectionState = BLEService.STATE_CONNECTING;
                     connectedDevices.setText(R.string.connecting);
                     mService.connect(mSensorAddresses);
+                    btnConnectDisconnect.setEnabled(false);
                 }else if(resultCode == SensorList.DEVICE_NOT_FOUND){
                     showMessage(mSensorId + " not found, try again");
                     Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
@@ -623,6 +623,7 @@ public class MainActivity extends Activity {
                     startActivityForResult(getSensorIntent, REQUEST_SELECT_DEVICE);
                 }else if(resultCode == Activity.RESULT_CANCELED){
                     Log.d(TAG, "User cancled request");
+
                 }
                 break;
             default:
