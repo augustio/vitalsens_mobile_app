@@ -55,9 +55,9 @@ public class MainActivity extends Activity {
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
     private static final int REQUEST_CONNECT_PARAMS = 3;
-    private static final int MAX_RECORD_SEGMENT_DURATION = 60; //In milliseconds
-    private static final int MAX_RECORD_DURATION = 1800; //In milliseconds
-    private static final int MAX_REC_COUNT = 86400000; //Number of milliseconds in one day
+    private static final int MAX_RECORD_SEGMENT_DURATION = 60; //In seconds (I minute)
+    private static final int MAX_RECORD_DURATION = 1800; //In Seconds (30 minutes)
+    private static final int MAX_RECORDING_DURATION = 864000; //In Seconds (10 days)
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
     private static final int ONE_SECOND_IN_MILLIS = 1000;
@@ -913,7 +913,7 @@ public class MainActivity extends Activity {
                     sec = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
                 }
                 updateTimer();
-                if(mRecTimerCounter == MAX_REC_COUNT)
+                if(mRecTimerCounter == MAX_RECORDING_DURATION)
                     refreshTimer();
                 else
                     mRecTimerCounter++;
