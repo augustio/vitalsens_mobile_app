@@ -73,4 +73,7 @@ public class ChannelTwoFragment extends Fragment {
         return xRange;
     }
 
+    public void setColor(int color){
+        mLineGraph.setColor(color);
+    }
 }

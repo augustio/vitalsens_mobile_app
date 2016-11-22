@@ -14,11 +14,9 @@ public class LineGraphView {
     private TimeSeries mSeries;
     private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
     private XYMultipleSeriesRenderer mMultiRenderer = new XYMultipleSeriesRenderer();
+    private XYSeriesRenderer mRenderer = new XYSeriesRenderer();
 
     public LineGraphView(String title) {
-
-        XYSeriesRenderer mRenderer = new XYSeriesRenderer();
-
         mSeries = new TimeSeries(title);
         mDataset.addSeries(mSeries);
         mRenderer.setColor(Color.WHITE);
@@ -67,6 +65,10 @@ public class LineGraphView {
 
     public void clearGraph() {
         mSeries.clear();
+    }
+
+    public void setColor(int color){
+        mRenderer.setColor(color);
     }
 
 }

@@ -47,5 +47,6 @@
     <string name="starting_auto_connect">Starting Auto-connect &#8230;</string>
     <string name="connecting">Connecting to remote device(s) &#8230;</string>
     <string name="disconnecting">Disconnecting from remote device(s) &#8230;</string>
+    <string name="pain">Pain</string>
 
 </resources>

@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
@@ -68,7 +69,7 @@ public class MainActivity extends Activity {
     private Button btnConnectDisconnect;
     private TextView connectedDevices, curDispDataType,
             batLevel, curTemperature, hrValue, patientId, batLevelTxt;
-    private LinearLayout chOne, chTwo, chThree;
+    private LinearLayout chOne, chTwo, chThree, mainDisplay;
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Record> mRecords;
@@ -92,6 +93,7 @@ public class MainActivity extends Activity {
     private boolean mRecSegmentTimeUp, mRecTimeUp;
     private boolean mAutoConnectOn;
     private boolean mShowAnalysis;
+    private boolean mPainStart;
 
     private ChannelOneFragment mChannelOne;
     private ChannelTwoFragment mChannelTwo;
@@ -139,6 +141,7 @@ public class MainActivity extends Activity {
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
         chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
         chThree = (LinearLayout) findViewById(R.id.channel3_fragment);
+        mainDisplay = (LinearLayout) findViewById(R.id.main_display);
 
         mHandler = new Handler();
         mRecordStartTimer = null;
@@ -154,6 +157,7 @@ public class MainActivity extends Activity {
         mShowAnalysis = false;
         mRecSegmentTimeUp = mRecTimeUp = false;
         mAutoConnectOn = false;
+        mPainStart = false;
 
         min = sec =  hr = 0;
         mNextIndex = 0;
@@ -215,6 +219,28 @@ public class MainActivity extends Activity {
                     }else if(mConnectionState == BLEService.STATE_CONNECTED){
                         mUserInitiatedDisconnection = true;
                         mService.disconnect(mSensorAddresses);
+                    }
+                }
+            }
+        });
+
+        mainDisplay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mRecording){
+                    if(mPainStart){
+                        mPainStart = false;
+                        if(mRecords.get(1) != null) {
+                            mRecords.get(1).setPEEnd(System.currentTimeMillis());
+                        }
+                        cancelPainEventMark();
+                    }
+                    else{
+                        mPainStart = true;
+                        if(mRecords.get(1) != null) {
+                            mRecords.get(1).setPEStart(System.currentTimeMillis());
+                        }
+                        markPainEvent();
                     }
                 }
             }
@@ -418,7 +444,6 @@ public class MainActivity extends Activity {
                                 mRecords.set(i, new Record(mRecStart, mPatientId, mRecSegmentStart, i));
                             }
                         }
-
                     }
                     switch(action){
                         case BLEService.ONE_CHANNEL_ECG:
@@ -859,6 +884,8 @@ public class MainActivity extends Activity {
         mShowAnalysis = false;
         mSamplesRecieved = false;
         mRecSegmentTimeUp = mRecTimeUp = false;
+        mPainStart = false;
+        cancelPainEventMark();
         clearGraphLayout();
         if(mRecording) {
             mRecording = false;
@@ -1026,6 +1053,18 @@ public class MainActivity extends Activity {
         }else{
             showMessage("No saved ids");
         }
+    }
+
+    private void markPainEvent(){
+        mChannelOne.setColor(Color.RED);
+        mChannelTwo.setColor(Color.RED);
+        mChannelThree.setColor(Color.RED);
+    }
+
+    private void cancelPainEventMark(){
+        mChannelOne.setColor(Color.WHITE);
+        mChannelTwo.setColor(Color.WHITE);
+        mChannelThree.setColor(Color.WHITE);
     }
 
     public boolean isExternalStorageReadable() {
