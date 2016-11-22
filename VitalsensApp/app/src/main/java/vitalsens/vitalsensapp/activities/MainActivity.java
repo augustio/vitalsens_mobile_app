@@ -231,14 +231,14 @@ public class MainActivity extends Activity {
                     if(mPainStart){
                         mPainStart = false;
                         if(mRecords.get(1) != null) {
-                            mRecords.get(1).setPEEnd(System.currentTimeMillis());
+                            mRecords.get(1).setPEEnd(mRecords.get(1).getChOne().size());
                         }
                         cancelPainEventMark();
                     }
                     else{
                         mPainStart = true;
                         if(mRecords.get(1) != null) {
-                            mRecords.get(1).setPEStart(System.currentTimeMillis());
+                            mRecords.get(1).setPEStart(mRecords.get(1).getChOne().size());
                         }
                         markPainEvent();
                     }

@@ -33,8 +33,8 @@ public class Record {
     private long start;
     private long end;
     private String type;
-    private long pEStart;
-    private long pEEnd;
+    private int pEStart;
+    private int pEEnd;
     private ArrayList<Integer> chOne;
     private ArrayList<Integer> chTwo;
     private ArrayList<Integer> chThree;
@@ -47,8 +47,8 @@ public class Record {
         this.patientId = patientId;
         this.start = start;
         end = 0;
-        pEStart = 0;
-        pEEnd = 0;
+        pEStart = -1;
+        pEEnd = -1;
         chOne = new ArrayList<>();
         chTwo = new ArrayList<>();
         chThree = new ArrayList<>();
@@ -94,11 +94,11 @@ public class Record {
         return end;
     }
 
-    public long getPEStart(){
+    public int getPEStart(){
         return pEStart;
     }
 
-    public long getPEEnd(){
+    public int getPEEnd(){
         return pEEnd;
     }
 
@@ -143,11 +143,11 @@ public class Record {
         this.end = end;
     }
 
-    public void setPEStart(long pEStart){
+    public void setPEStart(int pEStart){
         this.pEStart = pEStart;
     }
 
-    public void setPEEnd(long pEEnd){
+    public void setPEEnd(int pEEnd){
         this.pEEnd = pEEnd;
     }
 
