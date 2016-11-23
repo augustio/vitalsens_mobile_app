@@ -35,6 +35,7 @@ public class Record {
     private String type;
     private int pEStart;
     private int pEEnd;
+    private String secret;
     private ArrayList<Integer> chOne;
     private ArrayList<Integer> chTwo;
     private ArrayList<Integer> chThree;
@@ -49,6 +50,7 @@ public class Record {
         end = 0;
         pEStart = -1;
         pEEnd = -1;
+        secret = "";
         chOne = new ArrayList<>();
         chTwo = new ArrayList<>();
         chThree = new ArrayList<>();
@@ -92,6 +94,10 @@ public class Record {
 
     public long getEnd(){
         return end;
+    }
+
+    public String getSecret(){
+        return secret;
     }
 
     public int getPEStart(){
@@ -149,6 +155,10 @@ public class Record {
 
     public void setPEEnd(int pEEnd){
         this.pEEnd = pEEnd;
+    }
+
+    public void setSecret(String secret){
+        this.secret = secret;
     }
 
     public void addToChOne(int data){

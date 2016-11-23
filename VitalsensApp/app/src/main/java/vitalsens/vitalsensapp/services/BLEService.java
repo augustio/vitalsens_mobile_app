@@ -614,6 +614,7 @@ public class BLEService extends Service {
                 urlConnection.setRequestProperty("Accept", "application/json");
                 urlConnection.setRequestMethod("POST");
 
+                record.setSecret("v1t4753n553cr3tk3y");
                 String json = Record.toJson(record);
 
                 OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
