@@ -199,6 +199,7 @@ public class Record {
         rec.timeStamp = this.timeStamp;
         rec.pEEnd = this.pEEnd;
         rec.pEStart = this.pEStart;
+        rec.secret = this.secret;
 
         return rec;
     }
