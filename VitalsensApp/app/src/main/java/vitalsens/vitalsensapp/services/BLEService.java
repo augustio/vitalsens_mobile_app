@@ -126,7 +126,7 @@ public class BLEService extends Service {
     public static final String EMPTY_RECORD = "No data recorded";
     public static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
     public static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
-    private static final String SERVER_URL = "http://52.51.162.106:5000/api/record";
+    private static final String SERVER_URL = "http://83.136.249.208:5000/api/record";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
 
     private BluetoothManager mBluetoothManager;
