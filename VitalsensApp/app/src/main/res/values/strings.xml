@@ -44,9 +44,9 @@
     <string name="hr">HR</string>
     <string name="temp">Temp.</string>
     <string name="hr_NA">Heart Rate: N/A</string>
-    <string name="starting_auto_connect">Starting Auto-connect &#8230;</string>
-    <string name="connecting">Connecting to remote device(s) &#8230;</string>
-    <string name="disconnecting">Disconnecting from remote device(s) &#8230;</string>
-    <string name="pain">Pain</string>
+    <string name="starting_auto_connect">Auto-connect &#8230;</string>
+    <string name="connecting">Connecting &#8230;</string>
+    <string name="disconnecting">Disconnecting &#8230;</string>
+    <string name="pain">Pain On/Off</string>
 
 </resources>

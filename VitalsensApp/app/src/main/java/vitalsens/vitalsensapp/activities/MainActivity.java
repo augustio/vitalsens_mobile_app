@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
     private Button btnConnectDisconnect;
     private TextView connectedDevices, curDispDataType,
             batLevel, curTemperature, hrValue, patientId, batLevelTxt;
-    private LinearLayout chOne, chTwo, chThree, mainDisplay;
+    private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Record> mRecords;
@@ -141,7 +141,7 @@ public class MainActivity extends Activity {
         chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
         chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
         chThree = (LinearLayout) findViewById(R.id.channel3_fragment);
-        mainDisplay = (LinearLayout) findViewById(R.id.main_display);
+        Button btnPain = (Button) findViewById(R.id.pain_btn);
 
         mHandler = new Handler();
         mRecordStartTimer = null;
@@ -224,7 +224,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        mainDisplay.setOnClickListener(new View.OnClickListener() {
+        btnPain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(mRecording){
@@ -829,8 +829,7 @@ public class MainActivity extends Activity {
         btnConnectDisconnect.setText(R.string.disconnect);
         btnConnectDisconnect.setEnabled(true);
         if(mNumConnectedSensors == 0) {
-            String str = "Connected to " + sensorName;
-            connectedDevices.setText(str);
+            connectedDevices.setText(sensorName);
         }
         else{
             String str = connectedDevices.getText().toString() + "," + sensorName;
