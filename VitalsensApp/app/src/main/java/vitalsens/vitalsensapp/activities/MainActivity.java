@@ -27,14 +27,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
@@ -92,7 +91,6 @@ public class MainActivity extends Activity {
     private boolean mSamplesRecieved;
     private boolean mRecSegmentTimeUp, mRecTimeUp;
     private boolean mAutoConnectOn;
-    private boolean mShowAnalysis;
     private boolean mPainStart;
 
     private ChannelOneFragment mChannelOne;
@@ -154,7 +152,6 @@ public class MainActivity extends Activity {
         mUserInitiatedDisconnection = false;
         mDataDisplayOn = false;
         mSamplesRecieved = false;
-        mShowAnalysis = false;
         mRecSegmentTimeUp = mRecTimeUp = false;
         mAutoConnectOn = false;
         mPainStart = false;
@@ -410,20 +407,19 @@ public class MainActivity extends Activity {
                     final String result = intent.getStringExtra(Intent.EXTRA_TEXT);
                     switch(result){
                         case BLEService.NO_NETWORK_CONNECTION:
-                            showMessage(BLEService.NO_NETWORK_CONNECTION);
+                            connectedDevices.setText(BLEService.NO_NETWORK_CONNECTION);
                             break;
                         case BLEService.SERVER_ERROR:
-                            showMessage(BLEService.SERVER_ERROR);
+                            connectedDevices.setText(BLEService.SERVER_ERROR);
                             break;
                         case BLEService.EMPTY_RECORD:
-                            showMessage(BLEService.EMPTY_RECORD);
+                            connectedDevices.setText(BLEService.EMPTY_RECORD);
                             break;
                         case BLEService.CONNECTION_ERROR:
-                            showMessage(BLEService.CONNECTION_ERROR);
+                            connectedDevices.setText(BLEService.CONNECTION_ERROR);
                             break;
                         default:
-                            showMessage("Data sent to cloud");
-                            updateAnalysedResult(result);
+                            connectedDevices.setText("Data sent to cloud");
                     }
                     break;
                 default:
@@ -782,23 +778,13 @@ public class MainActivity extends Activity {
         String dataType = mAvailableDataTypes.get(mNextIndex);
 
         switch (dataType){
-            case Record.ECG_ONE_DATA:
-                curDispDataType.setText(Record.ECG_ONE_DATA);
-                setGraphLayout(ONE_CHANNEL_LAYOUT);
-                mShowECGOne = true;
-                break;
-            case Record.ECG_THREE_DATA:
-                curDispDataType.setText(Record.ECG_THREE_DATA);
+            case Record.ECG_DATA:
+                curDispDataType.setText(Record.ECG_DATA);
                 setGraphLayout(THRE_CHANNELS_LAYOUT);
                 mShowECGThree = true;
                 break;
-            case Record.PPG_ONE_DATA:
-                curDispDataType.setText(Record.PPG_ONE_DATA);
-                setGraphLayout(ONE_CHANNEL_LAYOUT);
-                mShowPPGOne = true;
-                break;
-            case Record.PPG_TWO_DATA:
-                curDispDataType.setText(Record.PPG_TWO_DATA);
+            case Record.PPG_DATA:
+                curDispDataType.setText(Record.PPG_DATA);
                 setGraphLayout(TWO_CHANNELS_LAYOUT);
                 mShowPPGTwo = true;
                 break;
@@ -880,7 +866,6 @@ public class MainActivity extends Activity {
         if(mAutoConnectTimer != null)
             mAutoConnectTimer.cancel();
         mDataDisplayOn = false;
-        mShowAnalysis = false;
         mSamplesRecieved = false;
         mRecSegmentTimeUp = mRecTimeUp = false;
         mPainStart = false;
@@ -954,7 +939,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateTimer(){
-        mTimerString = String.format("%02d:%02d:%02d", hr,min,sec);
+        mTimerString = String.format(Locale.getDefault(),"%02d:%02d:%02d", hr,min,sec);
         ((TextView) findViewById(R.id.timer_view)).setText(mTimerString);
     }
 
@@ -988,11 +973,11 @@ public class MainActivity extends Activity {
         String type = sensorId.substring(0, 3);
         switch(type.toUpperCase()){
             case "ECG":
-                mAvailableDataTypes.add(Record.ECG_THREE_DATA);
+                mAvailableDataTypes.add(Record.ECG_DATA);
                 mAvailableDataTypes.add(Record.ACCEL_DATA);
                 break;
             case "PPG":
-                mAvailableDataTypes.add(Record.PPG_TWO_DATA);
+                mAvailableDataTypes.add(Record.PPG_DATA);
                 break;
             case "ACL":
                 mAvailableDataTypes.add(Record.ACCEL_DATA);
@@ -1000,14 +985,6 @@ public class MainActivity extends Activity {
             case "IMP":
                 mAvailableDataTypes.add(Record.IMPEDANCE_DATA);
                 break;
-        }
-    }
-
-    private void updateAnalysedResult(String result){
-        try{
-            JSONObject res = new JSONObject(result);
-        }catch(Exception e){
-            Log.d(TAG, e.getLocalizedMessage());
         }
     }
 

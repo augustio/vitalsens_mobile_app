@@ -9,10 +9,8 @@ import java.util.Map;
 public class Record {
 
     /*Sensor datatypes*/
-    public static final String ECG_ONE_DATA = "Single Channel ECG";
-    public static final String ECG_THREE_DATA = "Three Channels ECG";
-    public static final String PPG_ONE_DATA = "Single Channel PPG";
-    public static final String PPG_TWO_DATA = "Two_Channels_PPG";
+    public static final String ECG_DATA = "ECG";
+    public static final String PPG_DATA = "PPG";
     public static final String ACCEL_DATA = "Acceleration";
     public static final String IMPEDANCE_DATA = "Impedance Pneumography";
 
@@ -20,10 +18,8 @@ public class Record {
     static
     {
         DATA_TYPES = new HashMap<String, Integer>();
-        DATA_TYPES.put(ECG_ONE_DATA, 0);
-        DATA_TYPES.put(ECG_THREE_DATA, 1);
-        DATA_TYPES.put(PPG_ONE_DATA, 2);
-        DATA_TYPES.put(PPG_TWO_DATA, 3);
+        DATA_TYPES.put(ECG_DATA, 1);
+        DATA_TYPES.put(PPG_DATA, 3);
         DATA_TYPES.put(ACCEL_DATA, 4);
         DATA_TYPES.put(IMPEDANCE_DATA, 5);
     }

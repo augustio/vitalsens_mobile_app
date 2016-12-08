@@ -19,7 +19,6 @@ package vitalsens.vitalsensapp.services;
         import android.app.Activity;
         import android.app.Service;
         import android.bluetooth.BluetoothAdapter;
-        import android.bluetooth.BluetoothDevice;
         import android.bluetooth.BluetoothGatt;
         import android.bluetooth.BluetoothGattCallback;
         import android.bluetooth.BluetoothGattCharacteristic;
@@ -69,12 +68,10 @@ public class BLEService extends Service {
     public static final int STATE_DISCONNECTED = 10;
     public static final int STATE_CONNECTING = 20;
     public static final int STATE_CONNECTED = 30;
-    public static final int ECG_ONE_CHANNEL = 0;
-    public static final int ECG_THREE_CHANNEL = 1;
-    public static final int PPG_ONE_CHANNEL = 2;
-    public static final int PPG_TWO_CHANNEL = 3;
-    public static final int ACCELERATION_THREE_CHANNEL = 4;
-    public static final int IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL = 5;
+    public static final int ECG = 1;
+    public static final int PPG = 3;
+    public static final int ACCELERATION = 4;
+    public static final int IMPEDANCE_PNEUMOGRAPHY = 5;
     public static final int NAN = -4096;
 
     public final static String ACTION_GATT_CONNECTED =
@@ -120,7 +117,6 @@ public class BLEService extends Service {
     private final static int SHIFT_LEFT_16BITS = 16;
     private final static int GET_BIT24 = 0x00400000;
     private final static int FIRST_BIT_MASK = 0x01;
-    private final static int MAX_RX_PKT_INTERVAL = 3000;
 
     public static final String SERVER_ERROR = "No Response From Server!";
     public static final String EMPTY_RECORD = "No data recorded";
@@ -133,10 +129,8 @@ public class BLEService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
     private Thread mConnectionThread, mDisconnectionThread, mNotificationThread;
     private int mConnectionState;
-    private int mPrevECG1PktNum = -1;
-    private int mPrevECG3PktNum = -1;
-    private int mPrevPPG1PktNum = -1;
-    private int mPrevPPG2PktNum = -1;
+    private int mPrevECGPktNum = -1;
+    private int mPrevPPGPktNum = -1;
     private int mPrevACCELPktNum = -1;
     private int mPrevIMPEDPktNum = -1;
 
@@ -145,10 +139,6 @@ public class BLEService extends Service {
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
-    private Handler mHandler = new Handler();
-    private long mTimerStart;
-    private boolean mTimerOn;
-
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -156,7 +146,6 @@ public class BLEService extends Service {
             String deviceName = gatt.getDevice().getName();
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectedSensors.put(sensorAddress, gatt);
-                mTimerOn = false;
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(ACTION_GATT_CONNECTED, deviceName);
                 Log.d(TAG, "Attempting to start service discovery:" +
@@ -168,12 +157,9 @@ public class BLEService extends Service {
                 mConnectionState = STATE_DISCONNECTED;
                 if(mConnectedSensors.isEmpty()) {
                     mConnectionState = STATE_DISCONNECTED;
-                    mHandler.removeCallbacks(rxPktIntervalTimer);
-                    mTimerOn = false;
                     mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic =
                             mHRCharacteristic = null;
-                    mPrevECG1PktNum = mPrevECG3PktNum = mPrevPPG1PktNum =
-                            mPrevPPG2PktNum = mPrevACCELPktNum = mPrevIMPEDPktNum = -1;
+                    mPrevECGPktNum = mPrevPPGPktNum = mPrevACCELPktNum = mPrevIMPEDPktNum = -1;
 
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     Log.d(TAG, "Disconnected from all sensors");
@@ -213,13 +199,7 @@ public class BLEService extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
             if(characteristic.getUuid().equals(RX_CHAR_UUID)) {
-                if(mTimerOn) {
-                    mHandler.removeCallbacks(rxPktIntervalTimer);
-                }
                 processRXData(characteristic.getValue());
-                mTimerStart = System.currentTimeMillis();
-                rxPktIntervalTimer.run();
-                mTimerOn = true;
             }
             if(characteristic.getUuid().equals(HT_MEASUREMENT_CHARACTERISTIC_UUID)){
                 try {
@@ -465,21 +445,9 @@ public class BLEService extends Service {
         }
 
         switch (dataId){
-            case ECG_ONE_CHANNEL:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG1PktNum);
-                mPrevECG1PktNum = packetNumber;
-                if( numPacketsLost > 0) {
-                    lostData[0] = dataId;
-                    for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(ONE_CHANNEL_ECG, lostData);
-                    }
-                    Log.e(TAG, "Packet Lost (ECG1): " + numPacketsLost);
-                }
-                broadcastUpdate(ONE_CHANNEL_ECG, sensorData);
-                break;
-            case ECG_THREE_CHANNEL:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevECG3PktNum);
-                mPrevECG3PktNum = packetNumber;
+            case ECG:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevECGPktNum);
+                mPrevECGPktNum = packetNumber;
                 if( numPacketsLost > 0) {
                     lostData[0] = dataId;
                     for(int i = 0; i < numPacketsLost; i++){
@@ -489,21 +457,9 @@ public class BLEService extends Service {
                 }
                 broadcastUpdate(THREE_CHANNEL_ECG, sensorData);
                 break;
-            case PPG_ONE_CHANNEL:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG1PktNum);
-                mPrevPPG1PktNum = packetNumber;
-                if( numPacketsLost > 0) {
-                    lostData[0] = dataId;
-                    for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(ONE_CHANNEL_PPG, lostData);
-                    }
-                    Log.e(TAG, "Packet Lost (PPG1): " + numPacketsLost);
-                }
-                broadcastUpdate(ONE_CHANNEL_PPG, sensorData);
-                break;
-            case PPG_TWO_CHANNEL:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPG2PktNum);
-                mPrevPPG2PktNum = packetNumber;
+            case PPG:
+                numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPGPktNum);
+                mPrevPPGPktNum = packetNumber;
                 if( numPacketsLost > 0) {
                     lostData[0] = dataId;
                     for(int i = 0; i < numPacketsLost; i++){
@@ -513,7 +469,7 @@ public class BLEService extends Service {
                 }
                 broadcastUpdate(TWO_CHANNEL_PPG, sensorData);
                 break;
-            case ACCELERATION_THREE_CHANNEL:
+            case ACCELERATION:
                 /*Get negative acceleration values. Max unsigned value = 4096.
                 * Max positive signed value = 2047*/
                 for(int i = 0; i < sensorData.length; i++){
@@ -533,7 +489,7 @@ public class BLEService extends Service {
                 }
                 broadcastUpdate(THREE_CHANNEL_ACCELERATION, sensorData);
                 break;
-            case IMPEDANCE_PNEUMOGRAPHY_ONE_CHANNEL:
+            case IMPEDANCE_PNEUMOGRAPHY:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
                 mPrevIMPEDPktNum = packetNumber;
                 if( numPacketsLost > 0) {
@@ -582,20 +538,6 @@ public class BLEService extends Service {
             return mantissa;
         }
     }
-
-    private Runnable rxPktIntervalTimer = new Runnable() {
-        @Override
-        public void run() {
-            long interval = System.currentTimeMillis() - mTimerStart;
-            if(interval >= MAX_RX_PKT_INTERVAL){
-                mTimerStart = 0;
-                mHandler.removeCallbacks(rxPktIntervalTimer);
-                disconnect(new ArrayList<>(mConnectedSensors.keySet()));
-            }
-
-            mHandler.postDelayed(rxPktIntervalTimer, 10);
-        }
-    };
 
     public String post(String serverUrl, Record record){
         String result;
