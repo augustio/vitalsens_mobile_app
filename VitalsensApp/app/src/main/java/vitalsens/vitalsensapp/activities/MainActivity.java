@@ -442,27 +442,7 @@ public class MainActivity extends Activity {
                         }
                     }
                     switch(action){
-                        case BLEService.ONE_CHANNEL_ECG:
-                            final int[] samples0 = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
-                            (new Runnable() {
-                                public void run() {
-                                    if (samples0 != null) {
-                                        if(!mSamplesRecieved) mSamplesRecieved = true;
-                                        if(mRecording){
-                                            for(int i = 1; i < samples0.length; i ++){
-                                                mRecords.get(0).addToChOne(samples0[i]);
-                                            }
-                                        }
-                                        if (mShowECGOne) {
-                                            for (int i = 1; i < samples0.length; i ++) {
-                                                mChannelOne.updateGraph(samples0[i]);
-                                            }
-                                        }
-                                    }
-                                }
-                            }).run();
-                            break;
-                        case BLEService.THREE_CHANNEL_ECG:
+                        case BLEService.ECG_DATA_RECIEVED:
                             final int[] samples1 = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
                             (new Runnable() {
                                 public void run() {
@@ -492,27 +472,7 @@ public class MainActivity extends Activity {
                                 }
                             }).run();
                             break;
-                        case BLEService.ONE_CHANNEL_PPG:
-                            final int[] samples2 = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
-                            (new Runnable() {
-                                public void run() {
-                                    if (samples2 != null) {
-                                        if(!mSamplesRecieved) mSamplesRecieved = true;
-                                        if(mRecording){
-                                            for(int i = 1; i < samples2.length; i ++){
-                                                mRecords.get(2).addToChOne(samples2[i]);
-                                            }
-                                        }
-                                        if (mShowPPGOne) {
-                                            for (int i = 1; i < samples2.length; i ++) {
-                                                mChannelOne.updateGraph(samples2[i]);
-                                            }
-                                        }
-                                    }
-                                }
-                            }).run();
-                            break;
-                        case BLEService.TWO_CHANNEL_PPG:
+                        case BLEService.PPG_DATA_RECIEVED:
                             final int[] samples3 = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
                             (new Runnable() {
                                 public void run() {
@@ -534,7 +494,7 @@ public class MainActivity extends Activity {
                                 }
                             }).run();
                             break;
-                        case BLEService.THREE_CHANNEL_ACCELERATION:
+                        case BLEService.ACCELERATION_DATA_RECIEVED:
                             final int[] samples4 = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
                             (new Runnable() {
                                 public void run() {
@@ -558,7 +518,7 @@ public class MainActivity extends Activity {
                                 }
                             }).run();
                             break;
-                        case BLEService.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY:
+                        case BLEService.IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED:
                             final int[] samples = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
                             (new Runnable() {
                                 public void run() {
@@ -588,12 +548,10 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BLEService.ONE_CHANNEL_ECG);
-        intentFilter.addAction(BLEService.THREE_CHANNEL_ECG);
-        intentFilter.addAction(BLEService.ONE_CHANNEL_PPG);
-        intentFilter.addAction(BLEService.TWO_CHANNEL_PPG);
-        intentFilter.addAction(BLEService.THREE_CHANNEL_ACCELERATION);
-        intentFilter.addAction(BLEService.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY);
+        intentFilter.addAction(BLEService.ECG_DATA_RECIEVED);
+        intentFilter.addAction(BLEService.PPG_DATA_RECIEVED);
+        intentFilter.addAction(BLEService.ACCELERATION_DATA_RECIEVED);
+        intentFilter.addAction(BLEService.IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED);
         intentFilter.addAction(BLEService.TEMP_VALUE);
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
         intentFilter.addAction(BLEService.HR);

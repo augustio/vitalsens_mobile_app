@@ -33,7 +33,6 @@ package vitalsens.vitalsensapp.services;
         import android.os.AsyncTask;
         import android.os.Binder;
         import android.os.Environment;
-        import android.os.Handler;
         import android.os.IBinder;
         import android.support.v4.content.LocalBroadcastManager;
         import android.util.Log;
@@ -82,18 +81,14 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.ACTION_GATT_SERVICES_DISCOVERED";
     public final static String ACTION_CLOUD_ACCESS_RESULT =
             "vitalsens.vitalsensapp.ACTION_CLOUD_ACCESS_RESULT";
-    public static final String ONE_CHANNEL_ECG =
-            "vitalsens.vitalsensapp.ONE_CHANNEL_ECG";
-    public static final String THREE_CHANNEL_ECG =
-            "vitalsens.vitalsensapp.THREE_CHANNEL_ECG";
-    public static final String ONE_CHANNEL_PPG =
-            "vitalsens.vitalsensapp.ONE_CHANNEL_PPG";
-    public static final String TWO_CHANNEL_PPG =
-            "vitalsens.vitalsensapp.TWO_CHANNEL_PPG";
-    public static final String THREE_CHANNEL_ACCELERATION =
-            "vitalsens.vitalsensapp.THREE_CHANNEL_ACCELERATION";
-    public static final String ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY =
-            "vitalsens.vitalsensapp.ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY";
+    public static final String ECG_DATA_RECIEVED =
+            "vitalsens.vitalsensapp.ECG_DATA_RECIEVED";
+    public static final String PPG_DATA_RECIEVED =
+            "vitalsens.vitalsensapp.PPG_DATA_RECIEVED";
+    public static final String ACCELERATION_DATA_RECIEVED =
+            "vitalsens.vitalsensapp.ACCELERATION_DATA_RECIEVED";
+    public static final String IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED =
+            "vitalsens.vitalsensapp.IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED";
     public static final String TEMP_VALUE =
             "vitalsens.vitalsensapp.TEMP_VALUE";
     public static final String BATTERY_LEVEL =
@@ -451,11 +446,11 @@ public class BLEService extends Service {
                 if( numPacketsLost > 0) {
                     lostData[0] = dataId;
                     for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(THREE_CHANNEL_ECG, lostData);
+                        broadcastUpdate(ECG_DATA_RECIEVED, lostData);
                     }
                     Log.e(TAG, "Packet Lost (ECG3): " + numPacketsLost);
                 }
-                broadcastUpdate(THREE_CHANNEL_ECG, sensorData);
+                broadcastUpdate(ECG_DATA_RECIEVED, sensorData);
                 break;
             case PPG:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPGPktNum);
@@ -463,11 +458,11 @@ public class BLEService extends Service {
                 if( numPacketsLost > 0) {
                     lostData[0] = dataId;
                     for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(TWO_CHANNEL_PPG, lostData);
+                        broadcastUpdate(PPG_DATA_RECIEVED, lostData);
                     }
                     Log.e(TAG, "Packet Lost (PPG2): " + numPacketsLost);
                 }
-                broadcastUpdate(TWO_CHANNEL_PPG, sensorData);
+                broadcastUpdate(PPG_DATA_RECIEVED, sensorData);
                 break;
             case ACCELERATION:
                 /*Get negative acceleration values. Max unsigned value = 4096.
@@ -483,11 +478,11 @@ public class BLEService extends Service {
                 if( numPacketsLost > 0) {
                     lostData[0] = dataId;
                     for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(THREE_CHANNEL_ACCELERATION, lostData);
+                        broadcastUpdate(ACCELERATION_DATA_RECIEVED, lostData);
                     }
                     Log.e(TAG, "Packet Lost (ACCELERATION): " + numPacketsLost);
                 }
-                broadcastUpdate(THREE_CHANNEL_ACCELERATION, sensorData);
+                broadcastUpdate(ACCELERATION_DATA_RECIEVED, sensorData);
                 break;
             case IMPEDANCE_PNEUMOGRAPHY:
                 numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
@@ -495,11 +490,11 @@ public class BLEService extends Service {
                 if( numPacketsLost > 0) {
                     lostData[0] = dataId;
                     for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, lostData);
+                        broadcastUpdate(IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED, lostData);
                     }
                     Log.e(TAG, "Packet Lost (IMPEDANCE PNEUMOGRAPHY): " + numPacketsLost);
                 }
-                broadcastUpdate(ONE_CHANNEL_IMPEDANCE_PNEUMOGRAPHY, sensorData);
+                broadcastUpdate(IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED, sensorData);
                 break;
             default:
                 break;
