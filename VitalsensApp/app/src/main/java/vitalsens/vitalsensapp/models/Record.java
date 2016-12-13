@@ -32,6 +32,7 @@ public class Record {
     private int pEStart;
     private int pEEnd;
     private String secret;
+    private double temp;
     private ArrayList<Integer> chOne;
     private ArrayList<Integer> chTwo;
     private ArrayList<Integer> chThree;
@@ -47,6 +48,7 @@ public class Record {
         pEStart = -1;
         pEEnd = -1;
         secret = "";
+        temp = 0.0;
         chOne = new ArrayList<>();
         chTwo = new ArrayList<>();
         chThree = new ArrayList<>();
@@ -94,6 +96,10 @@ public class Record {
 
     public String getSecret(){
         return secret;
+    }
+
+    public double getTemp(){
+        return temp;
     }
 
     public int getPEStart(){
@@ -157,6 +163,10 @@ public class Record {
         this.secret = secret;
     }
 
+    public void setTemp(double temp){
+        this.temp = temp;
+    }
+
     public void addToChOne(int data){
         chOne.add(data);
     }
@@ -196,6 +206,7 @@ public class Record {
             this.pEEnd = rec.pEEnd;
             this.pEStart = rec.pEStart;
             this.secret = rec.secret;
+            this.temp = rec.temp;
 
             return this;
         }else

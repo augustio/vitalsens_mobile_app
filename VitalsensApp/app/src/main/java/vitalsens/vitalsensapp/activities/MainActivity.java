@@ -83,6 +83,7 @@ public class MainActivity extends Activity {
     private int mCurrentRecSegmentCount;
     private int mRecTimerCounter;
     private int mNumConnectedSensors;
+    private double mCurTemp;
     private String mTimerString, mSensorId, mPatientId;;
     private boolean mShowECG, mShowPPG, mShowAccel, mShowImpedance;
     private boolean mRecording;
@@ -348,6 +349,7 @@ public class MainActivity extends Activity {
                             Record record = mRecords.get(i);
                             if(record != null) {
                                 record.setEnd(mRecSegmentEnd);
+                                record.setTemp(mCurTemp);
                                 mService.sendToCloud(record);
                                 mRecords.set(i, new Record(mRecStart, mPatientId, mRecSegmentStart, i));
                             }
@@ -719,6 +721,7 @@ public class MainActivity extends Activity {
         curDispDataType.setText("");
         connectedDevices.setText("");
         curTemperature.setText("");
+        mCurTemp = 0;
         batLevel.setBackgroundResource(0);
         batLevelTxt.setText("");
         hrValue.setText("");
@@ -908,6 +911,7 @@ public class MainActivity extends Activity {
     private void updateTempValue(double tempValue){
         String tempStr;
         if (tempValue != 1000) {
+            mCurTemp = tempValue;
             tempStr = tempValue + "\u00B0C";
             curTemperature.setText(tempStr);
         }
