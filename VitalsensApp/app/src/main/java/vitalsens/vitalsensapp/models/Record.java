@@ -184,19 +184,21 @@ public class Record {
         return gson.fromJson(json, Record.class);
     }
 
-    public Record copy(){
-        Record rec = new Record();
-        rec.chOne = this.getChOne();
-        rec.chTwo = this.getChTwo();
-        rec.chThree = this.getChThree();
-        rec.start = this.start;
-        rec.end = this.end;
-        rec.patientId = this.patientId;
-        rec.timeStamp = this.timeStamp;
-        rec.pEEnd = this.pEEnd;
-        rec.pEStart = this.pEStart;
-        rec.secret = this.secret;
+    public Record copy(Record rec){
+        if(rec != null) {
+            this.chOne = rec.getChOne();
+            this.chTwo = rec.getChTwo();
+            this.chThree = rec.getChThree();
+            this.start = rec.start;
+            this.end = rec.end;
+            this.patientId = rec.patientId;
+            this.timeStamp = rec.timeStamp;
+            this.pEEnd = rec.pEEnd;
+            this.pEStart = rec.pEStart;
+            this.secret = rec.secret;
 
-        return rec;
+            return this;
+        }else
+            return null;
     }
 }

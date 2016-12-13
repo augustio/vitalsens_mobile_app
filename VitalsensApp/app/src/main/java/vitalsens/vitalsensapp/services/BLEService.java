@@ -116,7 +116,8 @@ public class BLEService extends Service {
     public static final String SERVER_ERROR = "No Response From Server!";
     public static final String EMPTY_RECORD = "No data recorded";
     public static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
-    public static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
+    public static final String CONNECTION_ERROR = "NO Internet/Server Not Found";
+    public static final String DATA_SENT = "Data sent to cloud";
     private static final String SERVER_URL = "http://83.136.249.208:5000/api/record";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
 
@@ -658,5 +659,4 @@ public class BLEService extends Service {
         inputStream.close();
         return result;
     }
-
 }

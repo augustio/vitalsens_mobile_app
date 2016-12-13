@@ -51,12 +51,12 @@ public class MainActivity extends Activity {
     private static final int MAIN_LAYOUT = 0;
     private static final int ONE_CHANNEL_LAYOUT = 1;
     private static final int TWO_CHANNELS_LAYOUT = 2;
-    private static final int THRE_CHANNELS_LAYOUT = 3;
+    private static final int THREE_CHANNELS_LAYOUT = 3;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
     private static final int REQUEST_CONNECT_PARAMS = 3;
-    private static final int MAX_RECORD_SEGMENT_DURATION = 60; //In seconds (I minute)
-    private static final int MAX_RECORD_DURATION = 1800; //In Seconds (30 minutes)
+    private static final int MAX_RECORD_SEGMENT_DURATION = 60000; //In milliseconds (I minute)
+    private static final int MAX_RECORD_SEGMENTS = 30;
     private static final int MAX_RECORDING_DURATION = 864000; //In Seconds (10 days)
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
@@ -79,12 +79,12 @@ public class MainActivity extends Activity {
     private int mConnectionState;
     private int min, sec, hr;
     private int mNextIndex;
-    private long mRecStart, mRecSegmentStart;
+    private long mRecSegmentStart, mRecStart, mRecSegmentEnd;
+    private int mCurrentRecSegmentCount;
     private int mRecTimerCounter;
     private int mNumConnectedSensors;
     private String mTimerString, mSensorId, mPatientId;;
-    private boolean mShowECGOne, mShowECGThree, mShowPPGOne,
-            mShowPPGTwo, mShowAccel, mShowImpedance;
+    private boolean mShowECG, mShowPPG, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
     private boolean mDataDisplayOn;
@@ -316,116 +316,28 @@ public class MainActivity extends Activity {
             String action = intent.getAction();
             switch(action){
                 case BLEService.ACTION_GATT_CONNECTED:
-                    final String sensorName = intent.getStringExtra(Intent.EXTRA_TEXT);
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            handleGattConnectionEvent(sensorName);
-                        }
-                    });
+                    String sensorName = intent.getStringExtra(Intent.EXTRA_TEXT);
+                    handleGattConnectionEvent(sensorName);
                     break;
                 case BLEService.ACTION_GATT_DISCONNECTED:
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            handleGattDisconnectionEvent();
-                        }
-                    });
-                    break;
-                case BLEService.ACTION_GATT_SERVICES_DISCOVERED:
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            Log.d(TAG, "Gatt Services discovered");
-                        }
-                    });
+                    handleGattDisconnectionEvent();
                     break;
                 case BLEService.TEMP_VALUE:
-                    final double tempValue = intent.getDoubleExtra(Intent.EXTRA_TEXT, 1000);
-                    try {
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                String tempStr;
-                                if (tempValue != 1000) {
-                                    tempStr = tempValue + "\u00B0C";
-                                    curTemperature.setText(tempStr);
-                                }
-                            }
-                        });
-                    }catch (Exception e){
-                        Log.e(TAG, e.getMessage());
-                    }
+                    updateTempValue(intent.getDoubleExtra(Intent.EXTRA_TEXT, 1000));
                     break;
                 case BLEService.BATTERY_LEVEL:
-                    final int batteryLevel = intent.getIntExtra(Intent.EXTRA_TEXT, 200);
-                    try {
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                String batLevelStr = batteryLevel + "%";
-                                batLevelTxt.setText(batLevelStr);
-                                if(batteryLevel == 100){
-                                    batLevel.setBackgroundResource(R.drawable.battery8);
-                                }else if(batteryLevel >= 80) {
-                                    batLevel.setBackgroundResource(R.drawable.battery7);
-                                }else if(batteryLevel >= 60) {
-                                    batLevel.setBackgroundResource(R.drawable.battery6);
-                                }else if(batteryLevel >= 50) {
-                                    batLevel.setBackgroundResource(R.drawable.battery5);
-                                }else if(batteryLevel >= 40) {
-                                    batLevel.setBackgroundResource(R.drawable.battery4);
-                                }else if(batteryLevel >= 30) {
-                                    batLevel.setBackgroundResource(R.drawable.battery3);
-                                }else if(batteryLevel >= 20) {
-                                    batLevel.setBackgroundResource(R.drawable.battery2);
-                                }else if(batteryLevel >= 10) {
-                                    batLevel.setBackgroundResource(R.drawable.battery1);
-                                }else if(batteryLevel < 10) {
-                                    batLevel.setBackgroundResource(R.drawable.battery0);
-                                }
-                            }
-                        });
-                    }catch (Exception e){
-                        Log.e(TAG, e.getMessage());
-                    }
+                    updateBatteryLevel(intent.getIntExtra(Intent.EXTRA_TEXT, 200));
                     break;
                 case BLEService.HR:
-                    final int hr = intent.getIntExtra(Intent.EXTRA_TEXT, 1000);
-                    try {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(hr != 1000){
-                                    String hrStr = hr + " BPM";
-                                    hrValue.setText(hrStr);
-                                }else{
-                                    hrValue.setText(R.string.hr_NA);
-                                }
-                            }
-                        });
-                    }catch(Exception e){
-                        Log.e(TAG, e.getMessage());
-                    }
+                    updateHRValue(intent.getIntExtra(Intent.EXTRA_TEXT, 1000));
+
                     break;
                 case BLEService.ACTION_CLOUD_ACCESS_RESULT:
-                    final String result = intent.getStringExtra(Intent.EXTRA_TEXT);
-                    switch(result){
-                        case BLEService.NO_NETWORK_CONNECTION:
-                            connectedDevices.setText(BLEService.NO_NETWORK_CONNECTION);
-                            break;
-                        case BLEService.SERVER_ERROR:
-                            connectedDevices.setText(BLEService.SERVER_ERROR);
-                            break;
-                        case BLEService.EMPTY_RECORD:
-                            connectedDevices.setText(BLEService.EMPTY_RECORD);
-                            break;
-                        case BLEService.CONNECTION_ERROR:
-                            connectedDevices.setText(BLEService.CONNECTION_ERROR);
-                            break;
-                        default:
-                            connectedDevices.setText("Data sent to cloud");
-                    }
+                    reportCloudAccessStatus(intent.getStringExtra(Intent.EXTRA_TEXT));
                     break;
                 default:
                     if(mRecSegmentTimeUp) {
-                        long end = System.currentTimeMillis();
-                        mRecSegmentStart = end;
+                        mRecSegmentStart = mRecSegmentEnd;
                         mRecSegmentTimeUp = false;
                         if(mRecTimeUp) {
                             mRecStart = mRecSegmentStart;
@@ -435,7 +347,7 @@ public class MainActivity extends Activity {
                         for(int i = 0; i < 6; i++){
                             Record record = mRecords.get(i);
                             if(record != null) {
-                                record.setEnd(end);
+                                record.setEnd(mRecSegmentEnd);
                                 mService.sendToCloud(record);
                                 mRecords.set(i, new Record(mRecStart, mPatientId, mRecSegmentStart, i));
                             }
@@ -455,7 +367,7 @@ public class MainActivity extends Activity {
                                                 mRecords.get(1).addToChThree(samples1[i + 2]);
                                             }
                                         }
-                                        if (mShowECGThree) {
+                                        if (mShowECG) {
                                             for (int i = 1; i < samples1.length; i += 3) {
                                                 if(samples1[i] == BLEService.NAN) {
                                                     mChannelOne.updateGraph(samples1[i]);
@@ -484,7 +396,7 @@ public class MainActivity extends Activity {
                                                 mRecords.get(3).addToChTwo(samples3[i + 1]);
                                             }
                                         }
-                                        if (mShowPPGTwo) {
+                                        if (mShowPPG) {
                                             for(int i = 1; i < samples3.length; i += 2){
                                                 mChannelOne.updateGraph(samples3[i]);
                                                 mChannelTwo.updateGraph(samples3[i + 1]);
@@ -519,19 +431,19 @@ public class MainActivity extends Activity {
                             }).run();
                             break;
                         case BLEService.IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED:
-                            final int[] samples = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
+                            final int[] samples5 = intent.getIntArrayExtra(Intent.EXTRA_TEXT);
                             (new Runnable() {
                                 public void run() {
-                                    if (samples != null) {
+                                    if (samples5 != null) {
                                         if(!mSamplesRecieved) mSamplesRecieved = true;
                                         if(mRecording){
-                                            for(int i = 1; i < samples.length; i++) {
-                                                mRecords.get(5).addToChOne(samples[i]);
+                                            for(int i = 1; i < samples5.length; i++) {
+                                                mRecords.get(5).addToChOne(samples5[i]);
                                             }
                                         }
                                         if (mShowImpedance) {
-                                            for(int i = 1; i < samples.length; i ++){
-                                                mChannelOne.updateGraph(samples[i]);
+                                            for(int i = 1; i < samples5.length; i ++){
+                                                mChannelOne.updateGraph(samples5[i]);
                                             }
                                         }
                                     }
@@ -708,7 +620,7 @@ public class MainActivity extends Activity {
                 chOne.setVisibility(View.VISIBLE);
                 chTwo.setVisibility(View.VISIBLE);
                 break;
-            case THRE_CHANNELS_LAYOUT:
+            case THREE_CHANNELS_LAYOUT:
                 chOne.setVisibility(View.VISIBLE);
                 chTwo.setVisibility(View.VISIBLE);
                 chThree.setVisibility(View.VISIBLE);
@@ -724,8 +636,7 @@ public class MainActivity extends Activity {
         chOne.setVisibility(View.GONE);
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
-        mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo
-                = mShowAccel = mShowImpedance = false;
+        mShowECG = mShowPPG = mShowAccel = mShowImpedance = false;
     }
 
     private void displayData(){
@@ -738,17 +649,17 @@ public class MainActivity extends Activity {
         switch (dataType){
             case Record.ECG_DATA:
                 curDispDataType.setText(Record.ECG_DATA);
-                setGraphLayout(THRE_CHANNELS_LAYOUT);
-                mShowECGThree = true;
+                setGraphLayout(THREE_CHANNELS_LAYOUT);
+                mShowECG = true;
                 break;
             case Record.PPG_DATA:
                 curDispDataType.setText(Record.PPG_DATA);
                 setGraphLayout(TWO_CHANNELS_LAYOUT);
-                mShowPPGTwo = true;
+                mShowPPG = true;
                 break;
             case Record.ACCEL_DATA:
                 curDispDataType.setText(Record.ACCEL_DATA);
-                setGraphLayout(THRE_CHANNELS_LAYOUT);
+                setGraphLayout(THREE_CHANNELS_LAYOUT);
                 mShowAccel = true;
                 break;
             case Record.IMPEDANCE_DATA:
@@ -788,6 +699,7 @@ public class MainActivity extends Activity {
             }
 
             public void onFinish() {
+                mCurrentRecSegmentCount = 0;
                 mRecStart = System.currentTimeMillis();
                 mRecSegmentStart = mRecStart;
                 for(int i = 0; i < 6; i++)
@@ -811,8 +723,7 @@ public class MainActivity extends Activity {
         batLevelTxt.setText("");
         hrValue.setText("");
         patientId.setText("");
-        mShowECGOne = mShowECGThree = mShowPPGOne = mShowPPGTwo =
-                mShowAccel = mShowImpedance = false;
+        mShowECG = mShowPPG = mShowAccel = mShowImpedance = false;
         chOne.setVisibility(View.GONE);
         chTwo.setVisibility(View.GONE);
         chThree.setVisibility(View.GONE);
@@ -865,11 +776,16 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             if(mSamplesRecieved) {
-                if(mRecTimerCounter % MAX_RECORD_SEGMENT_DURATION == 0 && mRecTimerCounter != 0){
+                long now = System.currentTimeMillis();
+                long duration = now - mRecSegmentStart;
+                if(duration >= MAX_RECORD_SEGMENT_DURATION){
+                    mRecSegmentEnd = now;
+                    mCurrentRecSegmentCount++;
                     mRecSegmentTimeUp = true;
-                }
-                if(mRecTimerCounter % MAX_RECORD_DURATION == 0 && mRecTimerCounter != 0){
-                    mRecTimeUp = true;
+                    if(mCurrentRecSegmentCount == MAX_RECORD_SEGMENTS){
+                        mCurrentRecSegmentCount = 0;
+                        mRecTimeUp = true;
+                    }
                 }
                 if (mRecTimerCounter < SECONDS_IN_ONE_MINUTE) {
                     sec = mRecTimerCounter;
@@ -986,6 +902,66 @@ public class MainActivity extends Activity {
             }
         }else{
             showMessage("No saved ids");
+        }
+    }
+
+    private void updateTempValue(double tempValue){
+        String tempStr;
+        if (tempValue != 1000) {
+            tempStr = tempValue + "\u00B0C";
+            curTemperature.setText(tempStr);
+        }
+    }
+
+    private void updateBatteryLevel(int batteryLevel){
+        String str = batteryLevel + "%";
+        batLevelTxt.setText(str);
+        if(batteryLevel == 100){
+            batLevel.setBackgroundResource(R.drawable.battery8);
+        }else if(batteryLevel >= 80) {
+            batLevel.setBackgroundResource(R.drawable.battery7);
+        }else if(batteryLevel >= 60) {
+            batLevel.setBackgroundResource(R.drawable.battery6);
+        }else if(batteryLevel >= 50) {
+            batLevel.setBackgroundResource(R.drawable.battery5);
+        }else if(batteryLevel >= 40) {
+            batLevel.setBackgroundResource(R.drawable.battery4);
+        }else if(batteryLevel >= 30) {
+            batLevel.setBackgroundResource(R.drawable.battery3);
+        }else if(batteryLevel >= 20) {
+            batLevel.setBackgroundResource(R.drawable.battery2);
+        }else if(batteryLevel >= 10) {
+            batLevel.setBackgroundResource(R.drawable.battery1);
+        }else if(batteryLevel < 10) {
+            batLevel.setBackgroundResource(R.drawable.battery0);
+        }
+    }
+
+    private void updateHRValue(int hr){
+        if(hr != 1000){
+            String hrStr = hr + " BPM";
+            hrValue.setText(hrStr);
+        }else{
+            hrValue.setText(R.string.hr_NA);
+        }
+    }
+
+    private void reportCloudAccessStatus(String status){
+        switch(status){
+            case BLEService.NO_NETWORK_CONNECTION:
+                connectedDevices.setText(BLEService.NO_NETWORK_CONNECTION);
+                break;
+            case BLEService.SERVER_ERROR:
+                connectedDevices.setText(BLEService.SERVER_ERROR);
+                break;
+            case BLEService.EMPTY_RECORD:
+                connectedDevices.setText(BLEService.EMPTY_RECORD);
+                break;
+            case BLEService.CONNECTION_ERROR:
+                connectedDevices.setText(BLEService.CONNECTION_ERROR);
+                break;
+            default:
+                connectedDevices.setText(BLEService.DATA_SENT);
         }
     }
 
