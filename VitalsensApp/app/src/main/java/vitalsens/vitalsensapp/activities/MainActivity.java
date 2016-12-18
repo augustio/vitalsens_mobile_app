@@ -804,7 +804,7 @@ public class MainActivity extends Activity {
     };
 
     private void stopRecordingData(){
-        long end = SystemClock.uptimeMillis();
+        long end = System.currentTimeMillis();
         for(int i = 0; i < mRecords.size(); i++){
             Record rec = mRecords.get(i);
             if(rec == null)
