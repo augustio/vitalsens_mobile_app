@@ -18,6 +18,7 @@ import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -55,8 +56,8 @@ public class MainActivity extends Activity {
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
     private static final int REQUEST_CONNECT_PARAMS = 3;
-    private static final int MAX_RECORD_SEGMENT_DURATION = 60000; //In milliseconds (I minute)
-    private static final int MAX_RECORD_SEGMENTS = 30;
+    private static final int MAX_RECORD_SEGMENT_DURATION = 60; //In Seconds (I minute)
+    private static final int MAX_RECORD_DURATION = 1800; //In seconds (30 minutes)
     private static final int MAX_RECORDING_DURATION = 864000; //In Seconds (10 days)
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
@@ -71,7 +72,7 @@ public class MainActivity extends Activity {
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
-    private ArrayList<Record> mRecords;
+    private ArrayList<Record> mRecords, mRecordsCopy;
     private ArrayList<String> mAvailableDataTypes;
     private ArrayList<String> mSensorAddresses;
     private CountDownTimer mAutoConnectTimer;
@@ -79,18 +80,15 @@ public class MainActivity extends Activity {
     private int mConnectionState;
     private int min, sec, hr;
     private int mNextIndex;
-    private long mRecSegmentStart, mRecStart, mRecSegmentEnd;
-    private int mCurrentRecSegmentCount;
-    private int mRecTimerCounter;
+    private long mRecStart, mRecordingStart, mCurrentTimeStamp, mRecEnd, mRecSegmentEnd;
     private int mNumConnectedSensors;
     private double mCurTemp;
-    private String mTimerString, mSensorId, mPatientId;;
+    private String mSensorId, mPatientId;;
     private boolean mShowECG, mShowPPG, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
     private boolean mDataDisplayOn;
     private boolean mSamplesRecieved;
-    private boolean mRecSegmentTimeUp, mRecTimeUp;
     private boolean mAutoConnectOn;
     private boolean mPainStart;
 
@@ -147,21 +145,19 @@ public class MainActivity extends Activity {
         mAutoConnectTimer = null;
         mSensorId = "";
         mRecords = new ArrayList<>();
+        mRecordsCopy = new ArrayList<>();
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
         mUserInitiatedDisconnection = false;
         mDataDisplayOn = false;
         mSamplesRecieved = false;
-        mRecSegmentTimeUp = mRecTimeUp = false;
         mAutoConnectOn = false;
         mPainStart = false;
 
         min = sec =  hr = 0;
         mNextIndex = 0;
-        mRecTimerCounter = 0;
         mNumConnectedSensors = 0;
-        mTimerString = "";
         mPatientId = "";
 
         mChannelOne = new ChannelOneFragment();
@@ -337,21 +333,22 @@ public class MainActivity extends Activity {
                     reportCloudAccessStatus(intent.getStringExtra(Intent.EXTRA_TEXT));
                     break;
                 default:
-                    if(mRecSegmentTimeUp) {
-                        mRecSegmentStart = mRecSegmentEnd;
-                        mRecSegmentTimeUp = false;
-                        if(mRecTimeUp) {
-                            mRecStart = mRecSegmentStart;
-                            mRecTimeUp = false;
+                    if(mRecSegmentEnd > 0) {
+                        long start, end;
+                        start = end = mRecSegmentEnd;
+                        mRecSegmentEnd = 0;
+                        if(mRecEnd > 0) {
+                            mRecStart = start;
+                            mRecEnd = 0;
                         }
 
                         for(int i = 0; i < 6; i++){
                             Record record = mRecords.get(i);
                             if(record != null) {
-                                record.setEnd(mRecSegmentEnd);
+                                record.setEnd(end);
                                 record.setTemp(mCurTemp);
-                                mService.sendToCloud(record);
-                                mRecords.set(i, new Record(mRecStart, mPatientId, mRecSegmentStart, i));
+                                mRecordsCopy.add(record);
+                                mRecords.set(i, new Record(mRecStart, mPatientId, start, i));
                             }
                         }
                     }
@@ -452,6 +449,16 @@ public class MainActivity extends Activity {
                                 }
                             }).run();
                             break;
+                    }
+                    if(!mRecordsCopy.isEmpty()){
+                        (new Runnable(){
+                            public void run(){
+                                for(Record record : mRecordsCopy){
+                                    mService.sendToCloud(record);
+                                }
+                                mRecordsCopy.clear();
+                            }
+                        }).run();
                     }
             }
         }
@@ -701,16 +708,16 @@ public class MainActivity extends Activity {
             }
 
             public void onFinish() {
-                mCurrentRecSegmentCount = 0;
-                mRecStart = System.currentTimeMillis();
-                mRecSegmentStart = mRecStart;
-                for(int i = 0; i < 6; i++)
+                for(int i = 0; i < 6; i++) {
                     mRecords.add(null);
+                }
+                mRecordingStart = mRecStart = System.currentTimeMillis();;
                 for(String type : mAvailableDataTypes){
                     int dataId = Record.DATA_TYPES.get(type);
-                    Record rec = new Record(mRecStart, mPatientId, mRecSegmentStart, dataId);
+                    Record rec = new Record(mRecStart, mPatientId, mRecStart, dataId);
                     mRecords.add(dataId, rec);
                 }
+                mRecEnd = mRecSegmentEnd = 0;
                 mRecording = true;
                 mRecordTimer.run();
             }
@@ -739,7 +746,6 @@ public class MainActivity extends Activity {
             mAutoConnectTimer.cancel();
         mDataDisplayOn = false;
         mSamplesRecieved = false;
-        mRecSegmentTimeUp = mRecTimeUp = false;
         mPainStart = false;
         cancelPainEventMark();
         clearGraphLayout();
@@ -778,50 +784,27 @@ public class MainActivity extends Activity {
     private Runnable mRecordTimer = new Runnable() {
         @Override
         public void run() {
-            if(mSamplesRecieved) {
-                long now = System.currentTimeMillis();
-                long duration = now - mRecSegmentStart;
-                if(duration >= MAX_RECORD_SEGMENT_DURATION){
-                    mRecSegmentEnd = now;
-                    mCurrentRecSegmentCount++;
-                    mRecSegmentTimeUp = true;
-                    if(mCurrentRecSegmentCount == MAX_RECORD_SEGMENTS){
-                        mCurrentRecSegmentCount = 0;
-                        mRecTimeUp = true;
-                    }
+            long now = SystemClock.uptimeMillis();
+            mCurrentTimeStamp = System.currentTimeMillis();
+            long recordDuration = (mCurrentTimeStamp - mRecordingStart)/ONE_SECOND_IN_MILLIS;
+            if((recordDuration % MAX_RECORD_SEGMENT_DURATION) == 0 && recordDuration != 0) {
+                mRecSegmentEnd = mCurrentTimeStamp;
+                if ((recordDuration % MAX_RECORD_DURATION) == 0) {
+                    mRecEnd = mCurrentTimeStamp;
                 }
-                if (mRecTimerCounter < SECONDS_IN_ONE_MINUTE) {
-                    sec = mRecTimerCounter;
-                } else if (mRecTimerCounter < SECONDS_IN_ONE_HOUR) {
-                    min = mRecTimerCounter / SECONDS_IN_ONE_MINUTE;
-                    sec = mRecTimerCounter % SECONDS_IN_ONE_MINUTE;
-                } else {
-                    hr = mRecTimerCounter / SECONDS_IN_ONE_HOUR;
-                    min = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) / SECONDS_IN_ONE_MINUTE;
-                    sec = (mRecTimerCounter % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
-                }
-                updateTimer();
-                if(mRecTimerCounter == MAX_RECORDING_DURATION)
-                    refreshTimer();
-                else
-                    mRecTimerCounter++;
             }
-            mHandler.postDelayed(mRecordTimer, ONE_SECOND_IN_MILLIS);
+            hr = (int)recordDuration/SECONDS_IN_ONE_HOUR;
+            min = (int)(recordDuration%SECONDS_IN_ONE_HOUR)/SECONDS_IN_ONE_MINUTE;
+            sec = (int)(recordDuration%SECONDS_IN_ONE_HOUR)%SECONDS_IN_ONE_MINUTE;
+            String timerStr = String.format(Locale.getDefault(),"%02d:%02d:%02d", hr,min,sec);
+            ((TextView) findViewById(R.id.timer_view)).setText(timerStr);
+            long next = now + (ONE_SECOND_IN_MILLIS - now % ONE_SECOND_IN_MILLIS);
+            mHandler.postAtTime(mRecordTimer, next);
         }
     };
 
-    private void refreshTimer(){
-        mRecTimerCounter = 1;
-        hr = min = sec = 0;
-    }
-
-    private void updateTimer(){
-        mTimerString = String.format(Locale.getDefault(),"%02d:%02d:%02d", hr,min,sec);
-        ((TextView) findViewById(R.id.timer_view)).setText(mTimerString);
-    }
-
     private void stopRecordingData(){
-        long end = System.currentTimeMillis();
+        long end = SystemClock.uptimeMillis();
         for(int i = 0; i < mRecords.size(); i++){
             Record rec = mRecords.get(i);
             if(rec == null)
@@ -832,9 +815,11 @@ public class MainActivity extends Activity {
             }
         }
         mRecords.clear();
+        mRecordsCopy.clear();
         mHandler.removeCallbacks(mRecordTimer);
         ((TextView) findViewById(R.id.timer_view)).setText("");
-        refreshTimer();
+        hr = min = sec = 0;
+        mRecStart = mRecordingStart = 0;
     }
 
     private void showMessage(final String msg) {
