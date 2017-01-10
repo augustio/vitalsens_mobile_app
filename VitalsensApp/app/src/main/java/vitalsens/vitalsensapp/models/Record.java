@@ -24,18 +24,18 @@ public class Record {
         DATA_TYPES.put(IMPEDANCE_DATA, 5);
     }
 
-    private long timeStamp;
-    private String patientId;
-    private long start;
-    private long end;
-    private String type;
-    private int pEStart;
-    private int pEEnd;
-    private String secret;
-    private double temp;
-    private ArrayList<Integer> chOne;
-    private ArrayList<Integer> chTwo;
-    private ArrayList<Integer> chThree;
+    private long timeStamp; //Timestamp that marks the beginning of a record
+    private String patientId; //Patient Identification string
+    private long start; //Timestamp that marks the beginning of a record segment
+    private long end; //Timestamp that marks the end of a record segment
+    private String type; //Type of recorded data
+    private int pEStart; //Pain event start marker
+    private int pEEnd; //Pain event end marker
+    private String secret; //Static secret key for temporary authentication implementation
+    private double temp; //Temperature value recorded at the end of record segment
+    private ArrayList<Integer> chOne; // Channel one data
+    private ArrayList<Integer> chTwo; //Channel two data
+    private ArrayList<Integer> chThree; //Channel three data
 
     public Record(){
     }
