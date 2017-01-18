@@ -48,5 +48,13 @@
     <string name="connecting">Connecting &#8230;</string>
     <string name="disconnecting">Disconnecting &#8230;</string>
     <string name="pain">Pain On/Off</string>
+    <string name="cloud_access_service_desc">
+        A vitalsens application background service that performs cloud access
+        transactions.
+    </string>
+    <string name="save_record_service_desc">
+        A vitalsens application background service that saves recorded data to the
+        local storage.
+    </string>
 
 </resources>

@@ -42,6 +42,7 @@ import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.services.BLEService;
+import vitalsens.vitalsensapp.services.CloudAccessService;
 import vitalsens.vitalsensapp.services.SaveRecordService;
 import vitalsens.vitalsensapp.utils.ConnectDialog;
 
@@ -66,6 +67,7 @@ public class MainActivity extends Activity {
     private static final int ONE_SECOND_IN_MILLIS = 1000;
     private static final int PRE_RECORD_START_DURATION = 10000; //In milliseconds
     private static final int PRE_AUTO_RECONNECTION_PAUSE_DURATION = 5000; //In milliseconds
+    private static final String CLOUD_ACCESS_KEY = "v1t4753n553cr3tk3y";
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
@@ -74,7 +76,7 @@ public class MainActivity extends Activity {
     private LinearLayout chOne, chTwo, chThree;
     private Handler mHandler;
     private BLEService mService;
-    private ArrayList<Record> mRecords, mRecordsCopy;
+    private ArrayList<Record> mRecords;
     private ArrayList<String> mAvailableDataTypes;
     private ArrayList<String> mSensorAddresses;
     private CountDownTimer mAutoConnectTimer;
@@ -147,7 +149,6 @@ public class MainActivity extends Activity {
         mAutoConnectTimer = null;
         mSensorId = "";
         mRecords = new ArrayList<>();
-        mRecordsCopy = new ArrayList<>();
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
@@ -331,11 +332,11 @@ public class MainActivity extends Activity {
                     updateHRValue(intent.getIntExtra(Intent.EXTRA_TEXT, 1000));
 
                     break;
-                case BLEService.ACTION_CLOUD_ACCESS_RESULT:
-                    reportCloudAccessStatus(intent.getStringExtra(Intent.EXTRA_TEXT));
+                case CloudAccessService.ACTION_CLOUD_ACCESS_RESULT:
+                    reportCloudAccessStatus(intent.getStringExtra(CloudAccessService.EXTRA_RESULT));
                     break;
-                case SaveRecordService.ACTION_SAVE_RECORD:
-                    showMessage(intent.getStringExtra(SaveRecordService.SAVE_RECORD_STATUS));
+                case SaveRecordService.ACTION_SAVE_RECORD_STATUS:
+                    showMessage(intent.getStringExtra(SaveRecordService.EXTRA_STATUS));
                 default:
                     if(mRecSegmentEnd > 0) {
                         long start, end;
@@ -351,7 +352,9 @@ public class MainActivity extends Activity {
                             if(record != null) {
                                 record.setEnd(end);
                                 record.setTemp(mCurTemp);
-                                mRecordsCopy.add(record);
+                                record.setSecret(CLOUD_ACCESS_KEY);
+                                CloudAccessService.startActionCloudAccess(MainActivity.this, record);
+                                SaveRecordService.startActionSaveRecord(MainActivity.this, record);
                                 mRecords.set(i, new Record(mRecStart, mPatientId, start, i));
                             }
                         }
@@ -454,19 +457,6 @@ public class MainActivity extends Activity {
                             }).run();
                             break;
                     }
-                    if(!mRecordsCopy.isEmpty()){
-                        (new Runnable(){
-                            public void run(){
-                                for(Record record : mRecordsCopy){
-                                    mService.sendToCloud(record);
-                                    SaveRecordService.startActionSaveRecord(
-                                            MainActivity.this, Record.toJson(record)
-                                    );
-                                }
-                                mRecordsCopy.clear();
-                            }
-                        }).run();
-                    }
             }
         }
     };
@@ -483,8 +473,8 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.TEMP_VALUE);
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
         intentFilter.addAction(BLEService.HR);
-        intentFilter.addAction(BLEService.ACTION_CLOUD_ACCESS_RESULT);
-        intentFilter.addAction(SaveRecordService.ACTION_SAVE_RECORD);
+        intentFilter.addAction(CloudAccessService.ACTION_CLOUD_ACCESS_RESULT);
+        intentFilter.addAction(SaveRecordService.ACTION_SAVE_RECORD_STATUS);
         return intentFilter;
     }
 
@@ -819,11 +809,12 @@ public class MainActivity extends Activity {
                 continue;
             if(!rec.isEmpty()) {
                 rec.setEnd(end);
-                mService.sendToCloud(rec);
+                rec.setSecret(CLOUD_ACCESS_KEY);
+                CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
+                SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
             }
         }
         mRecords.clear();
-        mRecordsCopy.clear();
         mHandler.removeCallbacks(mRecordTimer);
         ((TextView) findViewById(R.id.timer_view)).setText("");
         hr = min = sec = 0;
@@ -945,20 +936,17 @@ public class MainActivity extends Activity {
 
     private void reportCloudAccessStatus(String status){
         switch(status){
-            case BLEService.NO_NETWORK_CONNECTION:
-                connectedDevices.setText(BLEService.NO_NETWORK_CONNECTION);
+            case CloudAccessService.NO_NETWORK_CONNECTION:
+                connectedDevices.setText(CloudAccessService.NO_NETWORK_CONNECTION);
                 break;
-            case BLEService.SERVER_ERROR:
-                connectedDevices.setText(BLEService.SERVER_ERROR);
+            case CloudAccessService.SERVER_ERROR:
+                connectedDevices.setText(CloudAccessService.SERVER_ERROR);
                 break;
-            case BLEService.EMPTY_RECORD:
-                connectedDevices.setText(BLEService.EMPTY_RECORD);
-                break;
-            case BLEService.CONNECTION_ERROR:
-                connectedDevices.setText(BLEService.CONNECTION_ERROR);
+            case CloudAccessService.CONNECTION_ERROR:
+                connectedDevices.setText(CloudAccessService.CONNECTION_ERROR);
                 break;
             default:
-                connectedDevices.setText(BLEService.DATA_SENT);
+                connectedDevices.setText(CloudAccessService.DATA_SENT);
         }
     }
 

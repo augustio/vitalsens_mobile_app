@@ -23,7 +23,7 @@
             android:label="@string/app_title"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.NoTitleBar"
-            android:windowSoftInputMode="stateHidden"></activity>
+            android:windowSoftInputMode="stateHidden" />
         <activity
             android:name=".activities.SensorList"
             android:configChanges="keyboardHidden|orientation|screenSize"
@@ -61,7 +61,12 @@
 
         <service
             android:name=".services.SaveRecordService"
-            android:exported="false"></service>
+            android:exported="false"
+            android:description="@string/save_record_service_desc" />
+        <service
+            android:name=".services.CloudAccessService"
+            android:exported="false"
+            android:description="@string/cloud_access_service_desc" />
     </application>
 
 </manifest>
