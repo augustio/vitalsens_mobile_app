@@ -112,6 +112,7 @@ public class BLEService extends Service {
     private final static int SHIFT_LEFT_16BITS = 16;
     private final static int GET_BIT24 = 0x00400000;
     private final static int FIRST_BIT_MASK = 0x01;
+    private final static int URL_CONNECTION_TIMEOUT = 10000;
 
     public static final String SERVER_ERROR = "No Response From Server!";
     public static final String EMPTY_RECORD = "No data recorded";
@@ -120,6 +121,7 @@ public class BLEService extends Service {
     public static final String DATA_SENT = "Data sent to cloud";
     private static final String SERVER_URL = "http://83.136.249.208:5000/api/record";
     private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
+    private static final String CLOUD_ACCESS_KEY = "v1t4753n553cr3tk3y";
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -545,14 +547,14 @@ public class BLEService extends Service {
             url = new URL(serverUrl);
             urlConnection = (HttpURLConnection)url.openConnection();
             if(urlConnection != null) {
-                urlConnection.setConnectTimeout(10000);
+                urlConnection.setConnectTimeout(URL_CONNECTION_TIMEOUT);
                 urlConnection.setDoOutput(true);
                 urlConnection.setChunkedStreamingMode(0);
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setRequestProperty("Accept", "application/json");
                 urlConnection.setRequestMethod("POST");
 
-                record.setSecret("v1t4753n553cr3tk3y");
+                record.setSecret(CLOUD_ACCESS_KEY);
                 String json = Record.toJson(record);
 
                 OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
@@ -567,13 +569,11 @@ public class BLEService extends Service {
                 result = convertInputStreamToString(inputStream);
             }else {
                 result = SERVER_ERROR;
-                saveRecords(record);
             }
 
         } catch (Exception e) {
             Log.d("OutputStream", " " + e.getLocalizedMessage());
-            result =  CONNECTION_ERROR;
-            saveRecords(record);
+            result = CONNECTION_ERROR;
         }finally{
             if(urlConnection != null) {
                 urlConnection.disconnect();

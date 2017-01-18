@@ -23,25 +23,24 @@
             android:label="@string/app_title"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.NoTitleBar"
-            android:windowSoftInputMode="stateHidden">
-        </activity>
+            android:windowSoftInputMode="stateHidden"></activity>
         <activity
             android:name=".activities.SensorList"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/title_activity_sensor_list"
             android:screenOrientation="portrait"
-            android:theme="@android:style/Theme.NoTitleBar"/>
+            android:theme="@android:style/Theme.NoTitleBar" />
 
         <service
             android:name=".services.BLEService"
             android:enabled="true"
-            android:exported="false"/>
+            android:exported="false" />
 
         <activity
             android:name=".activities.History"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/title_activity_history"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".activities.SplashActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -51,13 +50,18 @@
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".utils.ConnectDialog"
             android:label="@string/title_activity_connect_dialog"
-            android:theme="@android:style/Theme.Holo.Dialog.NoActionBar"/>
+            android:theme="@android:style/Theme.Holo.Dialog.NoActionBar" />
+
+        <service
+            android:name=".services.SaveRecordService"
+            android:exported="false"></service>
     </application>
 
 </manifest>

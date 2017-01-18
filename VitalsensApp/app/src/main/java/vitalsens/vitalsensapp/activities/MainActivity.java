@@ -42,12 +42,14 @@ import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
 import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.services.BLEService;
+import vitalsens.vitalsensapp.services.SaveRecordService;
 import vitalsens.vitalsensapp.utils.ConnectDialog;
 
 public class MainActivity extends Activity {
 
     private static final String TAG = "VitalsensApp";
-    private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
+    private static final String DIRECTORY_NAME_IDS = "/VITALSENSE_IDS";
+    private static final String DIRECTORY_NAME_RECORDS = "/VITALSENSE_RECORDS";
     private static final String PATIENT_DEVICE_IDS_FILE_PATH = "patient_device_ids.txt";
     private static final int MAIN_LAYOUT = 0;
     private static final int ONE_CHANNEL_LAYOUT = 1;
@@ -245,7 +247,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 if (mConnectionState == BLEService.STATE_DISCONNECTED) {
                     Intent intent = new Intent(MainActivity.this, History.class);
-                    intent.putExtra(Intent.EXTRA_TEXT, DIRECTORY_NAME);
+                    intent.putExtra(Intent.EXTRA_TEXT, DIRECTORY_NAME_RECORDS);
                     startActivity(intent);
                 }
             }
@@ -332,6 +334,8 @@ public class MainActivity extends Activity {
                 case BLEService.ACTION_CLOUD_ACCESS_RESULT:
                     reportCloudAccessStatus(intent.getStringExtra(Intent.EXTRA_TEXT));
                     break;
+                case SaveRecordService.ACTION_SAVE_RECORD:
+                    showMessage(intent.getStringExtra(SaveRecordService.SAVE_RECORD_STATUS));
                 default:
                     if(mRecSegmentEnd > 0) {
                         long start, end;
@@ -455,6 +459,9 @@ public class MainActivity extends Activity {
                             public void run(){
                                 for(Record record : mRecordsCopy){
                                     mService.sendToCloud(record);
+                                    SaveRecordService.startActionSaveRecord(
+                                            MainActivity.this, Record.toJson(record)
+                                    );
                                 }
                                 mRecordsCopy.clear();
                             }
@@ -477,6 +484,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
         intentFilter.addAction(BLEService.HR);
         intentFilter.addAction(BLEService.ACTION_CLOUD_ACCESS_RESULT);
+        intentFilter.addAction(SaveRecordService.ACTION_SAVE_RECORD);
         return intentFilter;
     }
 
@@ -853,7 +861,7 @@ public class MainActivity extends Activity {
     private void savePatientAndDeviceIds() {
         if (isExternalStorageWritable()) {
             File root = android.os.Environment.getExternalStorageDirectory();
-            File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME);
+            File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME_IDS);
             if (!dir.isDirectory())
                 dir.mkdirs();
             File file = new File(dir, PATIENT_DEVICE_IDS_FILE_PATH);
@@ -876,7 +884,7 @@ public class MainActivity extends Activity {
             showMessage("Cannot access external storage");
         }
         File root = android.os.Environment.getExternalStorageDirectory();
-        File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME);
+        File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME_IDS);
         File file = new File(dir, PATIENT_DEVICE_IDS_FILE_PATH);
         if (file.exists()) {
             try {
