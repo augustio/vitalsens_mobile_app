@@ -11,23 +11,17 @@ import android.content.Context;
 import android.graphics.Color;
 
 public class LineGraphView {
-    private TimeSeries mSeries, mSeriesOverlay;
+    private TimeSeries mSeries;
     private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
     private XYMultipleSeriesRenderer mMultiRenderer = new XYMultipleSeriesRenderer();
     private XYSeriesRenderer mRenderer = new XYSeriesRenderer();
-    private XYSeriesRenderer mRendererOverlay = new XYSeriesRenderer();
 
     public LineGraphView(String title) {
         mSeries = new TimeSeries(title);
-        mSeriesOverlay = new TimeSeries("");
-        mDataset.addSeries(0, mSeries);
-        mDataset.addSeries(1, mSeriesOverlay);
+        mDataset.addSeries(mSeries);
         mRenderer.setColor(Color.WHITE);
-        mRendererOverlay.setColor(Color.RED);
         mRenderer.setLineWidth(3.0f);
         mRenderer.setFillPoints(true);
-        mRendererOverlay.setLineWidth(3.0f);
-        mRendererOverlay.setFillPoints(true);
 
         final XYMultipleSeriesRenderer renderer = mMultiRenderer;
         renderer.setBackgroundColor(Color.TRANSPARENT);
@@ -40,8 +34,7 @@ public class LineGraphView {
         renderer.setInScroll(true);
         renderer.setPanEnabled(false, false);
         renderer.setZoomEnabled(false, false);
-        renderer.addSeriesRenderer(0, mRenderer);
-        renderer.addSeriesRenderer(1, mRendererOverlay);
+        renderer.addSeriesRenderer(mRenderer);
     }
 
     public GraphicalView getView(Context context) {
@@ -72,7 +65,6 @@ public class LineGraphView {
 
     public void clearGraph() {
         mSeries.clear();
-        mS
     }
 
     public void setColor(int color){

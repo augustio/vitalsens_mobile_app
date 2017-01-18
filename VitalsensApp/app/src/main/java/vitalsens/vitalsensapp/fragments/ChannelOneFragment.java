@@ -73,9 +73,8 @@ public class ChannelOneFragment extends Fragment {
         return xRange;
     }
 
-    public void showPainEventMark(boolean status){
-        mLineGraph.showPainEventMark(status);
+    public void setColor(int color){
+        mLineGraph.setColor(color);
     }
-
 }
 
