@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.models.Record;
@@ -144,19 +145,21 @@ public class History extends Activity {
             size = len+"B";
         }
         else if(len < 1e+6){
-            size = String.format("%.2f", (len/1024))+"KB";
+            size = String.format(Locale.getDefault(),"%.2f", (len/1024))+"KB";
         }
         else if(len < 1e+9){
-            size = String.format("%.2f", (len/1.049e+6))+"MB";
+            size = String.format(Locale.getDefault(),"%.2f", (len/1.049e+6))+"MB";
         }
         else{
-            size = String.format("%.2f", (len/1.074e+9))+"GB";
+            size = String.format(Locale.getDefault(),"%.2f", (len/1.074e+9))+"GB";
         }
         return size;
     }
 
     private String getFilePath(int pos){
         String item = mListAdapter.getItem(pos);
+        if(item == null)
+            return null;
         String fn = item.substring(0, item.indexOf('\n'));
         return (android.os.Environment.getExternalStorageDirectory()+
                 mDirName+"/"+fn);
@@ -168,6 +171,10 @@ public class History extends Activity {
             return null;
         }
         String path = getFilePath(pos);
+        if(path == null){
+            showMessage("No record Available");
+            return null;
+        }
         if(!path.endsWith(("txt"))) {
             showMessage("Invalid file format");
             return null;
@@ -192,7 +199,12 @@ public class History extends Activity {
     }
 
     private void deleteRecord(AdapterView.AdapterContextMenuInfo info){
-        File f = new File(getFilePath(info.position));
+        String filePath = getFilePath(info.position);
+        if(filePath == null){
+            showMessage("No record to delete");
+            return;
+        }
+        File f = new File(filePath);
         if(f.delete()) {
             mListAdapter.remove(mListAdapter.getItem(info.position));
             showMessage("Record deleted");
@@ -278,7 +290,12 @@ public class History extends Activity {
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Vitalsens Record");
         emailIntent.putExtra(Intent.EXTRA_TEXT, "Attached is a copy of Vitalsens record");
         emailIntent.setData(Uri.parse("mailto:electria.metropolia@gmail.com"));
-        emailIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse( "file://"+getFilePath(pos)));
+        String filePath = getFilePath(pos);
+        if(filePath == null){
+            showMessage("No file to send");
+            return;
+        }
+        emailIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse( "file://"+ filePath));
 
         try {
             startActivity(Intent.createChooser(emailIntent, "Sending Email...."));

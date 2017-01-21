@@ -28,6 +28,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -37,9 +40,9 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
-import vitalsens.vitalsensapp.fragments.ChannelOneFragment;
-import vitalsens.vitalsensapp.fragments.ChannelThreeFragment;
-import vitalsens.vitalsensapp.fragments.ChannelTwoFragment;
+import vitalsens.vitalsensapp.fragments.GraphviewFragment;
+import vitalsens.vitalsensapp.fragments.RecordAnalysisFragment;
+import vitalsens.vitalsensapp.fragments.RecordFragment;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.services.BLEService;
 import vitalsens.vitalsensapp.services.CloudAccessService;
@@ -56,6 +59,8 @@ public class MainActivity extends Activity {
     private static final int ONE_CHANNEL_LAYOUT = 1;
     private static final int TWO_CHANNELS_LAYOUT = 2;
     private static final int THREE_CHANNELS_LAYOUT = 3;
+    private static final int RECORD_TIMER_LAYOUT = -1;
+    private static final int RECORD_ANALYSIS_LAYOUT = -2;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
     private static final int REQUEST_CONNECT_PARAMS = 3;
@@ -73,7 +78,7 @@ public class MainActivity extends Activity {
     private Button btnConnectDisconnect;
     private TextView connectedDevices, curDispDataType,
             batLevel, curTemperature, hrValue, patientId, batLevelTxt;
-    private LinearLayout chOne, chTwo, chThree;
+    private LinearLayout mGraphLayout;
     private Handler mHandler;
     private BLEService mService;
     private ArrayList<Record> mRecords;
@@ -81,13 +86,16 @@ public class MainActivity extends Activity {
     private ArrayList<String> mSensorAddresses;
     private CountDownTimer mAutoConnectTimer;
     private CountDownTimer mRecordStartTimer;
+    private FragmentManager mFragManager;
     private int mConnectionState;
     private int min, sec, hr;
     private int mNextIndex;
+    private int mXRange;
     private long mRecStart, mRecordingStart, mCurrentTimeStamp, mRecEnd, mRecSegmentEnd;
     private int mNumConnectedSensors;
     private double mCurTemp;
-    private String mSensorId, mPatientId;;
+    private String mSensorId, mPatientId;
+    private String mAnalysisResult;
     private boolean mShowECG, mShowPPG, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
@@ -96,9 +104,9 @@ public class MainActivity extends Activity {
     private boolean mAutoConnectOn;
     private boolean mPainStart;
 
-    private ChannelOneFragment mChannelOne;
-    private ChannelTwoFragment mChannelTwo;
-    private ChannelThreeFragment mChannelThree;
+    private GraphviewFragment mGraphFragment;
+    private RecordFragment mRecordFragment;
+    private RecordAnalysisFragment mRecordAnalysisFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,18 +115,17 @@ public class MainActivity extends Activity {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        int samplesDispWindowSize;
         int screenSize = getResources().getConfiguration().screenLayout &
                 Configuration.SCREENLAYOUT_SIZE_MASK;
         switch(screenSize) {
             case Configuration.SCREENLAYOUT_SIZE_XLARGE:
-                samplesDispWindowSize = 1250;
+                mXRange = 1250;
                 break;
             case Configuration.SCREENLAYOUT_SIZE_LARGE:
-                samplesDispWindowSize = 675;
+                mXRange = 675;
                 break;
             default:
-                samplesDispWindowSize = 600;
+                mXRange = 600;
         }
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -139,9 +146,7 @@ public class MainActivity extends Activity {
         Button btnHistory = (Button) findViewById(R.id.btn_history);
         curDispDataType = (TextView) findViewById(R.id.cur_disp_dataType);
         connectedDevices = (TextView) findViewById(R.id.connected_devices);
-        chOne = (LinearLayout) findViewById(R.id.channel1_fragment);
-        chTwo = (LinearLayout) findViewById(R.id.channel2_fragment);
-        chThree = (LinearLayout) findViewById(R.id.channel3_fragment);
+        mGraphLayout = (LinearLayout) findViewById(R.id.main_display);
         Button btnPain = (Button) findViewById(R.id.pain_btn);
 
         mHandler = new Handler();
@@ -162,22 +167,9 @@ public class MainActivity extends Activity {
         mNextIndex = 0;
         mNumConnectedSensors = 0;
         mPatientId = "";
+        mAnalysisResult = "";
 
-        mChannelOne = new ChannelOneFragment();
-        mChannelTwo = new ChannelTwoFragment();
-        mChannelThree = new ChannelThreeFragment();
-
-        mChannelOne.setxRange(samplesDispWindowSize);
-        mChannelTwo.setxRange(samplesDispWindowSize);
-        mChannelThree.setxRange(samplesDispWindowSize);
-
-        FragmentManager fragmentManager = getFragmentManager();
-
-        fragmentManager.beginTransaction()
-                .add(R.id.channel1_fragment, mChannelOne, "chOne")
-                .add(R.id.channel2_fragment, mChannelTwo, "chTwo")
-                .add(R.id.channel3_fragment, mChannelThree, "chThree")
-                .commit();
+        mFragManager = getFragmentManager();
 
         setGraphLayout(MAIN_LAYOUT);
 
@@ -267,7 +259,7 @@ public class MainActivity extends Activity {
         btnDec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mNextIndex > 0) {
+                if(mNextIndex >= -1) {
                     mNextIndex--;
                     displayData();
                 }
@@ -376,13 +368,16 @@ public class MainActivity extends Activity {
                                         if (mShowECG) {
                                             for (int i = 1; i < samples1.length; i += 3) {
                                                 if(samples1[i] == BLEService.NAN) {
-                                                    mChannelOne.updateGraph(samples1[i]);
-                                                    mChannelTwo.updateGraph(samples1[i + 1]);
-                                                    mChannelThree.updateGraph(samples1[i + 2]);
+                                                    int[] result =
+                                                            {samples1[i], samples1[i + 1], samples1[i + 2]};
+                                                    mGraphFragment.updateGraph(result);
                                                 }else{
-                                                    mChannelOne.updateGraph(samples1[i + 2] - samples1[i + 1]);
-                                                    mChannelTwo.updateGraph(samples1[i] - samples1[i + 1]);
-                                                    mChannelThree.updateGraph(samples1[i] - samples1[i + 2]);
+                                                    int[] result = {
+                                                            samples1[i + 2] - samples1[i + 1],
+                                                            samples1[i] - samples1[i + 1],
+                                                            samples1[i] - samples1[i + 2]
+                                                    };
+                                                    mGraphFragment.updateGraph(result);
                                                 }
                                             }
                                         }
@@ -404,8 +399,9 @@ public class MainActivity extends Activity {
                                         }
                                         if (mShowPPG) {
                                             for(int i = 1; i < samples3.length; i += 2){
-                                                mChannelOne.updateGraph(samples3[i]);
-                                                mChannelTwo.updateGraph(samples3[i + 1]);
+                                                int[] result =
+                                                        {samples3[i], samples3[i + 1]};
+                                                mGraphFragment.updateGraph(result);
                                             }
                                         }
                                     }
@@ -427,9 +423,9 @@ public class MainActivity extends Activity {
                                         }
                                         if (mShowAccel) {
                                             for(int i = 1; i < samples4.length; i += 3){
-                                                mChannelOne.updateGraph(samples4[i]);
-                                                mChannelTwo.updateGraph(samples4[i + 1]);
-                                                mChannelThree.updateGraph(samples4[i + 2]);
+                                                int[] result =
+                                                        {samples4[i], samples4[i + 1], samples4[i + 2]};
+                                                mGraphFragment.updateGraph(result);
                                             }
                                         }
                                     }
@@ -449,7 +445,9 @@ public class MainActivity extends Activity {
                                         }
                                         if (mShowImpedance) {
                                             for(int i = 1; i < samples5.length; i ++){
-                                                mChannelOne.updateGraph(samples5[i]);
+                                                int[] result =
+                                                        {samples5[i]};
+                                                mGraphFragment.updateGraph(result);
                                             }
                                         }
                                     }
@@ -547,6 +545,7 @@ public class MainActivity extends Activity {
         unbindService(mServiceConnection);
         mService.stopSelf();
         mService = null;
+        clearGraphLayout();
     }
 
     @Override
@@ -617,39 +616,85 @@ public class MainActivity extends Activity {
 
     private void setGraphLayout(int type) {
         clearGraphLayout();
+
         switch (type) {
             case MAIN_LAYOUT:
                 break;
+            case RECORD_TIMER_LAYOUT:
+                mRecordFragment = new RecordFragment();
+                mFragManager.beginTransaction()
+                        .add(R.id.main_display, mRecordFragment)
+                        .commit();
+                break;
+            case RECORD_ANALYSIS_LAYOUT:
+                mRecordAnalysisFragment = new RecordAnalysisFragment();
+                mFragManager.beginTransaction()
+                        .add(R.id.main_display, mRecordAnalysisFragment)
+                        .commit();
+                break;
             case ONE_CHANNEL_LAYOUT:
-                chOne.setVisibility(View.VISIBLE);
+                mGraphFragment = GraphviewFragment.createInstance(1, mXRange);
+                mFragManager.beginTransaction()
+                        .add(R.id.main_display, mGraphFragment)
+                        .commit();
                 break;
             case TWO_CHANNELS_LAYOUT:
-                chOne.setVisibility(View.VISIBLE);
-                chTwo.setVisibility(View.VISIBLE);
+                mGraphFragment = GraphviewFragment.createInstance(2, mXRange);
+                mFragManager.beginTransaction()
+                        .add(R.id.main_display, mGraphFragment)
+                        .commit();
                 break;
             case THREE_CHANNELS_LAYOUT:
-                chOne.setVisibility(View.VISIBLE);
-                chTwo.setVisibility(View.VISIBLE);
-                chThree.setVisibility(View.VISIBLE);
+                mGraphFragment = GraphviewFragment.createInstance(3, mXRange);
+                mFragManager.beginTransaction()
+                        .add(R.id.main_display, mGraphFragment)
+                        .commit();
                 break;
 
         }
     }
 
     private void clearGraphLayout() {
-        mChannelOne.clearGraph();
-        mChannelTwo.clearGraph();
-        mChannelThree.clearGraph();
-        chOne.setVisibility(View.GONE);
-        chTwo.setVisibility(View.GONE);
-        chThree.setVisibility(View.GONE);
         mShowECG = mShowPPG = mShowAccel = mShowImpedance = false;
+        if(mGraphFragment != null){
+            mFragManager.beginTransaction()
+                    .detach(mGraphFragment)
+                    .commit();
+            mGraphFragment.clearGraph();
+            mGraphFragment = null;
+        }
+        if(mRecordFragment != null){
+            mFragManager.beginTransaction()
+                    .detach(mRecordFragment)
+                    .commit();
+            mRecordFragment.clearRecordTimer();
+            mRecordFragment = null;
+        }
+        if(mRecordAnalysisFragment != null){
+            mFragManager.beginTransaction()
+                    .detach(mRecordAnalysisFragment)
+                    .commit();
+            mRecordAnalysisFragment.clearView();
+            mRecordAnalysisFragment = null;
+        }
     }
 
     private void displayData(){
 
         if(mAvailableDataTypes.size() <= mNextIndex)
             return;
+
+        if(mNextIndex == -1){
+            setGraphLayout(RECORD_TIMER_LAYOUT);
+            curDispDataType.setText("");
+            return;
+        }
+
+        if(mNextIndex == -2){
+            setGraphLayout(RECORD_ANALYSIS_LAYOUT);
+            curDispDataType.setText("");
+            return;
+        }
 
         String dataType = mAvailableDataTypes.get(mNextIndex);
 
@@ -718,6 +763,8 @@ public class MainActivity extends Activity {
                 mRecEnd = mRecSegmentEnd = 0;
                 mRecording = true;
                 mRecordTimer.run();
+                mNextIndex = -1;
+                displayData();
             }
         }.start();
     }
@@ -731,11 +778,8 @@ public class MainActivity extends Activity {
         batLevelTxt.setText("");
         hrValue.setText("");
         patientId.setText("");
-        mShowECG = mShowPPG = mShowAccel = mShowImpedance = false;
-        chOne.setVisibility(View.GONE);
-        chTwo.setVisibility(View.GONE);
-        chThree.setVisibility(View.GONE);
         mNextIndex = 0;
+        mAnalysisResult = "";
         mNumConnectedSensors = 0;
         mAvailableDataTypes.clear();
         if(mRecordStartTimer != null)
@@ -795,7 +839,12 @@ public class MainActivity extends Activity {
             min = (int)(recordDuration%SECONDS_IN_ONE_HOUR)/SECONDS_IN_ONE_MINUTE;
             sec = (int)(recordDuration%SECONDS_IN_ONE_HOUR)%SECONDS_IN_ONE_MINUTE;
             String timerStr = String.format(Locale.getDefault(),"%02d:%02d:%02d", hr,min,sec);
-            ((TextView) findViewById(R.id.timer_view)).setText(timerStr);
+            if(mRecordFragment != null && mRecordFragment.isAdded()) {
+                mRecordFragment.setRecordTimer(timerStr);
+                ((TextView) findViewById(R.id.timer_view)).setText("");
+            }
+            else
+                ((TextView) findViewById(R.id.timer_view)).setText(timerStr);
             long next = now + (ONE_SECOND_IN_MILLIS - now % ONE_SECOND_IN_MILLIS);
             mHandler.postAtTime(mRecordTimer, next);
         }
@@ -947,19 +996,19 @@ public class MainActivity extends Activity {
                 break;
             default:
                 connectedDevices.setText(CloudAccessService.DATA_SENT);
+                mAnalysisResult = status;
+                updateAnalysisResult(status);
         }
     }
 
     private void markPainEvent(){
-        mChannelOne.setColor(Color.RED);
-        mChannelTwo.setColor(Color.RED);
-        mChannelThree.setColor(Color.RED);
+        if(mGraphFragment != null && mGraphFragment.isAdded() && mShowECG)
+            mGraphFragment.setColor(Color.RED);
     }
 
     private void cancelPainEventMark(){
-        mChannelOne.setColor(Color.WHITE);
-        mChannelTwo.setColor(Color.WHITE);
-        mChannelThree.setColor(Color.WHITE);
+        if(mGraphFragment != null && mGraphFragment.isAdded() && mShowECG)
+            mGraphFragment.setColor(Color.WHITE);
     }
 
     public boolean isExternalStorageReadable() {
@@ -970,5 +1019,10 @@ public class MainActivity extends Activity {
 
     private static boolean isExternalStorageWritable() {
         return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
+    }
+
+    private void updateAnalysisResult(String analysisStr){
+        if(mRecordAnalysisFragment != null && mRecordAnalysisFragment.isAdded())
+            mRecordAnalysisFragment.updateView(analysisStr);
     }
 }

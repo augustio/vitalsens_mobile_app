@@ -3,6 +3,5 @@
     android:id="@+id/message_text"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:singleLine="false"
     android:textSize="20sp"
     android:textColor="@color/blue"/>

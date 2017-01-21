@@ -9,6 +9,9 @@ import android.net.NetworkInfo;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -118,6 +121,14 @@ public class CloudAccessService extends IntentService {
             result += line;
 
         inputStream.close();
+
+        try {
+            JSONObject obj = new JSONObject(result);
+            result = obj.getJSONObject("data").toString();
+        }catch (JSONException e){
+            Log.e("CloudAccessService", e.getLocalizedMessage());
+        }
+
         return result;
     }
 }
