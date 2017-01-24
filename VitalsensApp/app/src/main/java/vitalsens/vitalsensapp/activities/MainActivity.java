@@ -28,15 +28,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 
 import vitalsens.vitalsensapp.R;
@@ -66,22 +64,24 @@ public class MainActivity extends Activity {
     private static final int REQUEST_CONNECT_PARAMS = 3;
     private static final int MAX_RECORD_SEGMENT_DURATION = 30; //In Seconds (I minute)
     private static final int MAX_RECORD_DURATION = 1800; //In seconds (30 minutes)
-    private static final int MAX_RECORDING_DURATION = 864000; //In Seconds (10 days)
     private static final int SECONDS_IN_ONE_MINUTE = 60;
     private static final int SECONDS_IN_ONE_HOUR = 3600;
     private static final int ONE_SECOND_IN_MILLIS = 1000;
     private static final int PRE_RECORD_START_DURATION = 10000; //In milliseconds
     private static final int PRE_AUTO_RECONNECTION_PAUSE_DURATION = 5000; //In milliseconds
+    private static final int ECG = 1;
+    private static final int PPG = 3;
+    private static final int ACCEL = 4;
+    private static final int IMPED = 5;
     private static final String CLOUD_ACCESS_KEY = "v1t4753n553cr3tk3y";
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
     private TextView connectedDevices, curDispDataType,
             batLevel, curTemperature, hrValue, patientId, batLevelTxt;
-    private LinearLayout mGraphLayout;
     private Handler mHandler;
     private BLEService mService;
-    private ArrayList<Record> mRecords;
+    private HashMap<Integer, Record> mRecords;
     private ArrayList<String> mAvailableDataTypes;
     private ArrayList<String> mSensorAddresses;
     private CountDownTimer mAutoConnectTimer;
@@ -146,14 +146,13 @@ public class MainActivity extends Activity {
         Button btnHistory = (Button) findViewById(R.id.btn_history);
         curDispDataType = (TextView) findViewById(R.id.cur_disp_dataType);
         connectedDevices = (TextView) findViewById(R.id.connected_devices);
-        mGraphLayout = (LinearLayout) findViewById(R.id.main_display);
         Button btnPain = (Button) findViewById(R.id.pain_btn);
 
         mHandler = new Handler();
         mRecordStartTimer = null;
         mAutoConnectTimer = null;
         mSensorId = "";
-        mRecords = new ArrayList<>();
+        mRecords = new HashMap<>();
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
         mRecording = false;
@@ -219,15 +218,15 @@ public class MainActivity extends Activity {
                 if(mRecording){
                     if(mPainStart){
                         mPainStart = false;
-                        if(mRecords.get(1) != null) {
-                            mRecords.get(1).setPEEnd(mRecords.get(1).getChOne().size());
+                        if(mRecords.get(ECG) != null) {
+                            mRecords.get(ECG).setPEEnd(mRecords.get(ECG).getChOne().size());
                         }
                         cancelPainEventMark();
                     }
                     else{
                         mPainStart = true;
-                        if(mRecords.get(1) != null) {
-                            mRecords.get(1).setPEStart(mRecords.get(1).getChOne().size());
+                        if(mRecords.get(ECG) != null) {
+                            mRecords.get(ECG).setPEStart(mRecords.get(ECG).getChOne().size());
                         }
                         markPainEvent();
                     }
@@ -339,17 +338,14 @@ public class MainActivity extends Activity {
                             mRecEnd = 0;
                         }
 
-                        for(int i = 0; i < 6; i++){
-                            Record rec = mRecords.get(i);
-                            if(rec == null)
-                                continue;
+                        for(int key : mRecords.keySet()){
+                            Record rec = mRecords.put(key, new Record(mRecStart, mPatientId, start, key));
                             if(!rec.isEmpty()) {
                                 rec.setEnd(end);
                                 rec.setTemp(mCurTemp);
                                 rec.setSecret(CLOUD_ACCESS_KEY);
                                 CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
                                 SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
-                                mRecords.set(i, new Record(mRecStart, mPatientId, start, i));
                             }
                         }
                     }
@@ -774,19 +770,16 @@ public class MainActivity extends Activity {
             }
 
             public void onFinish() {
-                for(int i = 0; i < 6; i++) {
-                    mRecords.add(null);
-                }
                 mRecordingStart = mRecStart = System.currentTimeMillis();;
-                for(String type : mAvailableDataTypes){
-                    int dataId = Record.DATA_TYPES.get(type);
+                for(int dataId : Record.DATA_TYPES.values()){
                     Record rec = new Record(mRecStart, mPatientId, mRecStart, dataId);
-                    mRecords.add(dataId, rec);
+                    mRecords.put(dataId, rec);
                 }
+
                 mRecEnd = mRecSegmentEnd = 0;
                 mRecording = true;
                 mRecordTimer.run();
-                mNextIndex = -1;
+                mNextIndex = RECORD_TIMER_LAYOUT;
                 displayData();
             }
         }.start();
@@ -850,39 +843,39 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             long now = SystemClock.uptimeMillis();
-            mCurrentTimeStamp = System.currentTimeMillis();
-            long recordDuration = (mCurrentTimeStamp - mRecordingStart)/ONE_SECOND_IN_MILLIS;
-            if((recordDuration % MAX_RECORD_SEGMENT_DURATION) == 0 && recordDuration != 0) {
-                mRecSegmentEnd = mCurrentTimeStamp;
-                if ((recordDuration % MAX_RECORD_DURATION) == 0) {
-                    mRecEnd = mCurrentTimeStamp;
+            if(mSamplesRecieved) {
+                mCurrentTimeStamp = System.currentTimeMillis();
+                long recordDuration = (mCurrentTimeStamp - mRecordingStart) / ONE_SECOND_IN_MILLIS;
+                if ((recordDuration % MAX_RECORD_SEGMENT_DURATION) == 0 && recordDuration != 0) {
+                    mRecSegmentEnd = mCurrentTimeStamp;
+                    if ((recordDuration % MAX_RECORD_DURATION) == 0) {
+                        mRecEnd = mCurrentTimeStamp;
+                    }
                 }
+                hr = (int) recordDuration / SECONDS_IN_ONE_HOUR;
+                min = (int) (recordDuration % SECONDS_IN_ONE_HOUR) / SECONDS_IN_ONE_MINUTE;
+                sec = (int) (recordDuration % SECONDS_IN_ONE_HOUR) % SECONDS_IN_ONE_MINUTE;
+                String timerStr = String.format(Locale.getDefault(), "%02d:%02d:%02d", hr, min, sec);
+                if (mRecordFragment != null && mRecordFragment.isAdded()) {
+                    mRecordFragment.setRecordTimer(timerStr);
+                    ((TextView) findViewById(R.id.timer_view)).setText("");
+                } else
+                    ((TextView) findViewById(R.id.timer_view)).setText(timerStr);
             }
-            hr = (int)recordDuration/SECONDS_IN_ONE_HOUR;
-            min = (int)(recordDuration%SECONDS_IN_ONE_HOUR)/SECONDS_IN_ONE_MINUTE;
-            sec = (int)(recordDuration%SECONDS_IN_ONE_HOUR)%SECONDS_IN_ONE_MINUTE;
-            String timerStr = String.format(Locale.getDefault(),"%02d:%02d:%02d", hr,min,sec);
-            if(mRecordFragment != null && mRecordFragment.isAdded()) {
-                mRecordFragment.setRecordTimer(timerStr);
-                ((TextView) findViewById(R.id.timer_view)).setText("");
-            }
-            else
-                ((TextView) findViewById(R.id.timer_view)).setText(timerStr);
-            long next = now + (ONE_SECOND_IN_MILLIS - now % ONE_SECOND_IN_MILLIS);
+            long next = now + (ONE_SECOND_IN_MILLIS - (now % ONE_SECOND_IN_MILLIS));
             mHandler.postAtTime(mRecordTimer, next);
         }
     };
 
     private void stopRecordingData(){
         long end = System.currentTimeMillis();
-        for(int i = 0; i < mRecords.size(); i++){
-            Record rec = mRecords.get(i);
-            if(rec == null)
-                continue;
+        for(int key : mRecords.keySet()){
+            Record rec = mRecords.get(key);
             if(!rec.isEmpty()) {
                 rec.setEnd(end);
+                rec.setTemp(mCurTemp);
                 rec.setSecret(CLOUD_ACCESS_KEY);
-                //CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
+                CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
                 SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
             }
         }
