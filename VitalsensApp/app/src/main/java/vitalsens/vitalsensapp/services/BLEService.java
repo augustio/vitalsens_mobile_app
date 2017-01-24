@@ -32,6 +32,7 @@ package vitalsens.vitalsensapp.services;
         import android.support.v4.content.LocalBroadcastManager;
         import android.util.Log;
 
+        import java.lang.reflect.Array;
         import java.util.ArrayList;
         import java.util.HashMap;
         import java.util.List;
@@ -93,15 +94,14 @@ public class BLEService extends Service {
     private final static int SHIFT_LEFT_16BITS = 16;
     private final static int GET_BIT24 = 0x00400000;
     private final static int FIRST_BIT_MASK = 0x01;
+    private final static int NUM_DATA_TYPES = 6;
+    private final static int INVALID_PKT_N0 = -1;
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private Thread mConnectionThread, mDisconnectionThread, mNotificationThread;
     private int mConnectionState;
-    private int mPrevECGPktNum = -1;
-    private int mPrevPPGPktNum = -1;
-    private int mPrevACCELPktNum = -1;
-    private int mPrevIMPEDPktNum = -1;
+    private ArrayList<Integer> mPrevPktNums = new ArrayList<>(6);
 
     private BluetoothGattCharacteristic mRXCharacteristic = null, mHTCharacteristic = null,
     mBatteryLevelCharacteristic = null, mHRCharacteristic = null;
@@ -117,6 +117,8 @@ public class BLEService extends Service {
                 mConnectedSensors.put(sensorAddress, gatt);
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(ACTION_GATT_CONNECTED, deviceName);
+                for(int i = 0; i < NUM_DATA_TYPES; i++)
+                    mPrevPktNums.add(INVALID_PKT_N0);
                 Log.d(TAG, "Attempting to start service discovery:" +
                         gatt.discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -128,8 +130,6 @@ public class BLEService extends Service {
                     mConnectionState = STATE_DISCONNECTED;
                     mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic =
                             mHRCharacteristic = null;
-                    mPrevECGPktNum = mPrevPPGPktNum = mPrevACCELPktNum = mPrevIMPEDPktNum = -1;
-
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     Log.d(TAG, "Disconnected from all sensors");
                 }
@@ -404,8 +404,8 @@ public class BLEService extends Service {
 
             switch (dataId) {
                 case ECG:
-                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevECGPktNum);
-                    mPrevECGPktNum = packetNumber;
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevPktNums.get(dataId));
+                    mPrevPktNums.set(dataId, packetNumber);
                     if (numPacketsLost > 0) {
                         lostData[0] = dataId;
                         for (int i = 0; i < numPacketsLost; i++) {
@@ -416,8 +416,8 @@ public class BLEService extends Service {
                     broadcastUpdate(ECG_DATA_RECIEVED, sensorData);
                     break;
                 case PPG:
-                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPGPktNum);
-                    mPrevPPGPktNum = packetNumber;
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevPktNums.get(dataId));
+                    mPrevPktNums.set(dataId, packetNumber);
                     if (numPacketsLost > 0) {
                         lostData[0] = dataId;
                         for (int i = 0; i < numPacketsLost; i++) {
@@ -436,8 +436,8 @@ public class BLEService extends Service {
                             sensorData[i] = value - 4096;
                         }
                     }
-                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevACCELPktNum);
-                    mPrevACCELPktNum = packetNumber;
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevPktNums.get(dataId));
+                    mPrevPktNums.set(dataId, packetNumber);
                     if (numPacketsLost > 0) {
                         lostData[0] = dataId;
                         for (int i = 0; i < numPacketsLost; i++) {
@@ -448,8 +448,8 @@ public class BLEService extends Service {
                     broadcastUpdate(ACCELERATION_DATA_RECIEVED, sensorData);
                     break;
                 case IMPEDANCE_PNEUMOGRAPHY:
-                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
-                    mPrevIMPEDPktNum = packetNumber;
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevPktNums.get(dataId));
+                    mPrevPktNums.set(dataId, packetNumber);
                     if (numPacketsLost > 0) {
                         lostData[0] = dataId;
                         for (int i = 0; i < numPacketsLost; i++) {
