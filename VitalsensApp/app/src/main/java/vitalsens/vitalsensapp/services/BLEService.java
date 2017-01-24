@@ -385,93 +385,83 @@ public class BLEService extends Service {
     }
 
     private void processRXData(byte[] data){
-        if(data.length < 20){
-            String sample = "";
-            for(int i:data) {
-                sample += "[";
-                sample += (i & 0xFF);
-                sample += "]";
+        if(data.length == 20) {
+
+            int dataId = ((data[0] & 0XFF) >> 5);
+            int packetNumber = (data[1] & 0XFF);
+            int numPacketsLost;
+
+            int sensorData[] = new int[13];
+            int lostData[] = new int[13];
+            for (int i = 1; i < lostData.length; i++)
+                lostData[i] = NAN;
+            sensorData[0] = lostData[0] = dataId;
+
+            for (int i = 1, j = 2; i < sensorData.length; i += 2, j += 3) {
+                sensorData[i] = (data[j] & 0XFF) << 4 | (data[j + 1] & 0XF0) >> 4;
+                sensorData[i + 1] = (data[j + 1] & 0X0F) << 8 | (data[j + 2] & 0XFF);
             }
 
-            Log.d(TAG, "Packet data: " + sample);
-
-            return;
-        }
-
-        int dataId = ((data[0] & 0XFF) >> 5);
-        int packetNumber = (data[1] & 0XFF);
-        int numPacketsLost;
-
-        int sensorData[] = new int[13];
-        int lostData [] = new int[13];
-        for(int i = 0; i < lostData.length; i++)
-            lostData[i] = NAN;
-        sensorData[0] = dataId;
-
-        for(int i=1, j=2; i < sensorData.length; i+=2, j+=3){
-            sensorData[i] = (data[j] & 0XFF) << 4 | (data[j+1] & 0XF0) >> 4;
-            sensorData[i+1] = (data[j+1] & 0X0F) << 8 | (data[j+2] & 0XFF);
-        }
-
-        switch (dataId){
-            case ECG:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevECGPktNum);
-                mPrevECGPktNum = packetNumber;
-                if( numPacketsLost > 0) {
-                    lostData[0] = dataId;
-                    for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(ECG_DATA_RECIEVED, lostData);
+            switch (dataId) {
+                case ECG:
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevECGPktNum);
+                    mPrevECGPktNum = packetNumber;
+                    if (numPacketsLost > 0) {
+                        lostData[0] = dataId;
+                        for (int i = 0; i < numPacketsLost; i++) {
+                            broadcastUpdate(ECG_DATA_RECIEVED, lostData);
+                        }
+                        Log.e(TAG, "Packet Lost (ECG3): " + numPacketsLost);
                     }
-                    Log.e(TAG, "Packet Lost (ECG3): " + numPacketsLost);
-                }
-                broadcastUpdate(ECG_DATA_RECIEVED, sensorData);
-                break;
-            case PPG:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPGPktNum);
-                mPrevPPGPktNum = packetNumber;
-                if( numPacketsLost > 0) {
-                    lostData[0] = dataId;
-                    for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(PPG_DATA_RECIEVED, lostData);
+                    broadcastUpdate(ECG_DATA_RECIEVED, sensorData);
+                    break;
+                case PPG:
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevPPGPktNum);
+                    mPrevPPGPktNum = packetNumber;
+                    if (numPacketsLost > 0) {
+                        lostData[0] = dataId;
+                        for (int i = 0; i < numPacketsLost; i++) {
+                            broadcastUpdate(PPG_DATA_RECIEVED, lostData);
+                        }
+                        Log.e(TAG, "Packet Lost (PPG2): " + numPacketsLost);
                     }
-                    Log.e(TAG, "Packet Lost (PPG2): " + numPacketsLost);
-                }
-                broadcastUpdate(PPG_DATA_RECIEVED, sensorData);
-                break;
-            case ACCELERATION:
-                /*Get negative acceleration values. Max unsigned value = 4096.
-                * Max positive signed value = 2047*/
-                for(int i = 0; i < sensorData.length; i++){
-                    int value = sensorData[i];
-                    if(value > 2047) {
-                        sensorData[i] = value - 4096;
+                    broadcastUpdate(PPG_DATA_RECIEVED, sensorData);
+                    break;
+                case ACCELERATION:
+                //Get negative acceleration values. Max unsigned value = 4096.
+                //Max positive signed value = 2047
+                    for (int i = 0; i < sensorData.length; i++) {
+                        int value = sensorData[i];
+                        if (value > 2047) {
+                            sensorData[i] = value - 4096;
+                        }
                     }
-                }
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevACCELPktNum);
-                mPrevACCELPktNum = packetNumber;
-                if( numPacketsLost > 0) {
-                    lostData[0] = dataId;
-                    for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(ACCELERATION_DATA_RECIEVED, lostData);
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevACCELPktNum);
+                    mPrevACCELPktNum = packetNumber;
+                    if (numPacketsLost > 0) {
+                        lostData[0] = dataId;
+                        for (int i = 0; i < numPacketsLost; i++) {
+                            broadcastUpdate(ACCELERATION_DATA_RECIEVED, lostData);
+                        }
+                        Log.e(TAG, "Packet Lost (ACCELERATION): " + numPacketsLost);
                     }
-                    Log.e(TAG, "Packet Lost (ACCELERATION): " + numPacketsLost);
-                }
-                broadcastUpdate(ACCELERATION_DATA_RECIEVED, sensorData);
-                break;
-            case IMPEDANCE_PNEUMOGRAPHY:
-                numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
-                mPrevIMPEDPktNum = packetNumber;
-                if( numPacketsLost > 0) {
-                    lostData[0] = dataId;
-                    for(int i = 0; i < numPacketsLost; i++){
-                        broadcastUpdate(IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED, lostData);
+                    broadcastUpdate(ACCELERATION_DATA_RECIEVED, sensorData);
+                    break;
+                case IMPEDANCE_PNEUMOGRAPHY:
+                    numPacketsLost = calculatePacketLoss(packetNumber, mPrevIMPEDPktNum);
+                    mPrevIMPEDPktNum = packetNumber;
+                    if (numPacketsLost > 0) {
+                        lostData[0] = dataId;
+                        for (int i = 0; i < numPacketsLost; i++) {
+                            broadcastUpdate(IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED, lostData);
+                        }
+                        Log.e(TAG, "Packet Lost (IMPEDANCE PNEUMOGRAPHY): " + numPacketsLost);
                     }
-                    Log.e(TAG, "Packet Lost (IMPEDANCE PNEUMOGRAPHY): " + numPacketsLost);
-                }
-                broadcastUpdate(IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED, sensorData);
-                break;
-            default:
-                break;
+                    broadcastUpdate(IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED, sensorData);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -507,4 +497,27 @@ public class BLEService extends Service {
             return mantissa;
         }
     }
+
+    private void logData(String str, byte[] data){
+        String sample = "";
+        for(int i:data) {
+            sample += "[";
+            sample += (i & 0xFF);
+            sample += "]";
+        }
+
+        Log.d(TAG, str + ": " + sample);
+    }
+
+    private void logData(String str, double [] data){
+        String sample = "";
+        for(double d:data) {
+            sample += "[";
+            sample += d;
+            sample += "]";
+        }
+
+        Log.d(TAG, str + ": " + sample);
+    }
+
 }
