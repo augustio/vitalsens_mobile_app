@@ -180,7 +180,7 @@ public class Record {
     }
 
     public boolean isEmpty(){
-        return (chOne == null);
+        return chOne.isEmpty();
     }
 
     public static String toJson(Record record){
