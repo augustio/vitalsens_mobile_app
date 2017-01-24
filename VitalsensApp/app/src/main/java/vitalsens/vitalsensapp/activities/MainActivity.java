@@ -328,151 +328,142 @@ public class MainActivity extends Activity {
                     break;
                 case SaveRecordService.ACTION_SAVE_RECORD_STATUS:
                     showMessage(intent.getStringExtra(SaveRecordService.EXTRA_STATUS));
-                default:
-                    if(mRecSegmentEnd > 0) {
-                        long start, end;
-                        start = end = mRecSegmentEnd;
-                        mRecSegmentEnd = 0;
-                        if(mRecEnd > 0) {
-                            mRecStart = start;
-                            mRecEnd = 0;
-                        }
+                case BLEService.DATA_RECIEVED:
+                    mSamplesRecieved = true;
+                    final double[] samples = intent.getDoubleArrayExtra(Intent.EXTRA_TEXT);
+                    if(samples != null) {
+                        final int dataId = (int) samples[0];
 
-                        for(int key : mRecords.keySet()){
-                            Record rec = mRecords.put(key, new Record(mRecStart, mPatientId, start, key));
-                            if(!rec.isEmpty()) {
-                                rec.setEnd(end);
-                                rec.setTemp(mCurTemp);
-                                rec.setSecret(CLOUD_ACCESS_KEY);
-                                CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
-                                SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
+                        if (mRecSegmentEnd > 0) {
+                            long start, end;
+                            start = end = mRecSegmentEnd;
+                            mRecSegmentEnd = 0;
+                            if (mRecEnd > 0) {
+                                mRecStart = start;
+                                mRecEnd = 0;
+                            }
+
+                            for (int key : mRecords.keySet()) {
+                                Record rec = mRecords.put(key, new Record(mRecStart, mPatientId, start, key));
+                                if (!rec.isEmpty()) {
+                                    rec.setEnd(end);
+                                    rec.setTemp(mCurTemp);
+                                    rec.setSecret(CLOUD_ACCESS_KEY);
+                                    CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
+                                    SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
+                                }
                             }
                         }
-                    }
-                    switch(action){
-                        case BLEService.ECG_DATA_RECIEVED:
-                            final double[] samples1 = intent.getDoubleArrayExtra(Intent.EXTRA_TEXT);
-                            (new Runnable() {
-                                public void run() {
-                                    if (samples1 != null) {
-                                        if(!mSamplesRecieved) mSamplesRecieved = true;
-                                        if(mRecording){
-                                            for(int i = 1; i < samples1.length; i += 3){
-                                                if(Double.isNaN(samples1[i])){
-                                                    mRecords.get(1).addToChOne(null);
-                                                    mRecords.get(1).addToChTwo(null);
-                                                    mRecords.get(1).addToChThree(null);
-                                                }else {
-                                                    mRecords.get(1).addToChOne(samples1[i]);
-                                                    mRecords.get(1).addToChTwo(samples1[i + 1]);
-                                                    mRecords.get(1).addToChThree(samples1[i + 2]);
+                        switch (dataId) {
+                            case ECG:
+                                (new Runnable() {
+                                    public void run() {
+                                        if (mRecording) {
+                                            for (int i = 1; i < samples.length; i += 3) {
+                                                if (Double.isNaN(samples[i])) {
+                                                    mRecords.get(ECG).addToChOne(null);
+                                                    mRecords.get(ECG).addToChTwo(null);
+                                                    mRecords.get(ECG).addToChThree(null);
+                                                } else {
+                                                    mRecords.get(ECG).addToChOne(samples[i]);
+                                                    mRecords.get(ECG).addToChTwo(samples[i + 1]);
+                                                    mRecords.get(ECG).addToChThree(samples[i + 2]);
                                                 }
                                             }
                                         }
                                         if (mShowECG) {
-                                            for (int i = 1; i < samples1.length; i += 3) {
-                                                if(Double.isNaN(samples1[i])) {
+                                            for (int i = 1; i < samples.length; i += 3) {
+                                                if (Double.isNaN(samples[i])) {
                                                     double[] result =
-                                                            {samples1[i], samples1[i + 1], samples1[i + 2]};
+                                                            {samples[i], samples[i + 1], samples[i + 2]};
                                                     mGraphFragment.updateGraph(result);
-                                                }else{
+                                                } else {
                                                     double[] result = {
-                                                            samples1[i + 2] - samples1[i + 1],
-                                                            samples1[i] - samples1[i + 1],
-                                                            samples1[i] - samples1[i + 2]
+                                                            samples[i + 2] - samples[i + 1],
+                                                            samples[i] - samples[i + 1],
+                                                            samples[i] - samples[i + 2]
                                                     };
                                                     mGraphFragment.updateGraph(result);
                                                 }
                                             }
                                         }
+
                                     }
-                                }
-                            }).run();
-                            break;
-                        case BLEService.PPG_DATA_RECIEVED:
-                            final double[] samples3 = intent.getDoubleArrayExtra(Intent.EXTRA_TEXT);
-                            (new Runnable() {
-                                public void run() {
-                                    if (samples3 != null) {
-                                        if(!mSamplesRecieved) mSamplesRecieved = true;
-                                        if(mRecording){
-                                            for(int i = 1; i < samples3.length; i += 2){
-                                                if(Double.isNaN(samples3[i])){
-                                                    mRecords.get(3).addToChOne(null);
-                                                    mRecords.get(3).addToChTwo(null);
-                                                }else {
-                                                    mRecords.get(3).addToChOne(samples3[i]);
-                                                    mRecords.get(3).addToChTwo(samples3[i + 1]);
+                                }).run();
+                                break;
+                            case PPG:
+                                (new Runnable() {
+                                    public void run() {
+                                        if (mRecording) {
+                                            for (int i = 1; i < samples.length; i += 2) {
+                                                if (Double.isNaN(samples[i])) {
+                                                    mRecords.get(PPG).addToChOne(null);
+                                                    mRecords.get(PPG).addToChTwo(null);
+                                                } else {
+                                                    mRecords.get(PPG).addToChOne(samples[i]);
+                                                    mRecords.get(PPG).addToChTwo(samples[i + 1]);
                                                 }
                                             }
                                         }
                                         if (mShowPPG) {
-                                            for(int i = 1; i < samples3.length; i += 2){
+                                            for (int i = 1; i < samples.length; i += 2) {
                                                 double[] result =
-                                                        {samples3[i], samples3[i + 1]};
+                                                        {samples[i], samples[i + 1]};
                                                 mGraphFragment.updateGraph(result);
                                             }
                                         }
                                     }
-                                }
-                            }).run();
-                            break;
-                        case BLEService.ACCELERATION_DATA_RECIEVED:
-                            final double[] samples4 = intent.getDoubleArrayExtra(Intent.EXTRA_TEXT);
-                            (new Runnable() {
-                                public void run() {
-                                    if (samples4 != null) {
-                                        if(!mSamplesRecieved) mSamplesRecieved = true;
-                                        if(mRecording){
-                                            for(int i = 1; i < samples4.length; i += 3){
-                                                if(Double.isNaN(samples4[i])){
-                                                    mRecords.get(4).addToChOne(null);
-                                                    mRecords.get(4).addToChTwo(null);
-                                                    mRecords.get(4).addToChThree(null);
-                                                }else {
-                                                    mRecords.get(4).addToChOne(samples4[i]);
-                                                    mRecords.get(4).addToChTwo(samples4[i + 1]);
-                                                    mRecords.get(4).addToChThree(samples4[i + 2]);
+                                }).run();
+                                break;
+                            case ACCEL:
+                                (new Runnable() {
+                                    public void run() {
+                                        if (mRecording) {
+                                            for (int i = 1; i < samples.length; i += 3) {
+                                                if (Double.isNaN(samples[i])) {
+                                                    mRecords.get(ACCEL).addToChOne(null);
+                                                    mRecords.get(ACCEL).addToChTwo(null);
+                                                    mRecords.get(ACCEL).addToChThree(null);
+                                                } else {
+                                                    mRecords.get(ACCEL).addToChOne(samples[i]);
+                                                    mRecords.get(ACCEL).addToChTwo(samples[i + 1]);
+                                                    mRecords.get(ACCEL).addToChThree(samples[i + 2]);
                                                 }
                                             }
                                         }
                                         if (mShowAccel) {
-                                            for(int i = 1; i < samples4.length; i += 3){
+                                            for (int i = 1; i < samples.length; i += 3) {
                                                 double[] result =
-                                                        {samples4[i], samples4[i + 1], samples4[i + 2]};
+                                                        {samples[i], samples[i + 1], samples[i + 2]};
                                                 mGraphFragment.updateGraph(result);
                                             }
                                         }
                                     }
-                                }
-                            }).run();
-                            break;
-                        case BLEService.IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED:
-                            final double[] samples5 = intent.getDoubleArrayExtra(Intent.EXTRA_TEXT);
-                            (new Runnable() {
-                                public void run() {
-                                    if (samples5 != null) {
-                                        if(!mSamplesRecieved) mSamplesRecieved = true;
-                                        if(mRecording){
-                                            for(int i = 1; i < samples5.length; i++) {
-                                                if(Double.isNaN(samples5[i])){
-                                                    mRecords.get(5).addToChOne(null);
-                                                }else {
-                                                    mRecords.get(5).addToChOne(samples5[i]);
+                                }).run();
+                                break;
+                            case IMPED:
+                                (new Runnable() {
+                                    public void run() {
+                                        if (mRecording) {
+                                            for (int i = 1; i < samples.length; i++) {
+                                                if (Double.isNaN(samples[i])) {
+                                                    mRecords.get(IMPED).addToChOne(null);
+                                                } else {
+                                                    mRecords.get(IMPED).addToChOne(samples[i]);
                                                 }
                                             }
                                         }
                                         if (mShowImpedance) {
-                                            for(int i = 1; i < samples5.length; i ++){
+                                            for (int i = 1; i < samples.length; i++) {
                                                 double[] result =
-                                                        {samples5[i]};
+                                                        {samples[i]};
                                                 mGraphFragment.updateGraph(result);
                                             }
                                         }
                                     }
-                                }
-                            }).run();
-                            break;
+                                }).run();
+                                break;
+                        }
                     }
             }
         }
@@ -482,11 +473,7 @@ public class MainActivity extends Activity {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BLEService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BLEService.ECG_DATA_RECIEVED);
-        intentFilter.addAction(BLEService.PPG_DATA_RECIEVED);
-        intentFilter.addAction(BLEService.ACCELERATION_DATA_RECIEVED);
-        intentFilter.addAction(BLEService.IMPEDANCE_PNEUMOGRAPHY_DATA_RECIEVED);
+        intentFilter.addAction(BLEService.DATA_RECIEVED);
         intentFilter.addAction(BLEService.TEMP_VALUE);
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
         intentFilter.addAction(BLEService.HR);
