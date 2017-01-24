@@ -79,7 +79,7 @@ public class GraphviewFragment extends Fragment {
         return graphLayout;
     }
 
-    public void updateGraph(int[] value) {
+    public void updateGraph(double[] value) {
         if(mGraphView == null || mLineGraph == null)
             return;
         for(int i = 0; i < value.length && i < mGraphView.size(); i++){
@@ -90,7 +90,7 @@ public class GraphviewFragment extends Fragment {
                 if(mLineGraph.get(i).getItemCount() > xValueCounter){
                     mLineGraph.get(i).removeValue(xValueCounter);
                 }
-                if(value[i] == BLEService.NAN) {
+                if(Double.isNaN(value[i])) {
                     mLineGraph.get(i).addValue(xValueCounter, xValueCounter,
                             mLineGraph.get(i).getValue(xValueCounter - 1));
                 }

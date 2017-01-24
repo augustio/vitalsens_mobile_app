@@ -53,7 +53,6 @@ public class BLEService extends Service {
     public static final int PPG = 3;
     public static final int ACCELERATION = 4;
     public static final int IMPEDANCE_PNEUMOGRAPHY = 5;
-    public static final int NAN = -4096;
 
     public final static String ACTION_GATT_CONNECTED =
             "vitalsens.vitalsensapp.ACTION_GATT_CONNECTED";
@@ -229,6 +228,13 @@ public class BLEService extends Service {
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
+    private void broadcastUpdate(final String action,
+                                 final double[] value) {
+        final Intent intent = new Intent(action);
+        intent.putExtra(Intent.EXTRA_TEXT, value);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
     public class LocalBinder extends Binder {
         public BLEService getService() {
             return BLEService.this;
@@ -391,11 +397,11 @@ public class BLEService extends Service {
             int packetNumber = (data[1] & 0XFF);
             int numPacketsLost;
 
-            int sensorData[] = new int[13];
-            int lostData[] = new int[13];
+            double sensorData[] = new double[13];
+            double lostData[] = new double[13];
             for (int i = 1; i < lostData.length; i++)
-                lostData[i] = NAN;
-            sensorData[0] = lostData[0] = dataId;
+                lostData[i] = Double.NaN;
+            sensorData[0] = dataId;
 
             for (int i = 1, j = 2; i < sensorData.length; i += 2, j += 3) {
                 sensorData[i] = (data[j] & 0XFF) << 4 | (data[j + 1] & 0XF0) >> 4;
@@ -431,9 +437,9 @@ public class BLEService extends Service {
                 //Get negative acceleration values. Max unsigned value = 4096.
                 //Max positive signed value = 2047
                     for (int i = 0; i < sensorData.length; i++) {
-                        int value = sensorData[i];
+                        double value = sensorData[i];
                         if (value > 2047) {
-                            sensorData[i] = value - 4096;
+                            sensorData[i] = -1*(4096 - value);
                         }
                     }
                     numPacketsLost = calculatePacketLoss(packetNumber, mPrevPktNums.get(dataId));

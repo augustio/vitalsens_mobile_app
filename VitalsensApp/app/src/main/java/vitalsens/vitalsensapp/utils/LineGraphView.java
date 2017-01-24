@@ -41,7 +41,7 @@ public class LineGraphView {
         return ChartFactory.getLineChartView(context, mDataset, mMultiRenderer);
     }
 
-    public void addValue(int index, int x, int y){
+    public void addValue(int index, int x, double y){
         mSeries.add(index, x, y);
     }
 

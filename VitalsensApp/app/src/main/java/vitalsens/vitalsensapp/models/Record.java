@@ -33,9 +33,9 @@ public class Record {
     private int pEEnd; //Pain event end marker
     private String secret; //Static secret key for temporary authentication implementation
     private double temp; //Temperature value recorded at the end of record segment
-    private ArrayList<Integer> chOne; // Channel one data
-    private ArrayList<Integer> chTwo; //Channel two data
-    private ArrayList<Integer> chThree; //Channel three data
+    private ArrayList<Double> chOne; // Channel one data
+    private ArrayList<Double> chTwo; //Channel two data
+    private ArrayList<Double> chThree; //Channel three data
 
     public Record(){
     }
@@ -110,21 +110,21 @@ public class Record {
         return pEEnd;
     }
 
-    public ArrayList<Integer> getChOne(){
+    public ArrayList<Double> getChOne(){
         if(chOne.size() > 0)
             return new ArrayList<>(chOne);
         else
             return null;
     }
 
-    public ArrayList<Integer> getChTwo(){
+    public ArrayList<Double> getChTwo(){
         if(chTwo.size() > 0)
             return new ArrayList<>(chTwo);
         else
             return null;
     }
 
-    public ArrayList<Integer> getChThree(){
+    public ArrayList<Double> getChThree(){
         if(chThree.size() > 0)
             return new ArrayList<>(chThree);
         else
@@ -167,15 +167,15 @@ public class Record {
         this.temp = temp;
     }
 
-    public void addToChOne(int data){
+    public void addToChOne(Double data){
         chOne.add(data);
     }
 
-    public void addToChTwo(int data){
+    public void addToChTwo(Double data){
         chTwo.add(data);
     }
 
-    public void addToChThree(int data){
+    public void addToChThree(Double data){
         chThree.add(data);
     }
 
