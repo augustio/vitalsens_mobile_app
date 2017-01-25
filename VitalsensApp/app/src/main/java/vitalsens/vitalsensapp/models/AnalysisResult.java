@@ -11,8 +11,6 @@ public class AnalysisResult {
     private int duration;
     private int heartRate;
     private int pvcCount;
-    private int minRPeak;
-    private int maxRPeak;
 
     public AnalysisResult(){
         this.pId = "";
@@ -21,20 +19,16 @@ public class AnalysisResult {
         this.duration = 0;
         this.heartRate = 0;
         this.pvcCount = 0;
-        this.minRPeak = 0;
-        this.maxRPeak = 0;
     }
 
     public AnalysisResult(String pId, String dType, String recordTime, int duration,
-                          int heartRate, int pvcCount, int minRPeak, int maxRPeak) {
+                          int heartRate, int pvcCount) {
         this.pId = pId;
         this.dType = dType;
         this.recordTime = recordTime;
         this.duration = duration;
         this.heartRate = heartRate;
         this.pvcCount = pvcCount;
-        this.minRPeak = minRPeak;
-        this.maxRPeak = maxRPeak;
     }
 
     public String getpId() {
@@ -83,22 +77,6 @@ public class AnalysisResult {
 
     public void setPvcCount(int pvcCount) {
         this.pvcCount = pvcCount;
-    }
-
-    public int getMinRPeak() {
-        return minRPeak;
-    }
-
-    public void setMinRPeak(int minRPeak) {
-        this.minRPeak = minRPeak;
-    }
-
-    public int getMaxRPeak() {
-        return maxRPeak;
-    }
-
-    public void setMaxRPeak(int maxRPeak) {
-        this.maxRPeak = maxRPeak;
     }
 
     public static AnalysisResult fromJson(String json){

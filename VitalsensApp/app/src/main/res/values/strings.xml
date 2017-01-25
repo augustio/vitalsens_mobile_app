@@ -62,8 +62,6 @@
     <string name="duration">Duration</string>
     <string name="hRate">Heart-Rate</string>
     <string name="pvcCount">PVC Count</string>
-    <string name="minRPeak">Min R-Peak</string>
-    <string name="maxRPeak">Max R-Peak</string>
     <string name="analysis_result">Analysis Result</string>
 
 </resources>

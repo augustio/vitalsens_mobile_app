@@ -20,8 +20,6 @@ public class RecordAnalysisFragment extends Fragment {
     private TextView mDurationView;
     private TextView mHeartRateView;
     private TextView mPVCCountView;
-    private TextView mMinRPeakView;
-    private TextView mMaxRPeakView;
 
     private AnalysisResult mAnalysisResult;
 
@@ -55,10 +53,6 @@ public class RecordAnalysisFragment extends Fragment {
         mHeartRateView.setText(String.valueOf(mAnalysisResult.getHeartRate()));
         mPVCCountView = (TextView) l.findViewById(R.id.pvc_count);
         mPVCCountView.setText(String.valueOf(mAnalysisResult.getPvcCount()));
-        mMinRPeakView = (TextView) l.findViewById(R.id.min_r_peak);
-        mMinRPeakView.setText(String.valueOf(mAnalysisResult.getMinRPeak()));
-        mMaxRPeakView = (TextView) l.findViewById(R.id.max_r_peak);
-        mMaxRPeakView.setText(String.valueOf(mAnalysisResult.getMaxRPeak()));
 
         mViewCreated = true;
 
@@ -78,8 +72,6 @@ public class RecordAnalysisFragment extends Fragment {
             mDurationView.setText(String.valueOf(mAnalysisResult.getDuration()));
             mHeartRateView.setText(String.valueOf(mAnalysisResult.getHeartRate()));
             mPVCCountView.setText(String.valueOf(mAnalysisResult.getPvcCount()));
-            mMinRPeakView.setText(String.valueOf(mAnalysisResult.getMinRPeak()));
-            mMaxRPeakView.setText(String.valueOf(mAnalysisResult.getMaxRPeak()));
         }
     }
 
@@ -93,7 +85,5 @@ public class RecordAnalysisFragment extends Fragment {
         mDurationView.setText("");
         mHeartRateView.setText("");
         mPVCCountView.setText("");
-        mMinRPeakView.setText("");
-        mMaxRPeakView.setText("");
     }
 }

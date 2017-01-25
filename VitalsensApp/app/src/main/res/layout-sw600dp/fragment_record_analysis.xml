@@ -194,60 +194,6 @@
                     android:layout_weight="2"
                     android:background="@color/green_overlay_light"/>
             </TableRow>
-            <View
-                android:layout_height="2dip"
-                android:background="#FFFFFFFF" />
-            <TableRow>
-                <TextView
-                    android:layout_column="1"
-                    android:textColor="@color/whitegrey"
-                    android:textSize="18sp"
-                    android:text="@string/minRPeak"
-                    android:paddingTop="2dip"
-                    android:paddingBottom="2dip"
-                    android:paddingStart="7dip"
-                    android:layout_width="0dp"
-                    android:layout_weight="3"
-                    android:background="@color/green_overlay_dark"/>
-                <TextView
-                    android:id="@+id/min_r_peak"
-                    android:textColor="@color/blue_text"
-                    android:textSize="18sp"
-                    android:gravity="end"
-                    android:paddingTop="2dip"
-                    android:paddingBottom="2dip"
-                    android:paddingEnd="7dip"
-                    android:layout_width="0dp"
-                    android:layout_weight="2"
-                    android:background="@color/green_overlay_light"/>
-            </TableRow>
-            <View
-                android:layout_height="2dip"
-                android:background="#FFFFFFFF" />
-            <TableRow>
-                <TextView
-                    android:layout_column="1"
-                    android:textColor="@color/whitegrey"
-                    android:textSize="18sp"
-                    android:text="@string/maxRPeak"
-                    android:paddingTop="2dip"
-                    android:paddingBottom="2dip"
-                    android:paddingStart="7dip"
-                    android:layout_width="0dp"
-                    android:layout_weight="3"
-                    android:background="@color/green_overlay_dark"/>
-                <TextView
-                    android:id="@+id/max_r_peak"
-                    android:textColor="@color/blue_text"
-                    android:textSize="18sp"
-                    android:gravity="end"
-                    android:paddingTop="2dip"
-                    android:paddingBottom="2dip"
-                    android:paddingEnd="7dip"
-                    android:layout_width="0dp"
-                    android:layout_weight="2"
-                    android:background="@color/green_overlay_light"/>
-            </TableRow>
         </TableLayout>
 
     </ScrollView>
