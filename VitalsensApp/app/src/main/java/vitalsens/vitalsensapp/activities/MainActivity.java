@@ -248,7 +248,7 @@ public class MainActivity extends Activity {
         btnInc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mNextIndex < (mAvailableDataTypes.size() - 1)) {
+                if(mNextIndex < (mAvailableDataTypes.size() - 1) && mConnectionState == BLEService.STATE_CONNECTED) {
                     mNextIndex++;
                     displayData();
                 }
@@ -258,7 +258,7 @@ public class MainActivity extends Activity {
         btnDec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mNextIndex >= -1) {
+                if(mNextIndex >= -1 && mConnectionState == BLEService.STATE_CONNECTED) {
                     mNextIndex--;
                     displayData();
                 }
@@ -690,13 +690,13 @@ public class MainActivity extends Activity {
         if(mAvailableDataTypes.size() <= mNextIndex)
             return;
 
-        if(mNextIndex == -1){
+        if(mNextIndex == RECORD_TIMER_LAYOUT){
             setGraphLayout(RECORD_TIMER_LAYOUT);
             curDispDataType.setText("");
             return;
         }
 
-        if(mNextIndex == -2){
+        if(mNextIndex == RECORD_ANALYSIS_LAYOUT){
             setGraphLayout(RECORD_ANALYSIS_LAYOUT);
             curDispDataType.setText("");
             return;
