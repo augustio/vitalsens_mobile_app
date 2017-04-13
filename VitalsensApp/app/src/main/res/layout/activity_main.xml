@@ -166,7 +166,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
-            android:textColor="@color/darkgrey"
+            android:textColor="@color/white"
             android:textSize="15sp"
             android:text="@string/empty"/>
 
