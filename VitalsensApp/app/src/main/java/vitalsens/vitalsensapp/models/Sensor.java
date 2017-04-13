@@ -11,12 +11,12 @@ public class Sensor {
     private String address;
 
     /*Sensor datatypes*/
-    public static final String ECG_ONE_DATA = "Single Channel ECG";
-    public static final String ECG_THREE_DATA = "Three Channels ECG";
-    public static final String PPG_ONE_DATA = "Single Channel PPG";
-    public static final String PPG_TWO_DATA = "Two_Channels_PPG";
-    public static final String ACCEL_DATA = "Accelerometer";
-    public static final String IMPEDANCE_DATA = "Impedance Pneumography";
+    public static final String ECG_ONE_DATA = "ECG_ONE";
+    public static final String ECG_THREE_DATA = "ECG_THREE";
+    public static final String PPG_ONE_DATA = "PPG_ONE";
+    public static final String PPG_TWO_DATA = "PPG_TWO";
+    public static final String ACCEL_DATA = "ACCEL";
+    public static final String IMPEDANCE_DATA = "IMPED";
 
     public static final Map<String, Integer> DATA_TYPES;
     static
