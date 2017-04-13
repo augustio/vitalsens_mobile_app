@@ -372,18 +372,22 @@ public class MainActivity extends Activity {
                                             }
                                         }
                                         if (mShowECG) {
-                                            for (int i = 1; i < samples.length; i += 3) {
+                                            for (int i = 1, j = 0; i < samples.length; i += 3, j++) {
                                                 if (Double.isNaN(samples[i])) {
                                                     double[] result =
                                                             {samples[i], samples[i + 1], samples[i + 2]};
-                                                    mGraphFragment.updateGraph(result);
+                                                    if(j%2 == 0){
+                                                        mGraphFragment.updateGraph(result);
+                                                    }
                                                 } else {
                                                     double[] result = {
                                                             samples[i + 2] - samples[i + 1],
                                                             samples[i] - samples[i + 1],
                                                             samples[i] - samples[i + 2]
                                                     };
-                                                    mGraphFragment.updateGraph(result);
+                                                    if(j%2 == 0){
+                                                        mGraphFragment.updateGraph(result);
+                                                    }
                                                 }
                                             }
                                         }
