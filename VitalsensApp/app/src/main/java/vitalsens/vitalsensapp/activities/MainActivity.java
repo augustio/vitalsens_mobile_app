@@ -71,8 +71,8 @@ public class MainActivity extends Activity {
     private static final int PRE_AUTO_RECONNECTION_PAUSE_DURATION = 5000; //In milliseconds
     private static final int ECG = 1;
     private static final int PPG = 3;
-    private static final int ACCEL = 4;
-    private static final int IMPED = 5;
+    private static final int ACC = 4;
+    private static final int IMP = 5;
     private static final String CLOUD_ACCESS_KEY = "v1t4753n553cr3tk3y";
 
     private BluetoothAdapter mBluetoothAdapter;
@@ -333,12 +333,14 @@ public class MainActivity extends Activity {
                     final double[] samples = intent.getDoubleArrayExtra(Intent.EXTRA_TEXT);
                     if(samples != null) {
                         final int dataId = (int) samples[0];
+                        long recEndTimeStamp = 0;
 
                         if (mRecSegmentEnd > 0) {
                             long start, end;
                             start = end = mRecSegmentEnd;
                             mRecSegmentEnd = 0;
                             if (mRecEnd > 0) {
+                                recEndTimeStamp = System.currentTimeMillis();
                                 mRecStart = start;
                                 mRecEnd = 0;
                             }
@@ -348,7 +350,7 @@ public class MainActivity extends Activity {
                                 if (!rec.isEmpty()) {
                                     rec.setEnd(end);
                                     rec.setTemp(mCurTemp);
-                                    rec.setSecret(CLOUD_ACCESS_KEY);
+                                    rec.setRecEnd(recEndTimeStamp);
                                     CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
                                     SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
                                 }
@@ -419,19 +421,19 @@ public class MainActivity extends Activity {
                                     }
                                 }).run();
                                 break;
-                            case ACCEL:
+                            case ACC:
                                 (new Runnable() {
                                     public void run() {
                                         if (mRecording) {
                                             for (int i = 1; i < samples.length; i += 3) {
                                                 if (Double.isNaN(samples[i])) {
-                                                    mRecords.get(ACCEL).addToChOne(null);
-                                                    mRecords.get(ACCEL).addToChTwo(null);
-                                                    mRecords.get(ACCEL).addToChThree(null);
+                                                    mRecords.get(ACC).addToChOne(null);
+                                                    mRecords.get(ACC).addToChTwo(null);
+                                                    mRecords.get(ACC).addToChThree(null);
                                                 } else {
-                                                    mRecords.get(ACCEL).addToChOne(samples[i]);
-                                                    mRecords.get(ACCEL).addToChTwo(samples[i + 1]);
-                                                    mRecords.get(ACCEL).addToChThree(samples[i + 2]);
+                                                    mRecords.get(ACC).addToChOne(samples[i]);
+                                                    mRecords.get(ACC).addToChTwo(samples[i + 1]);
+                                                    mRecords.get(ACC).addToChThree(samples[i + 2]);
                                                 }
                                             }
                                         }
@@ -445,15 +447,15 @@ public class MainActivity extends Activity {
                                     }
                                 }).run();
                                 break;
-                            case IMPED:
+                            case IMP:
                                 (new Runnable() {
                                     public void run() {
                                         if (mRecording) {
                                             for (int i = 1; i < samples.length; i++) {
                                                 if (Double.isNaN(samples[i])) {
-                                                    mRecords.get(IMPED).addToChOne(null);
+                                                    mRecords.get(IMP).addToChOne(null);
                                                 } else {
-                                                    mRecords.get(IMPED).addToChOne(samples[i]);
+                                                    mRecords.get(IMP).addToChOne(samples[i]);
                                                 }
                                             }
                                         }
@@ -864,8 +866,12 @@ public class MainActivity extends Activity {
             Record rec = mRecords.get(key);
             if(!rec.isEmpty()) {
                 rec.setEnd(end);
+                rec.setRecEnd(end);
+                if(mPainStart){
+                    rec.setPEEnd(rec.getChOne().size());
+                    mPainStart = false;
+                }
                 rec.setTemp(mCurTemp);
-                rec.setSecret(CLOUD_ACCESS_KEY);
                 CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
                 SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
             }

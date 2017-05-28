@@ -11,8 +11,8 @@ public class Record {
     /*Sensor datatypes*/
     public static final String ECG_DATA = "ECG";
     public static final String PPG_DATA = "PPG";
-    public static final String ACCEL_DATA = "Acceleration";
-    public static final String IMPEDANCE_DATA = "Impedance Pneumography";
+    public static final String ACCEL_DATA = "ACC";
+    public static final String IMPEDANCE_DATA = "IMP";
 
     public static final Map<String, Integer> DATA_TYPES;
     static
@@ -24,14 +24,14 @@ public class Record {
         DATA_TYPES.put(IMPEDANCE_DATA, 5);
     }
 
-    private long timeStamp; //Timestamp that marks the beginning of a record
+    private long recStart; //Timestamp that marks the beginning of a record
+    private long recEnd; // Timestamp that marks the end of a record
     private String patientId; //Patient Identification string
     private long start; //Timestamp that marks the beginning of a record segment
     private long end; //Timestamp that marks the end of a record segment
     private String type; //Type of recorded data
     private int pEStart; //Pain event start marker
     private int pEEnd; //Pain event end marker
-    private String secret; //Static secret key for temporary authentication implementation
     private double temp; //Temperature value recorded at the end of record segment
     private ArrayList<Double> chOne; // Channel one data
     private ArrayList<Double> chTwo; //Channel two data
@@ -40,42 +40,46 @@ public class Record {
     public Record(){
     }
 
-    public Record(long timeStamp, String patientId, long start, int type){
-        this.timeStamp = timeStamp;
+    public Record(long recStart, String patientId, long start, int type){
+        this.recStart = recStart;
+        this.recEnd = 0;
         this.patientId = patientId;
         this.start = start;
         end = 0;
-        pEStart = -1;
-        pEEnd = -1;
-        secret = "";
+        pEStart = 0;
+        pEEnd = 0;
         temp = 0.0;
         chOne = new ArrayList<>();
         chTwo = new ArrayList<>();
         chThree = new ArrayList<>();
         switch (type){
             case 0:
-                this.type = Sensor.ECG_ONE_DATA;
+                this.type = ECG_DATA;
                 break;
             case 1:
-                this.type = Sensor.ECG_THREE_DATA;
+                this.type = ECG_DATA;
                 break;
             case 2:
-                this.type = Sensor.PPG_ONE_DATA;
+                this.type = PPG_DATA;
                 break;
             case 3:
-                this.type = Sensor.PPG_TWO_DATA;
+                this.type = PPG_DATA;
                 break;
             case 4:
-                this.type = Sensor.ACCEL_DATA;
+                this.type = ACCEL_DATA;
                 break;
             case 5:
-                this.type = Sensor.IMPEDANCE_DATA;
+                this.type = IMPEDANCE_DATA;
                 break;
         }
     }
 
-    public long getTimeStamp(){
-        return timeStamp;
+    public long getRecStart(){
+        return recStart;
+    }
+
+    public long getRecEnd(){
+        return recStart;
     }
 
     public String getPatientId(){
@@ -92,10 +96,6 @@ public class Record {
 
     public long getEnd(){
         return end;
-    }
-
-    public String getSecret(){
-        return secret;
     }
 
     public double getTemp(){
@@ -131,8 +131,12 @@ public class Record {
             return null;
     }
 
-    public void setTimeStamp(long timeStamp){
-        this.timeStamp = timeStamp;
+    public void setRecStart(long recStart){
+        this.recStart = recStart;
+    }
+
+    public void setRecEnd(long recEnd){
+        this.recStart = recStart;
     }
 
     public void setPatientId(String patientId){
@@ -157,10 +161,6 @@ public class Record {
 
     public void setPEEnd(int pEEnd){
         this.pEEnd = pEEnd;
-    }
-
-    public void setSecret(String secret){
-        this.secret = secret;
     }
 
     public void setTemp(double temp){
@@ -202,10 +202,10 @@ public class Record {
             this.start = rec.start;
             this.end = rec.end;
             this.patientId = rec.patientId;
-            this.timeStamp = rec.timeStamp;
+            this.recStart = rec.recStart;
+            this.recEnd = rec.recEnd;
             this.pEEnd = rec.pEEnd;
             this.pEStart = rec.pEStart;
-            this.secret = rec.secret;
             this.temp = rec.temp;
 
             return this;

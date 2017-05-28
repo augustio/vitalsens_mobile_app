@@ -15,8 +15,8 @@ public class Sensor {
     public static final String ECG_THREE_DATA = "ECG";
     public static final String PPG_ONE_DATA = "PPG";
     public static final String PPG_TWO_DATA = "PPG";
-    public static final String ACCEL_DATA = "Acceleration";
-    public static final String IMPEDANCE_DATA = "Impedance Pneumography";
+    public static final String ACCEL_DATA = "ACC";
+    public static final String IMPEDANCE_DATA = "IMP";
 
     public static final Map<String, Integer> DATA_TYPES;
     static
