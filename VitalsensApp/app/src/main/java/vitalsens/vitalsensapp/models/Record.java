@@ -79,7 +79,7 @@ public class Record {
     }
 
     public long getRecEnd(){
-        return recStart;
+        return recEnd;
     }
 
     public String getPatientId(){
@@ -136,7 +136,7 @@ public class Record {
     }
 
     public void setRecEnd(long recEnd){
-        this.recStart = recStart;
+        this.recEnd = recEnd;
     }
 
     public void setPatientId(String patientId){
