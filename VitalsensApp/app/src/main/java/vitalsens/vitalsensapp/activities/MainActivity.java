@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
     private static final int ONE_SECOND_IN_MILLIS = 1000;
     private static final int PRE_RECORD_START_DURATION = 10000; //In milliseconds
     private static final int PRE_AUTO_RECONNECTION_PAUSE_DURATION = 5000; //In milliseconds
+    private static final int GRAPH_DISPLAY_TIMEOUT = 120000; //In milliseconds
     private static final int ECG = 1;
     private static final int PPG = 3;
     private static final int ACC = 4;
@@ -141,8 +142,8 @@ public class MainActivity extends Activity {
         batLevelTxt = (TextView) findViewById(R.id.bat_level_text);
         hrValue = (TextView) findViewById(R.id.hr_value);
         patientId = (TextView) findViewById(R.id.patient_id);
-        TextView btnInc = (TextView) findViewById(R.id.btn_inc);
-        TextView btnDec = (TextView) findViewById(R.id.btn_dec);
+        TextView btnNavRight = (TextView) findViewById(R.id.btn_nav_right);
+        TextView btnNavLeft = (TextView) findViewById(R.id.btn_nav_left);
         Button btnHistory = (Button) findViewById(R.id.btn_history);
         curDispDataType = (TextView) findViewById(R.id.cur_disp_dataType);
         connectedDevices = (TextView) findViewById(R.id.connected_devices);
@@ -245,7 +246,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        btnInc.setOnClickListener(new View.OnClickListener() {
+        btnNavRight.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mNextIndex < (mAvailableDataTypes.size() - 1) && mConnectionState == BLEService.STATE_CONNECTED) {
@@ -255,7 +256,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        btnDec.setOnClickListener(new View.OnClickListener() {
+        btnNavLeft.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mNextIndex >= -1 && mConnectionState == BLEService.STATE_CONNECTED) {
@@ -708,6 +709,8 @@ public class MainActivity extends Activity {
             return;
         }
 
+        setGraphDisplayTimeout(GRAPH_DISPLAY_TIMEOUT);
+
         String dataType = mAvailableDataTypes.get(mNextIndex);
 
         switch (dataType){
@@ -772,8 +775,7 @@ public class MainActivity extends Activity {
                 mRecEnd = mRecSegmentEnd = 0;
                 mRecording = true;
                 mRecordTimer.run();
-                mNextIndex = RECORD_TIMER_LAYOUT;
-                displayData();
+                setGraphDisplayTimeout(GRAPH_DISPLAY_TIMEOUT);
             }
         }.start();
     }
@@ -878,6 +880,7 @@ public class MainActivity extends Activity {
         }
         mRecords.clear();
         mHandler.removeCallbacks(mRecordTimer);
+        mHandler.removeCallbacks(mDisplayTimerView);
         ((TextView) findViewById(R.id.timer_view)).setText("");
         hr = min = sec = 0;
         mRecStart = mRecordingStart = 0;
@@ -1037,5 +1040,20 @@ public class MainActivity extends Activity {
     private void updateAnalysisResult(String analysisStr){
         if(mRecordAnalysisFragment != null && mRecordAnalysisFragment.isAdded())
             mRecordAnalysisFragment.updateView(analysisStr);
+    }
+
+    private Runnable mDisplayTimerView = new Runnable() {
+        public void run() {
+            if(mNextIndex == RECORD_TIMER_LAYOUT){
+                return;
+            }
+            mNextIndex = RECORD_TIMER_LAYOUT;
+            displayData();
+        }
+    };
+
+    private void setGraphDisplayTimeout(int timeout){
+        mHandler.removeCallbacks(mDisplayTimerView);
+        mHandler.postAtTime(mDisplayTimerView, SystemClock.uptimeMillis() + timeout);
     }
 }
