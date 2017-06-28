@@ -1,8 +1,11 @@
 package vitalsens.vitalsensapp.activities;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -15,16 +18,16 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +49,7 @@ import vitalsens.vitalsensapp.services.BLEService;
 import vitalsens.vitalsensapp.services.CloudAccessService;
 import vitalsens.vitalsensapp.services.SaveRecordService;
 import vitalsens.vitalsensapp.utils.ConnectDialog;
+import vitalsens.vitalsensapp.utils.IOOperations;
 
 public class MainActivity extends Activity {
 
@@ -74,11 +78,10 @@ public class MainActivity extends Activity {
     private static final int PPG = 3;
     private static final int ACC = 4;
     private static final int IMP = 5;
-    private static final String CLOUD_ACCESS_KEY = "v1t4753n553cr3tk3y";
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
-    private TextView connectedDevices, curDispDataType,
+    private TextView feedBackMsgTV, curDispDataType,
             batLevel, curTemperature, hrValue, patientId, batLevelTxt;
     private Handler mHandler;
     private BLEService mService;
@@ -96,7 +99,6 @@ public class MainActivity extends Activity {
     private int mNumConnectedSensors;
     private double mCurTemp;
     private String mSensorId, mPatientId;
-    private String mAnalysisResult;
     private boolean mShowECG, mShowPPG, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
@@ -146,7 +148,7 @@ public class MainActivity extends Activity {
         TextView btnNavLeft = (TextView) findViewById(R.id.btn_nav_left);
         Button btnHistory = (Button) findViewById(R.id.btn_history);
         curDispDataType = (TextView) findViewById(R.id.cur_disp_dataType);
-        connectedDevices = (TextView) findViewById(R.id.connected_devices);
+        feedBackMsgTV = (TextView) findViewById(R.id.connected_devices);
         Button btnPain = (Button) findViewById(R.id.pain_btn);
 
         mHandler = new Handler();
@@ -167,7 +169,6 @@ public class MainActivity extends Activity {
         mNextIndex = 0;
         mNumConnectedSensors = 0;
         mPatientId = "";
-        mAnalysisResult = "";
 
         mFragManager = getFragmentManager();
 
@@ -197,11 +198,11 @@ public class MainActivity extends Activity {
                             mAutoConnectTimer.cancel();
                             mConnectionState = BLEService.STATE_DISCONNECTED;
                             btnConnectDisconnect.setText(R.string.connect);
-                            connectedDevices.setText(R.string.empty);
+                            feedBackMsgTV.setText(R.string.empty);
                             btnConnectDisconnect.setEnabled(true);
                         }else if(mAutoConnectOn) {
                             mAutoConnectOn = false;
-                            connectedDevices.setText(R.string.disconnecting);
+                            feedBackMsgTV.setText(R.string.disconnecting);
                             mUserInitiatedDisconnection = true;
                             mService.disconnect(mSensorAddresses);
                         }
@@ -325,7 +326,8 @@ public class MainActivity extends Activity {
 
                     break;
                 case CloudAccessService.ACTION_CLOUD_ACCESS_RESULT:
-                    reportCloudAccessStatus(intent.getStringExtra(CloudAccessService.EXTRA_RESULT));
+                    feedBackMsgTV.setText((intent.getStringExtra(CloudAccessService.EXTRA_RESULT)));
+                    CloudAccessService.startActionCloudAccess(MainActivity.this);
                     break;
                 case SaveRecordService.ACTION_SAVE_RECORD_STATUS:
                     showMessage(intent.getStringExtra(SaveRecordService.EXTRA_STATUS));
@@ -352,7 +354,6 @@ public class MainActivity extends Activity {
                                     rec.setEnd(end);
                                     rec.setTemp(mCurTemp);
                                     rec.setRecEnd(recEndTimeStamp);
-                                    CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
                                     SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
                                 }
                             }
@@ -497,7 +498,7 @@ public class MainActivity extends Activity {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     mSensorAddresses = data.getStringArrayListExtra(SensorList.EXTRA_SENSOR_ADDRESSES);
                     mConnectionState = BLEService.STATE_CONNECTING;
-                    connectedDevices.setText(R.string.connecting);
+                    feedBackMsgTV.setText(R.string.connecting);
                     mService.connect(mSensorAddresses);
                     btnConnectDisconnect.setEnabled(false);
                 }else if(resultCode == SensorList.DEVICE_NOT_FOUND){
@@ -751,11 +752,11 @@ public class MainActivity extends Activity {
         btnConnectDisconnect.setText(R.string.disconnect);
         btnConnectDisconnect.setEnabled(true);
         if(mNumConnectedSensors == 0) {
-            connectedDevices.setText(sensorName);
+            feedBackMsgTV.setText(sensorName);
         }
         else{
-            String str = connectedDevices.getText().toString() + "," + sensorName;
-            connectedDevices.setText(str);
+            String str = feedBackMsgTV.getText().toString() + "," + sensorName;
+            feedBackMsgTV.setText(str);
         }
         mNumConnectedSensors++;
         patientId.setText(mPatientId);
@@ -775,6 +776,7 @@ public class MainActivity extends Activity {
                 mRecEnd = mRecSegmentEnd = 0;
                 mRecording = true;
                 mRecordTimer.run();
+                CloudAccessService.startActionCloudAccess(MainActivity.this);
                 setGraphDisplayTimeout(GRAPH_DISPLAY_TIMEOUT);
             }
         }.start();
@@ -782,7 +784,7 @@ public class MainActivity extends Activity {
 
     private void handleGattDisconnectionEvent(){
         curDispDataType.setText("");
-        connectedDevices.setText("");
+        feedBackMsgTV.setText("");
         curTemperature.setText("");
         mCurTemp = 0;
         batLevel.setBackgroundResource(0);
@@ -790,7 +792,6 @@ public class MainActivity extends Activity {
         hrValue.setText("");
         patientId.setText("");
         mNextIndex = 0;
-        mAnalysisResult = "";
         mNumConnectedSensors = 0;
         mAvailableDataTypes.clear();
         if(mRecordStartTimer != null)
@@ -818,11 +819,11 @@ public class MainActivity extends Activity {
 
                 public void onTick(long millisUntilFinished) {
                     String str = millisUntilFinished / 1000 + " secs to  start auto-connect";
-                    connectedDevices.setText(str);
+                    feedBackMsgTV.setText(str);
                 }
 
                 public void onFinish() {
-                    connectedDevices.setText(R.string.starting_auto_connect);
+                    feedBackMsgTV.setText(R.string.starting_auto_connect);
                     mService.connect(mSensorAddresses);
                     mAutoConnectTimer = null;
                     mAutoConnectOn = true;
@@ -874,7 +875,7 @@ public class MainActivity extends Activity {
                     mPainStart = false;
                 }
                 rec.setTemp(mCurTemp);
-                CloudAccessService.startActionCloudAccess(MainActivity.this, rec);
+                CloudAccessService.startActionCloudAccess(MainActivity.this);
                 SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
             }
         }
@@ -915,7 +916,7 @@ public class MainActivity extends Activity {
     }
 
     private void savePatientAndDeviceIds() {
-        if (isExternalStorageWritable()) {
+        if (IOOperations.isExternalStorageWritable()) {
             File root = android.os.Environment.getExternalStorageDirectory();
             File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME_IDS);
             if (!dir.isDirectory())
@@ -936,7 +937,7 @@ public class MainActivity extends Activity {
     }
 
     private void getPatientAndDeviceIds(){
-        if(!isExternalStorageReadable()) {
+        if(!IOOperations.isExternalStorageReadable()) {
             showMessage("Cannot access external storage");
         }
         File root = android.os.Environment.getExternalStorageDirectory();
@@ -999,24 +1000,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void reportCloudAccessStatus(String status){
-        switch(status){
-            case CloudAccessService.NO_NETWORK_CONNECTION:
-                connectedDevices.setText(CloudAccessService.NO_NETWORK_CONNECTION);
-                break;
-            case CloudAccessService.SERVER_ERROR:
-                connectedDevices.setText(CloudAccessService.SERVER_ERROR);
-                break;
-            case CloudAccessService.CONNECTION_ERROR:
-                connectedDevices.setText(CloudAccessService.CONNECTION_ERROR);
-                break;
-            default:
-                connectedDevices.setText(CloudAccessService.DATA_SENT);
-                mAnalysisResult = status;
-                updateAnalysisResult(status);
-        }
-    }
-
     private void markPainEvent(){
         if(mGraphFragment != null && mGraphFragment.isAdded() && mShowECG)
             mGraphFragment.setColor(Color.RED);
@@ -1025,21 +1008,6 @@ public class MainActivity extends Activity {
     private void cancelPainEventMark(){
         if(mGraphFragment != null && mGraphFragment.isAdded() && mShowECG)
             mGraphFragment.setColor(Color.WHITE);
-    }
-
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        return (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state));
-    }
-
-    private static boolean isExternalStorageWritable() {
-        return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
-    }
-
-    private void updateAnalysisResult(String analysisStr){
-        if(mRecordAnalysisFragment != null && mRecordAnalysisFragment.isAdded())
-            mRecordAnalysisFragment.updateView(analysisStr);
     }
 
     private Runnable mDisplayTimerView = new Runnable() {

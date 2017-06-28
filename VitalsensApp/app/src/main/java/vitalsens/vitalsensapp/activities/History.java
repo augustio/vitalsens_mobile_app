@@ -2,14 +2,10 @@ package vitalsens.vitalsensapp.activities;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -19,27 +15,16 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Locale;
+import java.util.ArrayList;
 
 import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.models.Record;
+import vitalsens.vitalsensapp.utils.IOOperations;
 
 public class History extends Activity {
 
     private static final String TAG = History.class.getSimpleName();
-
-    private static final String SERVER_ERROR = "No Response From Server!";
-    private static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
-    private static final String CONNECTION_ERROR= "Server Not Reachable, Check Internet Connection";
     private static final String SERVER_URL = "http://83.136.249.208:5000/api/record";
 
     private TextView accessStatus;
@@ -69,7 +54,12 @@ public class History extends Activity {
             finish();
         }else {
             mDirName = extras.getString(Intent.EXTRA_TEXT);
-            readDirectory(mDirName);
+            ArrayList files = IOOperations.readDirectory(mDirName, true);
+            if(files != null){
+                for(Object obj : files){
+                    mListAdapter.add((String)obj);
+                }
+            }
         }
     }
 
@@ -97,63 +87,22 @@ public class History extends Activity {
                 deleteRecord(info);
                 return true;
             case R.id.send_email:
-                if(hasNetworkConnection())
+                if(IOOperations.hasNetworkConnection(getApplicationContext()))
                     sendAttachment(info.position);
                 else
-                    showMessage(NO_NETWORK_CONNECTION);
+                    showMessage(IOOperations.NO_NETWORK_CONNECTION);
                 return true;
             case R.id.send_cloud:
-                if(hasNetworkConnection()) {
+                if(IOOperations.hasNetworkConnection(getApplicationContext())) {
                     mPosition = info.position;
                     new HttpAsyncTask().execute(SERVER_URL);
                 }
                 else
-                    showMessage(NO_NETWORK_CONNECTION);
+                    showMessage(IOOperations.NO_NETWORK_CONNECTION);
                 return true;
             default:
                 return super.onContextItemSelected(item);
         }
-    }
-
-    private void readDirectory(String dirName){
-        if(isExternalStorageReadable()){
-            File root = android.os.Environment.getExternalStorageDirectory();
-            File dir = new File (root.getAbsolutePath() + dirName);
-            if(!dir.exists())
-                showMessage("No Record found");
-            else{
-                for (File f : dir.listFiles()) {
-                    if (f.isFile())
-                        mListAdapter.add(f.getName()+"\n"+getFileSize(f.length()));
-                }
-            }
-        }
-        else {
-            showMessage("Cannot read from storage");
-        }
-    }
-
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        return (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state));
-    }
-
-    private String getFileSize(double len){
-        String size;
-        if(len <1000){
-            size = len+"B";
-        }
-        else if(len < 1e+6){
-            size = String.format(Locale.getDefault(),"%.2f", (len/1024))+"KB";
-        }
-        else if(len < 1e+9){
-            size = String.format(Locale.getDefault(),"%.2f", (len/1.049e+6))+"MB";
-        }
-        else{
-            size = String.format(Locale.getDefault(),"%.2f", (len/1.074e+9))+"GB";
-        }
-        return size;
     }
 
     private String getFilePath(int pos){
@@ -166,10 +115,6 @@ public class History extends Activity {
     }
 
     private Record getRecord(int pos){
-        if(!isExternalStorageReadable()) {
-            showMessage("Cannot access external storage");
-            return null;
-        }
         String path = getFilePath(pos);
         if(path == null){
             showMessage("No record Available");
@@ -179,23 +124,12 @@ public class History extends Activity {
             showMessage("Invalid file format");
             return null;
         }
-        Record record;
         File file = new File(path);
-        if (!isEmptyFile(file)) {
-            try {
-                BufferedReader buf = new BufferedReader(new FileReader(file));
-                record = Record.fromJson(buf.readLine());
-                buf.close();
-            } catch (Exception e) {
-                record = null;
-                Log.e(TAG, e.toString());
-                showMessage("Problem accessing mFile");
-            }
-        }else{
-            showMessage("Empty File");
-            record = null;
+        String recordStr = IOOperations.readFileExternal(file);
+        if(recordStr == null){
+            return null;
         }
-        return record;
+        return Record.fromJson(recordStr);
     }
 
     private void deleteRecord(AdapterView.AdapterContextMenuInfo info){
@@ -212,54 +146,12 @@ public class History extends Activity {
             showMessage("Problem deleting record");
     }
 
-    private boolean isEmptyFile(File f){
-        return (f.length() <= Character.SIZE);
-    }
-
-    public static String POST(String serverUrl, Record record){
-        InputStream inputStream;
-        String result;
-        URL url;
-        HttpURLConnection urlConnection;
-        int responseCode;
-        try {
-            url = new URL(serverUrl);
-            urlConnection = (HttpURLConnection)url.openConnection();
-            urlConnection.setConnectTimeout(10000);
-            urlConnection.setDoOutput(true);
-            urlConnection.setChunkedStreamingMode(0);
-            urlConnection.setRequestProperty("Content-Type", "application/json");
-            urlConnection.setRequestProperty("Accept", "application/json");
-            urlConnection.setRequestMethod("POST");
-
-            String json = Record.toJson(record);
-
-            OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
-            writer.write(json);
-            writer.flush();
-            writer.close();
-
-            responseCode = urlConnection.getResponseCode();
-            if(responseCode == HttpURLConnection.HTTP_OK){
-                inputStream = urlConnection.getInputStream();
-                result = convertInputStreamToString(inputStream);
-            }else
-                result = SERVER_ERROR;
-
-        } catch (Exception e) {
-            Log.d("InputStream", e.getLocalizedMessage());
-            result =  CONNECTION_ERROR;
-        }
-
-        return result;
-    }
-
     private class HttpAsyncTask extends AsyncTask<String, String, String> {
         @Override
         protected String doInBackground(String... urls) {
             Record record = getRecord(mPosition);
             publishProgress("Sending Data to Server ...");
-            return POST(urls[0], record);
+            return IOOperations.POST(urls[0], Record.toJson(record), getApplicationContext());
         }
 
         protected void onProgressUpdate(String... value) {
@@ -270,11 +162,11 @@ public class History extends Activity {
         protected void onPostExecute(String result) {
             accessStatus.setText("");
             switch(result){
-                case SERVER_ERROR:
+                case IOOperations.SERVER_ERROR:
                     showMessage("Error Connecting to Server");
                     break;
-                case CONNECTION_ERROR:
-                    showMessage(CONNECTION_ERROR);
+                case IOOperations.CONNECTION_ERROR:
+                    showMessage(IOOperations.CONNECTION_ERROR);
                     break;
                 default:
                     showMessage("Data Sent");
@@ -301,23 +193,6 @@ public class History extends Activity {
         }catch (android.content.ActivityNotFoundException ex) {
             showMessage("No email clients installed.");
         }
-    }
-
-    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
-        String line = "";
-        String result = "";
-        while((line = bufferedReader.readLine()) != null)
-            result += line;
-
-        inputStream.close();
-        return result;
-    }
-
-    public boolean hasNetworkConnection(){
-        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        return (networkInfo != null && networkInfo.isConnected());
     }
 
     private void showMessage(final String msg) {
