@@ -78,6 +78,7 @@ public class MainActivity extends Activity {
     private static final int PPG = 3;
     private static final int ACC = 4;
     private static final int IMP = 5;
+    private static final int mNotifId = 0;
 
     private BluetoothAdapter mBluetoothAdapter;
     private Button btnConnectDisconnect;
@@ -111,10 +112,25 @@ public class MainActivity extends Activity {
     private RecordFragment mRecordFragment;
     private RecordAnalysisFragment mRecordAnalysisFragment;
 
+    private NotificationManager mNotificationManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.mipmap.vitalsens_launcher)
+                        .setContentTitle("Vitalsens App")
+                        .setContentText("Touch to return to App");
+        Intent intent = new Intent(this, SplashActivity.class);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        mBuilder.setContentIntent(pendingIntent);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(mNotifId, mBuilder.build());
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -619,6 +635,7 @@ public class MainActivity extends Activity {
                     .setPositiveButton(R.string.popup_yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            mNotificationManager.cancel(mNotifId);
                             finish();
                         }
                     })
