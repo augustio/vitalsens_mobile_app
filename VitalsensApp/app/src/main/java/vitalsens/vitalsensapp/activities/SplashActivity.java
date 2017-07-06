@@ -12,8 +12,6 @@ import vitalsens.vitalsensapp.R;
  */
 public class SplashActivity extends Activity {
 
-    private int delay;
-    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

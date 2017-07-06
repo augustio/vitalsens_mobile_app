@@ -30,7 +30,7 @@ public class IOOperations {
     public static final String SERVER_ERROR = "No Response From Server!";
     public static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
     public static final String CONNECTION_ERROR = "NO Internet/Server Not Found";
-    public static final String DATA_SENT = "Record sent to cloud";
+    public static final String DATA_SENT = "Record successfully saved";
 
     private final static int URL_CONNECTION_TIMEOUT = 10000;
 
@@ -64,11 +64,11 @@ public class IOOperations {
         return new File(dir, fileName);
     }
 
-    public static String writeFileExternal(String dirName, String fileName, String data){
+    public static String writeFileExternal(String dirName, String fileName, String data, boolean append){
         String status = "Data saved";
         File file = getFile(dirName, fileName, WRITE);
         try {
-            FileWriter fw = new FileWriter(file, true);
+            FileWriter fw = new FileWriter(file, append);
             fw.append(data);
             fw.flush();
             fw.close();
@@ -154,9 +154,11 @@ public class IOOperations {
                     buf.close();
                 } catch (Exception e) {
                     Log.e("IOOPerations", e.toString());
+                    result = null;
                 }
             } else {
                 Log.e("IOOperations", "Empty file");
+                result = null;
             }
         }
         return result;
@@ -172,11 +174,11 @@ public class IOOperations {
                     buf.close();
                 } catch (Exception e) {
                     Log.e("IOOPerations", e.toString());
-                    result = e.toString();
+                    result = null;
                 }
             } else {
                 Log.e("IOOperations", "Empty file");
-                result = "Empty file";
+                result = null;
             }
         }
         return result;
@@ -193,7 +195,7 @@ public class IOOperations {
         return result;
     }
 
-    public static String POST(String serverUrl, String record, Context c){
+    public static String POST(String serverUrl, String record, Context c, String auth){
         InputStream inputStream;
         String result;
         if(hasNetworkConnection(c)){
@@ -203,6 +205,9 @@ public class IOOperations {
             try {
                 url = new URL(serverUrl);
                 urlConnection = (HttpURLConnection)url.openConnection();
+                if(auth != null){
+                    urlConnection.setRequestProperty("Authorization", auth);
+                }
                 urlConnection.setConnectTimeout(URL_CONNECTION_TIMEOUT);
                 urlConnection.setDoOutput(true);
                 urlConnection.setChunkedStreamingMode(0);
@@ -218,13 +223,13 @@ public class IOOperations {
                 responseCode = urlConnection.getResponseCode();
                 if(responseCode == HttpURLConnection.HTTP_OK){
                     inputStream = urlConnection.getInputStream();
-                    Log.d("IOOPerations", "Cloud Upload Response: "+convertInputStreamToString(inputStream));
-                    result = DATA_SENT;
+                    result = convertInputStreamToString(inputStream);
+                    Log.d("IOOPerations", "Cloud Access Response: "+ result);
                 }else
                     result = SERVER_ERROR;
 
             } catch (Exception e) {
-                Log.d("InputStream", e.getLocalizedMessage());
+                Log.d("InputStream", "exception: "+ e.getLocalizedMessage());
                 result =  CONNECTION_ERROR;
             }
         }else{

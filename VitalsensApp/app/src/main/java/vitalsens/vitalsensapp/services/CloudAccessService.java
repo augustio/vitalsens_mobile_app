@@ -6,6 +6,8 @@ import android.content.Context;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.json.JSONObject;
+
 import java.io.File;
 
 import vitalsens.vitalsensapp.utils.IOOperations;
@@ -24,8 +26,9 @@ public class CloudAccessService extends IntentService {
         super("CloudAccessService");
     }
 
-    public static void startActionCloudAccess(Context context) {
+    public static void startActionCloudAccess(Context context, String authKey) {
         Intent intent = new Intent(context, CloudAccessService.class);
+        intent.putExtra("Authentication", "Basic " + authKey);
         intent.setAction(ACTION_CLOUD_ACCESS);
         context.startService(intent);
     }
@@ -34,8 +37,9 @@ public class CloudAccessService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
             final String action = intent.getAction();
+            final String auth = intent.getStringExtra("Authentication");
             if (ACTION_CLOUD_ACCESS.equals(action)) {
-                String result = "Records Directory Empty";
+                String msg = "Records Directory Empty";
                 File oldest = null;
                 if(IOOperations.isExternalStorageReadable()){
                     oldest = IOOperations.getOldestFile(IOOperations.readDirectory(DIRECTORY_NAME, false));
@@ -43,15 +47,21 @@ public class CloudAccessService extends IntentService {
                 if(oldest != null) {
                     final String record = IOOperations.readFileExternal(oldest);
                     if(record != null){
-                        result = IOOperations.POST(SERVER_URL, record, getApplicationContext());
+                        String result = IOOperations.POST(SERVER_URL, record, getApplicationContext(), auth);
                         Log.d(TAG, "Cloud-bound File: "+ oldest.getName()+"_"+oldest.lastModified());
-                        if(result.equals(IOOperations.DATA_SENT)){
-                            Log.d(TAG, "File deleted: "+ oldest.delete());
+                        try{
+                            JSONObject obj = new JSONObject(result);
+                            msg = obj.getString("message");
+                            if(msg.equals(IOOperations.DATA_SENT)){
+                                Log.d(TAG, "File deleted: "+ oldest.delete());
+                            }
+                        }catch (Exception e){
+                            Log.d(TAG, "JSON Parser Error: "+ e.getLocalizedMessage());
                         }
                     }
                 }
                 Intent localIntent = new Intent(ACTION_CLOUD_ACCESS_RESULT);
-                localIntent.putExtra(EXTRA_RESULT, result);
+                localIntent.putExtra(EXTRA_RESULT, msg);
                 LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
             }
         }

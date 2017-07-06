@@ -60,7 +60,7 @@ public class SaveRecordService extends IntentService {
             String dataType = record.getType();
             String fileName = dataType + "_" + sdf.format(date) + ".txt";
             if(!record.isEmpty()) {
-                status = IOOperations.writeFileExternal(DIRECTORY_NAME, fileName, Record.toJson(record));
+                status = IOOperations.writeFileExternal(DIRECTORY_NAME, fileName, Record.toJson(record), false);
             }else{
                 status = "Empty Record";
             }

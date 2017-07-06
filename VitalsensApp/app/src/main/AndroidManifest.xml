@@ -55,7 +55,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".utils.ConnectDialog"
+            android:name=".utils.LoginConnectDialog"
             android:label="@string/title_activity_connect_dialog"
             android:theme="@android:style/Theme.Holo.Dialog.NoActionBar" />
 

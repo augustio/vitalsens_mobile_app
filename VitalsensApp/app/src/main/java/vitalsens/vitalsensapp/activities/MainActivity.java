@@ -1,6 +1,5 @@
 package vitalsens.vitalsensapp.activities;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
@@ -22,7 +21,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -31,11 +29,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -44,19 +37,20 @@ import vitalsens.vitalsensapp.R;
 import vitalsens.vitalsensapp.fragments.GraphviewFragment;
 import vitalsens.vitalsensapp.fragments.RecordAnalysisFragment;
 import vitalsens.vitalsensapp.fragments.RecordFragment;
+import vitalsens.vitalsensapp.models.Patient;
 import vitalsens.vitalsensapp.models.Record;
 import vitalsens.vitalsensapp.services.BLEService;
 import vitalsens.vitalsensapp.services.CloudAccessService;
 import vitalsens.vitalsensapp.services.SaveRecordService;
-import vitalsens.vitalsensapp.utils.ConnectDialog;
+import vitalsens.vitalsensapp.utils.LoginConnectDialog;
 import vitalsens.vitalsensapp.utils.IOOperations;
 
 public class MainActivity extends Activity {
 
     private static final String TAG = "VitalsensApp";
-    private static final String DIRECTORY_NAME_IDS = "/VITALSENSE_IDS";
     private static final String DIRECTORY_NAME_RECORDS = "/VITALSENSE_RECORDS";
-    private static final String PATIENT_DEVICE_IDS_FILE_PATH = "patient_device_ids.txt";
+    private static final String PATIENT_DIRECTORY = "/VITALSENS_PATIENT";
+    private static final String PATIENT_FILE = "patient_auth_connection_credentials.txt";
     private static final int MAIN_LAYOUT = 0;
     private static final int ONE_CHANNEL_LAYOUT = 1;
     private static final int TWO_CHANNELS_LAYOUT = 2;
@@ -65,7 +59,8 @@ public class MainActivity extends Activity {
     private static final int RECORD_ANALYSIS_LAYOUT = -2;
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    private static final int REQUEST_CONNECT_PARAMS = 3;
+    private static final int REQUEST_SENSOR_ID = 3;
+    private static final int REQUEST_LOGIN = 4;
     private static final int MAX_RECORD_SEGMENT_DURATION = 30; //In Seconds (I minute)
     private static final int MAX_RECORD_DURATION = 1800; //In seconds (30 minutes)
     private static final int SECONDS_IN_ONE_MINUTE = 60;
@@ -99,7 +94,6 @@ public class MainActivity extends Activity {
     private long mRecStart, mRecordingStart, mCurrentTimeStamp, mRecEnd, mRecSegmentEnd;
     private int mNumConnectedSensors;
     private double mCurTemp;
-    private String mSensorId, mPatientId;
     private boolean mShowECG, mShowPPG, mShowAccel, mShowImpedance;
     private boolean mRecording;
     private boolean mUserInitiatedDisconnection;
@@ -107,6 +101,8 @@ public class MainActivity extends Activity {
     private boolean mSamplesRecieved;
     private boolean mAutoConnectOn;
     private boolean mPainStart;
+
+    private Patient mPatient;
 
     private GraphviewFragment mGraphFragment;
     private RecordFragment mRecordFragment;
@@ -147,13 +143,6 @@ public class MainActivity extends Activity {
                 mXRange = 600;
         }
 
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
         btnConnectDisconnect = (Button) findViewById(R.id.btn_connect);
         curTemperature = (TextView) findViewById(R.id.cur_temp);
         batLevel = (TextView) findViewById(R.id.bat_level);
@@ -170,7 +159,6 @@ public class MainActivity extends Activity {
         mHandler = new Handler();
         mRecordStartTimer = null;
         mAutoConnectTimer = null;
-        mSensorId = "";
         mRecords = new HashMap<>();
         mAvailableDataTypes = new ArrayList<>();
         mConnectionState = BLEService.STATE_DISCONNECTED;
@@ -184,7 +172,6 @@ public class MainActivity extends Activity {
         min = sec =  hr = 0;
         mNextIndex = 0;
         mNumConnectedSensors = 0;
-        mPatientId = "";
 
         mFragManager = getFragmentManager();
 
@@ -192,7 +179,12 @@ public class MainActivity extends Activity {
 
         service_init();
 
-        getPatientAndDeviceIds();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         btnConnectDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -203,12 +195,9 @@ public class MainActivity extends Activity {
                     startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
                 } else {
                     if (mConnectionState == BLEService.STATE_DISCONNECTED) {
-                        Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
-                        ArrayList<String> connParams = new ArrayList<>();
-                        connParams.add(mSensorId);
-                        connParams.add(mPatientId);
-                        newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
-                        startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
+                        Intent getSensorIdIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+                        getSensorIdIntent.setType(LoginConnectDialog.ACTION_GET_SENSOR_ID);
+                        startActivityForResult(getSensorIdIntent, REQUEST_SENSOR_ID);
                     } else if(mConnectionState == BLEService.STATE_CONNECTING){
                         if(mAutoConnectTimer != null && !mAutoConnectOn) {
                             mAutoConnectTimer.cancel();
@@ -287,14 +276,10 @@ public class MainActivity extends Activity {
             Log.i(TAG, "onClick - BT not enabled yet");
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        }else {
-            Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
-            ArrayList<String> connParams = new ArrayList<>();
-            connParams.add(mSensorId);
-            connParams.add(mPatientId);
-            newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
-            startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
         }
+        Intent loginIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+        loginIntent.setType(LoginConnectDialog.ACTION_LOGIN);
+        startActivityForResult(loginIntent, REQUEST_LOGIN);
     }
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -343,7 +328,7 @@ public class MainActivity extends Activity {
                     break;
                 case CloudAccessService.ACTION_CLOUD_ACCESS_RESULT:
                     feedBackMsgTV.setText((intent.getStringExtra(CloudAccessService.EXTRA_RESULT)));
-                    CloudAccessService.startActionCloudAccess(MainActivity.this);
+                    CloudAccessService.startActionCloudAccess(MainActivity.this, mPatient.getAuthKey());
                     break;
                 case SaveRecordService.ACTION_SAVE_RECORD_STATUS:
                     showMessage(intent.getStringExtra(SaveRecordService.EXTRA_STATUS));
@@ -365,7 +350,7 @@ public class MainActivity extends Activity {
                             }
 
                             for (int key : mRecords.keySet()) {
-                                Record rec = mRecords.put(key, new Record(mRecStart, mPatientId, start, key));
+                                Record rec = mRecords.put(key, new Record(mRecStart, mPatient.getPatientId(), start, key));
                                 if (!rec.isEmpty()) {
                                     rec.setEnd(end);
                                     rec.setTemp(mCurTemp);
@@ -518,13 +503,10 @@ public class MainActivity extends Activity {
                     mService.connect(mSensorAddresses);
                     btnConnectDisconnect.setEnabled(false);
                 }else if(resultCode == SensorList.DEVICE_NOT_FOUND){
-                    showMessage(mSensorId + " not found, try again");
-                    Intent newIntent = new Intent(MainActivity.this, ConnectDialog.class);
-                    ArrayList<String> connParams = new ArrayList<>();
-                    connParams.add(mSensorId);
-                    connParams.add(mPatientId);
-                    newIntent.putStringArrayListExtra(Intent.EXTRA_TEXT, connParams);
-                    startActivityForResult(newIntent, REQUEST_CONNECT_PARAMS);
+                    showMessage(mPatient.getSensorId() + " not found, try again");
+                    Intent getSensorIdIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+                    getSensorIdIntent.setType(LoginConnectDialog.ACTION_GET_SENSOR_ID);
+                    startActivityForResult(getSensorIdIntent, REQUEST_SENSOR_ID);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -537,19 +519,35 @@ public class MainActivity extends Activity {
                     finish();
                 }
                 break;
-            case REQUEST_CONNECT_PARAMS:
+            case REQUEST_SENSOR_ID:
                 if(resultCode == Activity.RESULT_OK && data != null){
-                    ArrayList<String> connParams = data.getStringArrayListExtra(Intent.EXTRA_TEXT);
-                    if(connParams != null && connParams.size() == 2) {
-                        mSensorId = connParams.get(0);
-                        mPatientId = connParams.get(1);
+                    String sId = data.getStringExtra(Intent.EXTRA_TEXT);
+                    if(sId != null) {
+                        mPatient.setSensorId(sId);
                     }
                     Intent getSensorIntent = new Intent(MainActivity.this, SensorList.class);
-                    getSensorIntent.putExtra(Intent.EXTRA_TEXT, mSensorId);
+                    getSensorIntent.putExtra(Intent.EXTRA_TEXT, mPatient.getSensorId());
                     startActivityForResult(getSensorIntent, REQUEST_SELECT_DEVICE);
                 }else if(resultCode == Activity.RESULT_CANCELED){
                     Log.d(TAG, "User cancled request");
-
+                }
+                break;
+            case REQUEST_LOGIN:
+                if(resultCode == Activity.RESULT_OK && data != null){
+                    String pStr = data.getStringExtra(Intent.EXTRA_TEXT);
+                    if(pStr != null) {
+                        mPatient = Patient.fromJson(pStr);
+                    }
+                    Intent getSensorIdIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+                    getSensorIdIntent.setType(LoginConnectDialog.ACTION_GET_SENSOR_ID);
+                    startActivityForResult(getSensorIdIntent, REQUEST_SENSOR_ID);
+                }else if(resultCode == Activity.RESULT_CANCELED){
+                    finish();
+                } else{
+                    Log.d(TAG, "User Authentication failed");
+                    Intent loginIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+                    loginIntent.setType(LoginConnectDialog.ACTION_LOGIN);
+                    startActivityForResult(loginIntent, REQUEST_LOGIN);
                 }
                 break;
             default:
@@ -567,6 +565,10 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy()");
+        mNotificationManager.cancel(mNotifId);
+        mPatient.setAuthKey("");
+        mPatient.setPassword("");
+        savePatient(mPatient);
         try {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(SensorStatusChangeReceiver);
         } catch (Exception ignore) {
@@ -586,7 +588,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        savePatientAndDeviceIds();
+        savePatient(mPatient);
         Log.d(TAG, "onPause");
         super.onPause();
     }
@@ -635,7 +637,6 @@ public class MainActivity extends Activity {
                     .setPositiveButton(R.string.popup_yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            mNotificationManager.cancel(mNotifId);
                             finish();
                         }
                     })
@@ -760,7 +761,7 @@ public class MainActivity extends Activity {
 
     private void handleGattConnectionEvent(String sensorName) {
         Log.d(TAG, "Connected to " + sensorName);
-        addAvailableDataType(mSensorId);
+        addAvailableDataType(mPatient.getSensorId());
         if(!mDataDisplayOn) {
             displayData();
             mDataDisplayOn = true;
@@ -776,7 +777,7 @@ public class MainActivity extends Activity {
             feedBackMsgTV.setText(str);
         }
         mNumConnectedSensors++;
-        patientId.setText(mPatientId);
+        patientId.setText(mPatient.getPatientId());
 
         mRecordStartTimer = new CountDownTimer(PRE_RECORD_START_DURATION, 1000){
             public void onTick(long millisUntilFinished) {
@@ -786,14 +787,14 @@ public class MainActivity extends Activity {
             public void onFinish() {
                 mRecordingStart = mRecStart = System.currentTimeMillis();;
                 for(int dataId : Record.DATA_TYPES.values()){
-                    Record rec = new Record(mRecStart, mPatientId, mRecStart, dataId);
+                    Record rec = new Record(mRecStart, mPatient.getPatientId(), mRecStart, dataId);
                     mRecords.put(dataId, rec);
                 }
 
                 mRecEnd = mRecSegmentEnd = 0;
                 mRecording = true;
                 mRecordTimer.run();
-                CloudAccessService.startActionCloudAccess(MainActivity.this);
+                CloudAccessService.startActionCloudAccess(MainActivity.this, mPatient.getAuthKey());
                 setGraphDisplayTimeout(GRAPH_DISPLAY_TIMEOUT);
             }
         }.start();
@@ -892,7 +893,7 @@ public class MainActivity extends Activity {
                     mPainStart = false;
                 }
                 rec.setTemp(mCurTemp);
-                CloudAccessService.startActionCloudAccess(MainActivity.this);
+                CloudAccessService.startActionCloudAccess(MainActivity.this, mPatient.getAuthKey());
                 SaveRecordService.startActionSaveRecord(MainActivity.this, rec);
             }
         }
@@ -932,46 +933,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void savePatientAndDeviceIds() {
-        if (IOOperations.isExternalStorageWritable()) {
-            File root = android.os.Environment.getExternalStorageDirectory();
-            File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME_IDS);
-            if (!dir.isDirectory())
-                dir.mkdirs();
-            File file = new File(dir, PATIENT_DEVICE_IDS_FILE_PATH);
-            try {
-                FileWriter fw = new FileWriter(file);
-                fw.write(mPatientId + "\n" + mSensorId);
-                fw.flush();
-                fw.close();
-            } catch (IOException e) {
-                Log.e(TAG, e.toString());
-                Log.e(TAG, "Problem writing to Storage");
+    private void savePatient(Patient patient) {
+        String pStr = Patient.toJson(patient);
+        if(pStr != null) {
+            if (IOOperations.isExternalStorageWritable()) {
+                String status = IOOperations.writeFileExternal(PATIENT_DIRECTORY, PATIENT_FILE, pStr, false);
+                showMessage(status);
+            } else {
+                showMessage("Cannot write to storage!");
             }
-        }else{
-            showMessage("Cannot write to storage!");
-        }
-    }
-
-    private void getPatientAndDeviceIds(){
-        if(!IOOperations.isExternalStorageReadable()) {
-            showMessage("Cannot access external storage");
-        }
-        File root = android.os.Environment.getExternalStorageDirectory();
-        File dir = new File(root.getAbsolutePath() + DIRECTORY_NAME_IDS);
-        File file = new File(dir, PATIENT_DEVICE_IDS_FILE_PATH);
-        if (file.exists()) {
-            try {
-                BufferedReader buf = new BufferedReader(new FileReader(file));
-                mPatientId = buf.readLine();
-                mSensorId = buf.readLine();
-                buf.close();
-            } catch (Exception e) {
-                Log.e(TAG, e.toString());
-                showMessage("Problem accessing mFile");
-            }
-        }else{
-            showMessage("No saved ids");
         }
     }
 
