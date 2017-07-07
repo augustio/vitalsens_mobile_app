@@ -27,10 +27,13 @@ import java.util.Locale;
 
 public class IOOperations {
 
+    public static final String TAG = "IOOperations";
+
     public static final String SERVER_ERROR = "No Response From Server!";
     public static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
     public static final String CONNECTION_ERROR = "NO Internet/Server Not Found";
-    public static final String DATA_SENT = "Record successfully saved";
+    public static final String DATA_SENT = "Record upload successful";
+    public static final String DATA_SAVED = "Data Saved";
 
     private final static int URL_CONNECTION_TIMEOUT = 10000;
 
@@ -59,13 +62,13 @@ public class IOOperations {
         File dir = new File (root.getAbsolutePath() + dirName);
         if(mode == WRITE) {
             if(!dir.isDirectory())
-                dir.mkdirs();
+                Log.d(TAG, "New Directory Created: "+dir.mkdirs());
         }
         return new File(dir, fileName);
     }
 
     public static String writeFileExternal(String dirName, String fileName, String data, boolean append){
-        String status = "Data saved";
+        String status = DATA_SAVED;
         File file = getFile(dirName, fileName, WRITE);
         try {
             FileWriter fw = new FileWriter(file, append);
@@ -173,11 +176,11 @@ public class IOOperations {
                     result = buf.readLine();
                     buf.close();
                 } catch (Exception e) {
-                    Log.e("IOOPerations", e.toString());
+                    Log.e(TAG, e.toString());
                     result = null;
                 }
             } else {
-                Log.e("IOOperations", "Empty file");
+                Log.e(TAG, "Empty file");
                 result = null;
             }
         }
@@ -224,12 +227,12 @@ public class IOOperations {
                 if(responseCode == HttpURLConnection.HTTP_OK){
                     inputStream = urlConnection.getInputStream();
                     result = convertInputStreamToString(inputStream);
-                    Log.d("IOOPerations", "Cloud Access Response: "+ result);
+                    Log.d(TAG, "Cloud Access Response: "+ result);
                 }else
                     result = SERVER_ERROR;
 
             } catch (Exception e) {
-                Log.d("InputStream", "exception: "+ e.getLocalizedMessage());
+                Log.d(TAG, "exception: "+ e.getLocalizedMessage());
                 result =  CONNECTION_ERROR;
             }
         }else{

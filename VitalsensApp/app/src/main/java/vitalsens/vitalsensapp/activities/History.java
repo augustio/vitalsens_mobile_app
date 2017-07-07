@@ -151,7 +151,7 @@ public class History extends Activity {
         protected String doInBackground(String... urls) {
             Record record = getRecord(mPosition);
             publishProgress("Sending Data to Server ...");
-            return IOOperations.POST(urls[0], Record.toJson(record), getApplicationContext());
+            return IOOperations.POST(urls[0], Record.toJson(record), getApplicationContext(), null);
         }
 
         protected void onProgressUpdate(String... value) {

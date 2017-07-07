@@ -66,15 +66,12 @@ public class BLEService extends Service {
             "vitalsens.vitalsensapp.TEMP_VALUE";
     public static final String BATTERY_LEVEL =
             "vitalsens.vitalsensapp.BATTERY_LEVEL";
-    public static final String HR = "vitalsens.vitalsensapp.HR";
 
 
     private final static UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private final static UUID UART_SERVICE_UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID RX_CHAR_UUID = UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
     private final static UUID HT_SERVICE_UUID = UUID.fromString("00001809-0000-1000-8000-00805f9b34fb");
-    public  final static UUID HR_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
-    private final static UUID HR_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
     private final static UUID HT_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A1C-0000-1000-8000-00805f9b34fb");
     private final static UUID BATTERY_SERVICE_UUID = UUID.fromString("0000180F-0000-1000-8000-00805f9b34fb");
     private final static UUID BATTERY_LEVEL_CHARACTERISTIC_UUID = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
@@ -95,7 +92,7 @@ public class BLEService extends Service {
     private ArrayList<Integer> mPrevPktNums = new ArrayList<>(6);
 
     private BluetoothGattCharacteristic mRXCharacteristic = null, mHTCharacteristic = null,
-    mBatteryLevelCharacteristic = null, mHRCharacteristic = null;
+    mBatteryLevelCharacteristic = null;
 
     private Map<String, BluetoothGatt> mConnectedSensors = new HashMap<>();
 
@@ -119,8 +116,7 @@ public class BLEService extends Service {
                 mConnectionState = STATE_DISCONNECTED;
                 if(mConnectedSensors.isEmpty()) {
                     mConnectionState = STATE_DISCONNECTED;
-                    mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic =
-                            mHRCharacteristic = null;
+                    mRXCharacteristic = mHTCharacteristic = mBatteryLevelCharacteristic = null;
                     broadcastUpdate(ACTION_GATT_DISCONNECTED);
                     Log.d(TAG, "Disconnected from all sensors");
                 }
@@ -143,9 +139,6 @@ public class BLEService extends Service {
                     }else if (service.getUuid().equals(BATTERY_SERVICE_UUID)) {
                         mBatteryLevelCharacteristic = service.getCharacteristic(BATTERY_LEVEL_CHARACTERISTIC_UUID);
                         characteristics.add(mBatteryLevelCharacteristic);
-                    }else if (service.getUuid().equals(HR_SERVICE_UUID)){
-                        mHRCharacteristic = service.getCharacteristic(HR_CHARACTERISTIC_UUID);
-                        characteristics.add(mHRCharacteristic);
                     }
                 }
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
@@ -172,10 +165,6 @@ public class BLEService extends Service {
             if(characteristic.getUuid().equals(BATTERY_LEVEL_CHARACTERISTIC_UUID)){
                 int batLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
                 broadcastUpdate(BATTERY_LEVEL, batLevel);
-            }
-            if(characteristic.getUuid().equals(HR_CHARACTERISTIC_UUID)){
-                int hr = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
-                broadcastUpdate(HR, hr);
             }
         }
 
@@ -210,13 +199,6 @@ public class BLEService extends Service {
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    }
-
-    private void broadcastUpdate(final String action,
-                                 final int[] value) {
-        final Intent intent = new Intent(action);
-        intent.putExtra(Intent.EXTRA_TEXT, value);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 

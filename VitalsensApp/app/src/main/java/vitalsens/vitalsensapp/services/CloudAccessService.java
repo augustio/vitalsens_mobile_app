@@ -39,7 +39,7 @@ public class CloudAccessService extends IntentService {
             final String action = intent.getAction();
             final String auth = intent.getStringExtra("Authentication");
             if (ACTION_CLOUD_ACCESS.equals(action)) {
-                String msg = "Records Directory Empty";
+                String result = "Records Directory Empty";
                 File oldest = null;
                 if(IOOperations.isExternalStorageReadable()){
                     oldest = IOOperations.getOldestFile(IOOperations.readDirectory(DIRECTORY_NAME, false));
@@ -47,11 +47,11 @@ public class CloudAccessService extends IntentService {
                 if(oldest != null) {
                     final String record = IOOperations.readFileExternal(oldest);
                     if(record != null){
-                        String result = IOOperations.POST(SERVER_URL, record, getApplicationContext(), auth);
+                        result = IOOperations.POST(SERVER_URL, record, getApplicationContext(), auth);
                         Log.d(TAG, "Cloud-bound File: "+ oldest.getName()+"_"+oldest.lastModified());
                         try{
                             JSONObject obj = new JSONObject(result);
-                            msg = obj.getString("message");
+                            String msg  = obj.getString("message");
                             if(msg.equals(IOOperations.DATA_SENT)){
                                 Log.d(TAG, "File deleted: "+ oldest.delete());
                             }
@@ -61,7 +61,7 @@ public class CloudAccessService extends IntentService {
                     }
                 }
                 Intent localIntent = new Intent(ACTION_CLOUD_ACCESS_RESULT);
-                localIntent.putExtra(EXTRA_RESULT, msg);
+                localIntent.putExtra(EXTRA_RESULT, result);
                 LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
             }
         }

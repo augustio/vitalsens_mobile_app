@@ -29,6 +29,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -322,12 +324,20 @@ public class MainActivity extends Activity {
                 case BLEService.BATTERY_LEVEL:
                     updateBatteryLevel(intent.getIntExtra(Intent.EXTRA_TEXT, 200));
                     break;
-                case BLEService.HR:
-                    updateHRValue(intent.getIntExtra(Intent.EXTRA_TEXT, 1000));
-
-                    break;
                 case CloudAccessService.ACTION_CLOUD_ACCESS_RESULT:
-                    feedBackMsgTV.setText((intent.getStringExtra(CloudAccessService.EXTRA_RESULT)));
+                    String res = intent.getStringExtra(CloudAccessService.EXTRA_RESULT);
+                    try{
+                        if(res.contains("heartRate") && mConnectionState == BLEService.STATE_CONNECTED){
+                            int hr = new JSONObject(res).getInt("heartRate");
+                            updateHRValue(hr);
+                        }
+                        if(res.contains("message")){
+                            res = new JSONObject(res).getString("message");
+                        }
+                    }catch(Exception e){
+                        Log.e(TAG, "JSON Parser Error: "+ e.getLocalizedMessage());
+                    }
+                    feedBackMsgTV.setText(res);
                     CloudAccessService.startActionCloudAccess(MainActivity.this, mPatient.getAuthKey());
                     break;
                 case SaveRecordService.ACTION_SAVE_RECORD_STATUS:
@@ -485,7 +495,6 @@ public class MainActivity extends Activity {
         intentFilter.addAction(BLEService.DATA_RECIEVED);
         intentFilter.addAction(BLEService.TEMP_VALUE);
         intentFilter.addAction(BLEService.BATTERY_LEVEL);
-        intentFilter.addAction(BLEService.HR);
         intentFilter.addAction(CloudAccessService.ACTION_CLOUD_ACCESS_RESULT);
         intentFilter.addAction(SaveRecordService.ACTION_SAVE_RECORD_STATUS);
         return intentFilter;
@@ -529,7 +538,7 @@ public class MainActivity extends Activity {
                     getSensorIntent.putExtra(Intent.EXTRA_TEXT, mPatient.getSensorId());
                     startActivityForResult(getSensorIntent, REQUEST_SELECT_DEVICE);
                 }else if(resultCode == Activity.RESULT_CANCELED){
-                    Log.d(TAG, "User cancled request");
+                    Log.d(TAG, "User canceled request");
                 }
                 break;
             case REQUEST_LOGIN:
@@ -588,7 +597,6 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        savePatient(mPatient);
         Log.d(TAG, "onPause");
         super.onPause();
     }
@@ -938,7 +946,11 @@ public class MainActivity extends Activity {
         if(pStr != null) {
             if (IOOperations.isExternalStorageWritable()) {
                 String status = IOOperations.writeFileExternal(PATIENT_DIRECTORY, PATIENT_FILE, pStr, false);
-                showMessage(status);
+                if(status.equals(IOOperations.DATA_SAVED)){
+                    showMessage("Patient's Info saved");
+                }else{
+                    showMessage(status);
+                }
             } else {
                 showMessage("Cannot write to storage!");
             }
@@ -979,11 +991,11 @@ public class MainActivity extends Activity {
     }
 
     private void updateHRValue(int hr){
-        if(hr != 1000){
+        if(hr == 1000){
+            hrValue.setText(R.string.hr_NA);
+        }else{
             String hrStr = hr + " BPM";
             hrValue.setText(hrStr);
-        }else{
-            hrValue.setText(R.string.hr_NA);
         }
     }
 

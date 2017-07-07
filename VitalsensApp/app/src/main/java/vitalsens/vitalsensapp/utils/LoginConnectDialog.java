@@ -78,20 +78,18 @@ public class LoginConnectDialog extends Activity {
                                 mPatient.setPassword(passwordInputText.getText().toString());
                                 String user = Patient.toJson(mPatient);
                                 String loginRes = IOOperations.POST(SERVER_URL, user, getApplicationContext(), null);
-                                Log.e("LoginConnectDialog", loginRes);
                                 if (loginRes.contains("token")) {
                                     JSONObject obj = new JSONObject(loginRes);
                                     String token = obj.getString("token");
                                     mPatient.setAuthKey(token);
                                     result = Patient.toJson(mPatient);
                                 } else {
-                                    showMessage(loginRes);
+                                    showMessage("Login Failed");
                                 }
                             } else {
                                 mPatient.setSensorId(sensorIdInputText.getText().toString());
                                 result = mPatient.getSensorId();
                             }
-                            Log.e("LoginConnectDialog", Patient.toJson(mPatient));
                             if (!result.isEmpty()) {
                                 resultIntent.putExtra(Intent.EXTRA_TEXT, result);
                                 setResult(Activity.RESULT_OK, resultIntent);
