@@ -50,7 +50,7 @@ import vitalsens.vitalsensapp.utils.IOOperations;
 public class MainActivity extends Activity {
 
     private static final String TAG = "VitalsensApp";
-    private static final String DIRECTORY_NAME_RECORDS = "/VITALSENSE_RECORDS";
+    private static final String DIRECTORY_NAME_RECORDS = "/VITALSENS_RECORDS";
     private static final String PATIENT_DIRECTORY = "/VITALSENS_PATIENT";
     private static final String PATIENT_FILE = "patient_auth_connection_credentials.txt";
     private static final int MAIN_LAYOUT = 0;
@@ -275,13 +275,14 @@ public class MainActivity extends Activity {
         });
 
         if (!mBluetoothAdapter.isEnabled()) {
-            Log.i(TAG, "onClick - BT not enabled yet");
+            Log.i(TAG, "onResume - BT not enabled yet");
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        }else{
+            Intent loginIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+            loginIntent.setType(LoginConnectDialog.ACTION_LOGIN);
+            startActivityForResult(loginIntent, REQUEST_LOGIN);
         }
-        Intent loginIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
-        loginIntent.setType(LoginConnectDialog.ACTION_LOGIN);
-        startActivityForResult(loginIntent, REQUEST_LOGIN);
     }
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -521,7 +522,9 @@ public class MainActivity extends Activity {
             case REQUEST_ENABLE_BT:
                 if (resultCode == Activity.RESULT_OK) {
                     showMessage("Bluetooth has turned on ");
-
+                    Intent loginIntent = new Intent(MainActivity.this, LoginConnectDialog.class);
+                    loginIntent.setType(LoginConnectDialog.ACTION_LOGIN);
+                    startActivityForResult(loginIntent, REQUEST_LOGIN);
                 } else {
                     Log.d(TAG, "BT not enabled");
                     showMessage("Problem in BT Turning ON ");
@@ -575,9 +578,11 @@ public class MainActivity extends Activity {
         super.onDestroy();
         Log.d(TAG, "onDestroy()");
         mNotificationManager.cancel(mNotifId);
-        mPatient.setAuthKey("");
-        mPatient.setPassword("");
-        savePatient(mPatient);
+        if(mPatient != null){
+            mPatient.setAuthKey("");
+            mPatient.setPassword("");
+            savePatient(mPatient);
+        }
         try {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(SensorStatusChangeReceiver);
         } catch (Exception ignore) {
@@ -611,12 +616,6 @@ public class MainActivity extends Activity {
     public void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
-        if (!mBluetoothAdapter.isEnabled()) {
-            Log.i(TAG, "onResume - BT not enabled yet");
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        }
-
     }
 
     @Override

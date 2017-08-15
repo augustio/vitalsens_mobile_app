@@ -22,7 +22,7 @@ public class SaveRecordService extends IntentService {
 
     public static final String ACTION_SAVE_RECORD = "vitalsens.vitalsensapp.services.saverecordservice.action.SAVE_RECORD";
     public static final String ACTION_SAVE_RECORD_STATUS = "vitalsens.vitalsensapp.services.saverecordservice.action.SAVE_RECORD_STATUS";
-    private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
+    private static final String DIRECTORY_NAME = "/VITALSENS_RECORDS";
     private static final String EXTRA_RECORD = "vitalsens.vitalsensapp.services.saverecordservice.extra.RECORD";
 
     public static final String EXTRA_STATUS = "vitalsens.vitalsensapp.services.saverecordservice.EXTRA_STATUS";

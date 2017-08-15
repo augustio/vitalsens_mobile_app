@@ -18,7 +18,7 @@ public class CloudAccessService extends IntentService {
     public static final String ACTION_CLOUD_ACCESS_RESULT = "vitalsens.vitalsensapp.services.cloudaccessservice.action.CLOUD_ACCESS_RESULT";
     public static final String EXTRA_RESULT = "vitalsens.vitalsensapp.services.cloudaccessservice.extra.RESULT";
     private static final String SERVER_URL = "http://83.136.249.208:5000/api/records";
-    private static final String DIRECTORY_NAME = "/VITALSENSE_RECORDS";
+    private static final String DIRECTORY_NAME = "/VITALSENS_RECORDS";
     private static final String TAG = "CloudAccessService";
 
 

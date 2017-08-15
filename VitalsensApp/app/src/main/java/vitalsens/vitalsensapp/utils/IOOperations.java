@@ -27,7 +27,7 @@ import java.util.Locale;
 
 public class IOOperations {
 
-    public static final String TAG = "IOOperations";
+    private static final String TAG = "IOOperations";
 
     public static final String SERVER_ERROR = "No Response From Server!";
     public static final String NO_NETWORK_CONNECTION = "Not Connected to Network";
@@ -132,7 +132,7 @@ public class IOOperations {
     }
 
     public static File getOldestFile(ArrayList files){
-        if(files.size() < 1){
+        if(files == null || files.size() < 1){
             return null;
         }
         File oldest = (File)files.get(0);
